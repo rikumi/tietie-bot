@@ -1,0 +1,22 @@
+{
+  "name": "tietie-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rikumi/tietie-bot.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rikumi/tietie-bot/issues"
+  },
+  "homepage": "https://github.com/rikumi/tietie-bot#readme",
+  "dependencies": {
+    "telegraf": "^4.4.0"
+  }
+}
