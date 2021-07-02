@@ -16,6 +16,7 @@ bot.on('message', (ctx) => {
   let module = `./commands/${action}.js`;
   if (!fs.existsSync(module)) module = `./commands/default.js`;
   const result = require(module)(ctx, bot);
+  if (!result) return;
   ctx.reply(result, msgOptions);
 });
 
