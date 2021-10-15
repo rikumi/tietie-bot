@@ -1,6 +1,6 @@
 module.exports = (ctx, bot) => {
   const { message } = ctx;
-  if (/[^\u0000-\u00ff]/.test(message.text.split(' ')[0])) return;
+  if (!/[^\u0000-\u00ff]/.test(message.text.split(' ')[0])) return;
   const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](https://t.me/${user.username})`;
   const extractUser = (message, entity) => ({ first_name: message.text.substr(entity.offset, entity.length), username: entity.url.split('/').pop() });
