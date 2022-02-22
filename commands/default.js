@@ -1,6 +1,6 @@
 module.exports = (ctx, bot) => {
   const { message } = ctx;
-  if (!/[^\u0000-\u00ff]/.test(message.text.split(' ')[0])) return;
+  if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) return;
   const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
   const getUrl = (username) => username ? `https://t.me/${username}` : 'https://youtu.be/dQw4w9WgXcQ';
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](${getUrl(user.username)})`;
