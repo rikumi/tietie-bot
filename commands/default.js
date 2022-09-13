@@ -13,7 +13,7 @@ module.exports = (ctx, bot) => {
   const lastMentionUser = lastMentionEntity && extractUser(repliedBotMsg, lastMentionEntity);
   const receiver = lastMentionUser || replied && replied.from || sender;
   const receiverLink = formatUser(receiver, receiver.username === sender.username ? '自己' : undefined);
-  const [action, ...rest] = message.text.slice(1).split(/\s+/);
+  const [action, ...rest] = message.text.slice(1).split(/\s+/).map(escape);
   const postfix = rest.join(' ').trim();
   return `${senderLink} ${action}${postfix ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
 }
