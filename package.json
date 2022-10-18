@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/rikumi/tietie-bot#readme",
   "dependencies": {
+    "minecraft-protocol": "^1.36.1",
     "telegraf": "^4.4.0"
   }
 }
