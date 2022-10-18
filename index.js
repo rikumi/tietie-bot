@@ -20,4 +20,4 @@ bot.on('message', (ctx) => {
   ctx.reply(result, msgOptions);
 });
 
-bot.launch();
+bot.launch().then(() => console.log("Service started!"));
