@@ -14,6 +14,7 @@ bot.on('message', async (ctx) => {
   const { message } = ctx;
   if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].slice(1);
+  if (!/^\w+$/.test(action)) return;
   let module = `./commands/${action}.js`;
   if (!fs.existsSync(module)) module = `./commands/default.js`;
   const result = await require(module)(ctx, bot);
