@@ -10,9 +10,31 @@ const startDatabase = () => {
   });
 };
 
+const checkDrinks = (names) => {
+  const length = names.length;
+  return new Promise((res, rej) => {
+    db.all(`SELECT name FROM drinks WHERE name IN (${Array(length).fill('?').join(', ')})`, names, (err, row) => {
+      if (err) {
+        rej(err);
+      } else {
+        console.log(row);
+        res(row);
+      }
+    });
+  });
+};
+
 const addDrink = (names) => {
-  names.forEach((name) => {
-    db.run(`INSERT INTO drinks (name) VALUES (?)`, name);
+  return new Promise((res, rej) => {
+    names.forEach((name) => {
+      db.run(`INSERT INTO drinks (name) VALUES (?)`, name, (err) => {
+        if (err) {
+          rej(err);
+        } else {
+          res(true);
+        }
+      });
+    });
   });
 };
 
@@ -25,4 +47,4 @@ const showDrinks = () => {
   });
 };
 
-module.exports = { startDatabase, addDrink, showDrinks };
+module.exports = { startDatabase, checkDrinks, addDrink, showDrinks };
