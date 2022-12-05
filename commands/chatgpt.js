@@ -1,4 +1,4 @@
-const instances = require('./chatgpt_token');
+const { instances } = require('./chatgpt_token');
 
 module.exports = (ctx, bot) => {
   const { message } = ctx;
