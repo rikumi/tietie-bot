@@ -12,3 +12,5 @@ module.exports = (ctx, bot) => {
   instances[chatId] = new chatgpt.ChatGPT({ SessionToken: chatgptSessionToken });
   ctx.reply('Token 设置成功，会话初始化成功', { reply_to_message_id: message.message_id });
 };
+
+module.exports.instances = instances;
