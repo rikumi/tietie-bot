@@ -1,7 +1,6 @@
 const chatgpt = require('chatgpt-lib');
 const { chatgptSessionToken } = require('../config.json');
 
-const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
 const chatbot = new chatgpt.ChatGPT({ SessionToken: chatgptSessionToken });
 
 module.exports = (ctx, bot) => {
