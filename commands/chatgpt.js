@@ -18,9 +18,9 @@ module.exports = (ctx, bot) => {
     try {
       const answer = await chatbot.ask(message.text.replace(/^\/chatgpt\s+/, ''));
       const trimmedAnswer = answer.length > 512 ? answer.slice(0, 512) + '...' : answer;
-      ctx.editMessage(message.chat_id, replyMessage.message_id, escape(trimmedAnswer));
+      ctx.editMessageText(message.chat_id, replyMessage.message_id, escape(trimmedAnswer));
     } catch (e) {
-      ctx.editMessage(message.chat_id, replyMessage.message_id, escape('请求失败了，可能是接口被限频或者 token 失效，请过一会再问我这个问题。'));
+      ctx.editMessageText(message.chat_id, replyMessage.message_id, escape('请求失败了，可能是接口被限频或者 token 失效，请过一会再问我这个问题。'));
     }
   });
 };
