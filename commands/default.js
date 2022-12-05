@@ -2,12 +2,10 @@ module.exports = (ctx, bot) => {
   const { message } = ctx;
   if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) return;
   const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
-  const getUrl = ({ id, username }) => (username ? `https://t.me/${username}` : `tg://user?id=${id}`);
-  const formatUser = (user, customName) =>
-    `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](${getUrl(user)})`;
+  const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
   const extractUser = (message, entity) => ({
     first_name: message.text.substr(entity.offset, entity.length),
-    username: entity.url.split(/[/=]/).pop(),
+    id: entity.url.split(/=/).pop(),
   });
   const sender = message.from;
   const senderLink = formatUser(sender);
@@ -16,7 +14,7 @@ module.exports = (ctx, bot) => {
   const lastMentionEntity = repliedBotMsg && (repliedBotMsg.entities || []).filter((k) => k.type === 'text_link')[0];
   const lastMentionUser = lastMentionEntity && extractUser(repliedBotMsg, lastMentionEntity);
   const receiver = lastMentionUser || (replied && replied.from) || sender;
-  const receiverLink = formatUser(receiver, receiver.username === sender.username ? '自己' : undefined);
+  const receiverLink = formatUser(receiver, receiver.id === sender.id ? '自己' : undefined);
   const [action, ...rest] = message.text.slice(1).split(/\s+/).map(escape);
   const postfix = rest.join(' ').trim();
   return `${senderLink} ${action}${postfix ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
