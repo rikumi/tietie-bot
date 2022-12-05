@@ -11,5 +11,5 @@ const chatbot = new cgpt.ChatGPT({ SessionToken: chatgptSessionToken });
 
 module.exports = (ctx, bot) => {
   const { message } = ctx;
-  chatbot.ask(message).then(answer => ctx.reply(answer, msgOptions));
+  chatbot.ask(message).then(answer => ctx.reply(escape(answer), msgOptions));
 };
