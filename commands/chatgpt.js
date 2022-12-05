@@ -7,7 +7,7 @@ const msgOptions = {
 };
 
 const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
-const chatbot = new cgpt.ChatGPT({ SessionToken: chatgptSessionToken });
+const chatbot = new chatgpt.ChatGPT({ SessionToken: chatgptSessionToken });
 
 module.exports = (ctx, bot) => {
   const { message } = ctx;
