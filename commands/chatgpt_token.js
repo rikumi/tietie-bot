@@ -4,7 +4,7 @@ const instances = {};
 module.exports = (ctx, bot) => {
   const { message } = ctx;
   const token = message.text.replace(/^\/chatgpt\s+/, '');
-  if (!token || !/^[\w\-]+$/.test(token)) {
+  if (!token || !/^[\w\-.]+$/.test(token)) {
     ctx.reply('Token 不符合格式！', { reply_to_message_id: message.message_id });
     return;
   }
