@@ -14,6 +14,7 @@ module.exports = (ctx, bot) => {
       const trimmedAnswer = answer.length > 512 ? answer.slice(0, 512) + '...' : answer;
       ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, trimmedAnswer);
     } catch (e) {
+      console.error(e);
       ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, '请求失败了，可能是接口被限频或者 token 失效，请过一会再问我这个问题。');
     }
   });
