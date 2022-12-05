@@ -11,7 +11,7 @@ const chatbot = new chatgpt.ChatGPT({ SessionToken: chatgptSessionToken });
 
 module.exports = (ctx, bot) => {
   const { message } = ctx;
-  ctx.reply('ChatGPT 正在思考...', {
+  ctx.reply('ChatGPT 正在思考…', {
     ...msgOptions,
     reply_to_message_id: message.message_id,
   }).then(async replyMessage => {
