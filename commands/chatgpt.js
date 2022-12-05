@@ -13,6 +13,6 @@ module.exports = (ctx, bot) => {
   const { message } = ctx;
   chatbot.ask(message.text.replace(/^\/chatgpt\s+/, '')).then(answer => ctx.reply(escape(answer), {
     ...msgOptions,
-    reply_to_message_id: message.id,
+    reply_to_message_id: message.message_id,
   }));
 };
