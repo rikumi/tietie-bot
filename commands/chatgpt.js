@@ -1,20 +1,12 @@
 const chatgpt = require('chatgpt-lib');
 const { chatgptSessionToken } = require('../config.json');
 
-const msgOptions = {
-  parse_mode: 'MarkdownV2',
-  disable_web_page_preview: true,
-};
-
 const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
 const chatbot = new chatgpt.ChatGPT({ SessionToken: chatgptSessionToken });
 
 module.exports = (ctx, bot) => {
   const { message } = ctx;
-  ctx.reply('ChatGPT 正在思考…', {
-    ...msgOptions,
-    reply_to_message_id: message.message_id,
-  }).then(async replyMessage => {
+  ctx.reply('ChatGPT 正在思考…', { reply_to_message_id: message.message_id }).then(async replyMessage => {
     try {
       const answer = await chatbot.ask(message.text.replace(/^\/chatgpt\s+/, ''));
       const trimmedAnswer = answer.length > 512 ? answer.slice(0, 512) + '...' : answer;
