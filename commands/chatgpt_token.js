@@ -8,13 +8,14 @@ class ChatGPT {
     this.parentId = uuid.v4();
   }
 
-  async ask(prompt) {
+  async *ask(prompt) {
     if (!this.config.Authorization || !this.validateToken(this.config.Authorization))
       await this.getTokens();
 
     let response = await axios.request({
       method: 'POST',
       url: 'https://chat.openai.com/backend-api/conversation',
+      responseType: 'stream',
       data: {
         action: 'next',
         messages: [
@@ -39,17 +40,29 @@ class ChatGPT {
       }
     });
 
-    try {
-      const parts = response.data.split('\n');
-      response = JSON.parse(parts[parts.length-5].split('data: ')[1]);
-    } catch (err) {
-      throw new Error(`Could not find or parse actual response text due to: ${err}`);
+    const stream = response.data;
+    let previous = '', accumulated = '';
+    
+    while (true) {
+      const chunk = await new Promise((resolve, reject) => {
+        stream.on('data', resolve);
+        stream.on('end', resolve);
+        stream.on('error', reject);
+      });
+      if (!chunk) return;
+  
+      accumulated += chunk.toString('utf8');
+      const lastData = accumulated.split(/(\r?\n){2}/)[-1].replace(/^data:\s+/, '').trim();
+      if (!lastData || lastData === '[DONE]') break;
+      const payload = JSON.parse(lastData);
+  
+      const next = payload.message.content.parts[0];
+      if (previous === next) continue;
+      previous = next;
+      this.parentId = payload.message.id;
+      this.conversationId = payload.conversation_id;
+      yield next;
     }
-
-    this.parentId = response.message.id;
-    this.conversationId = response.conversation_id;
-
-    return response.message.content.parts[0];
   }
 
   validateToken(token) {
