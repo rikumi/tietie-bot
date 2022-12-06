@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/rikumi/tietie-bot#readme",
   "dependencies": {
-    "chatgpt-lib": "^0.2.0",
     "minecraft-protocol": "^1.36.1",
     "pm2": "^5.2.2",
     "prettier": "^2.7.1",
