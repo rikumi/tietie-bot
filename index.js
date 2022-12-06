@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { startDatabase } = require('./db');
+const { startDatabase } = require('./modules/database');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
