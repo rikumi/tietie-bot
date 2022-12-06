@@ -3,6 +3,9 @@ const config = require('./config.json');
 const fs = require('fs');
 const { startDatabase } = require('./db');
 
+process.on('uncaughtException', (e) => { console.error(e); });
+process.on('unhandledRejection', (e) => { throw e; });
+
 const bot = new Telegraf(config.telegramBotToken);
 
 const msgOptions = {

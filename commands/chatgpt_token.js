@@ -41,27 +41,32 @@ class ChatGPT {
     });
 
     const stream = response.data;
-    let previous = '', accumulated = '';
-    
+    let buffer = Buffer.alloc(0);
+
     while (true) {
       const chunk = await new Promise((resolve, reject) => {
-        stream.on('data', resolve);
-        stream.on('end', resolve);
-        stream.on('error', reject);
+        stream.once('data', resolve);
+        stream.once('end', resolve);
+        stream.once('error', reject);
       });
       if (!chunk) return;
-  
-      accumulated += chunk.toString('utf8');
-      const lastData = accumulated.split(/(\r?\n){2}/)[-1].replace(/^data:\s+/, '').trim();
-      if (!lastData || lastData === '[DONE]') break;
-      const payload = JSON.parse(lastData);
-  
-      const next = payload.message.content.parts[0];
-      if (previous === next) continue;
-      previous = next;
-      this.parentId = payload.message.id;
-      this.conversationId = payload.conversation_id;
-      yield next;
+
+      buffer = Buffer.concat([buffer, chunk]);
+      while (buffer.findIndex(value => value === 10) !== -1) {
+        const index = buffer.findIndex(value => value === 10);
+        const line = buffer.slice(0, index).toString('utf8');
+        buffer = buffer.slice(index + 1);
+
+        const data = line.replace(/^data:\s+/, '').trim();
+        if (!data || data === '[DONE]') break;
+        const payload = JSON.parse(data);
+
+        const next = payload.message.content.parts[0];
+        if (!next) continue;
+        this.parentId = payload.message.id;
+        this.conversationId = payload.conversation_id;
+        yield next;
+      }
     }
   }
 

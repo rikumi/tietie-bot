@@ -11,9 +11,14 @@ module.exports = (ctx, bot) => {
   }
   ctx.reply('ChatGPT 正在思考…', { reply_to_message_id: message.message_id }).then(async replyMessage => {
     try {
-      for (await const answer of chatbot.ask(message.text.replace(/^\/chatgpt\s+/, ''))) {
-        ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, answer);
+      let lastEditTime = Date.now();
+      let lastAnswer = '';
+      for await (const answer of chatbot.ask(message.text.replace(/^\/chatgpt\s+/, ''))) {
+        lastAnswer = answer;
+        if (Date.now() - lastEditTime < 1000) continue;
+        await ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, answer);
       }
+      await ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, lastAnswer);
     } catch (e) {
       console.error(e);
       ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, '请求失败了，可能是接口被限频或者 token 失效，请过一会再问我这个问题。');
