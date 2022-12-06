@@ -16,7 +16,7 @@ class ChatGPT {
 
   async ask(prompt, onMessage) {
     await this.getTokens();
-    await this.semaphore.acquire();
+    const release = await this.semaphore.acquire();
 
     let response;
 
@@ -49,7 +49,7 @@ class ChatGPT {
         }
       });
     } catch (e) {
-      this.semaphore.release();
+      release();
       throw e;
     }
 
@@ -68,7 +68,7 @@ class ChatGPT {
         this.conversationId = payload.conversation_id;
         this.parentId = payload.message.id;
         isFirstMessage = false;
-        this.semaphore.release();
+        release();
       }
       const message = payload.message.content.parts[0]
       if (!message) return;
@@ -81,7 +81,7 @@ class ChatGPT {
     });
 
     if (isFirstMessage) {
-      this.semaphore.release();
+      release();
     }
   }
 

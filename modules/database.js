@@ -28,7 +28,7 @@ const getChatGPTToken = async (groupId) => {
 
 const setChatGPTToken = async (groupId, token) => {
   const db = await getDatabase();
-  return await db.run(`INSERT INTO chatgpt (group_id, token) VALUES (?, ?) ON CONFLICT(group_id) DO UPDATE SET token=excluded.token`, [groupId, token]);
+  return await db.run(`INSERT INTO chatgpt (group_id, token) VALUES (?, ?) ON CONFLICT REPLACE`, [groupId, token]);
 };
 
 const checkDrinks = async (names, groupId) => {
