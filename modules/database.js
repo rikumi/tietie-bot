@@ -28,7 +28,7 @@ const getChatGPTToken = async (groupId) => {
 
 const setChatGPTToken = async (groupId, token) => {
   const db = await getDatabase();
-  const exists = await db.get(`SELECT FROM chatgpt WHERE group_id = ?`, [groupId]);
+  const exists = await db.get(`SELECT * FROM chatgpt WHERE group_id = ?`, [groupId]);
   if (exists) {
     await db.run(`UPDATE chatgpt SET token = ? WHERE group_id = ?`, [token, groupId]);
   } else {
