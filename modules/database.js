@@ -28,7 +28,12 @@ const getChatGPTToken = async (groupId) => {
 
 const setChatGPTToken = async (groupId, token) => {
   const db = await getDatabase();
-  return await db.run(`INSERT INTO chatgpt (group_id, token) VALUES (?, ?) ON CONFLICT REPLACE`, [groupId, token]);
+  const exists = await db.get(`SELECT FROM chatgpt WHERE group_id = ?`, [groupId]);
+  if (exists) {
+    await db.run(`UPDATE chatgpt SET token = ? WHERE group_id = ?`, [token, groupId]);
+  } else {
+    await db.run(`INSERT INTO chatgpt (group_id, token) VALUES (?, ?)`, [groupId, token]);
+  }
 };
 
 const checkDrinks = async (names, groupId) => {
