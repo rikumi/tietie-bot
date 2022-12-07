@@ -15,7 +15,7 @@ module.exports = async (ctx) => {
     return;
   }
   const chatbot = ChatGPT.getInstance(token);
-  const replyMessage = await ctx.reply('ChatGPT 正在思考…', { reply_to_message_id: message.message_id });
+  const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id });
   try {
     let lastAnswer = '';
     for await (const answer of chatbot.ask(question)) {
