@@ -19,7 +19,6 @@
   },
   "homepage": "https://github.com/rikumi/tietie-bot#readme",
   "dependencies": {
-    "await-semaphore": "^0.1.3",
     "axios": "^1.2.1",
     "minecraft-protocol": "^1.36.1",
     "pm2": "^5.2.2",

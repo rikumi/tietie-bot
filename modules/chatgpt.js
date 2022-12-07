@@ -1,87 +1,95 @@
 const uuid = require('uuid');
 const axios = require('axios');
-const { Semaphore } = require('await-semaphore');
+
+const api = axios.create({
+  baseURL: 'https://chat.openai.com/',
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+  },
+  timeout: 10000,
+});
 
 class ChatGPT {
   constructor(token) {
     this.token = token;
     this.resetChat();
-    this.semaphore = new Semaphore(1);
   }
 
   resetChat() {
     this.conversationId = null;
     this.parentId = uuid.v4();
+    this.lastResponsePromise = Promise.resolve();
   }
 
-  async ask(prompt, onMessage) {
+  async *ask(prompt) {
     await this.getTokens();
-    const release = await this.semaphore.acquire();
 
-    let response;
-
-    try {
-      response = await axios.request({
-        method: 'POST',
-        url: 'https://chat.openai.com/backend-api/conversation',
-        responseType: 'stream',
-        data: {
-          action: 'next',
-          messages: [
-            {
-              id: uuid.v4(),
-              role: 'user',
-              content: {
-                content_type: 'text',
-                parts: [prompt],
-              },
-            },
-          ],
-          model: 'text-davinci-002-render',
-          conversation_id: this.conversationId,
-          parent_message_id: this.parentId,
+    let error = undefined;
+    this.lastResponsePromise = this.lastResponsePromise.then(() => api.post('/backend-api/conversation', {
+      action: 'next',
+      messages: [{
+        id: uuid.v4(),
+        role: 'user',
+        content: {
+          content_type: 'text',
+          parts: [prompt],
         },
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${this.authorization}`,
-          'Content-Type': 'application/json',
-        }
-      });
-    } catch (e) {
-      release();
-      throw e;
-    }
-
-    const stream = response.data;
+      }],
+      model: 'text-davinci-002-render',
+      conversation_id: this.conversationId,
+      parent_message_id: this.parentId,
+    }, {
+      responseType: 'stream',
+      headers: {
+        'Accept': 'application/json',
+        'Authorization': `Bearer ${this.authorization}`,
+        'Content-Type': 'application/json',
+      },
+    })).catch(e => error = e);
 
     let buffer = Buffer.alloc(0);
-    let lastData = '';
-    let isFirstMessage = true;
+    let latestString = '';
+    let endOrError = false;
+
+    const res = await this.lastResponsePromise;
+    if (error) {
+      console.error(error);
+      throw error;
+    }
+    const stream = res.data;
 
     stream.on('data', (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
-      const data = buffer.toString('utf8').split('\n\n').slice(-2)[0];
-      if (lastData === data || data === 'data: [DONE]') return;
-      const payload = JSON.parse(data.replace(/^data:\s+/, ''));
-      if (isFirstMessage) {
-        this.conversationId = payload.conversation_id;
-        this.parentId = payload.message.id;
-        isFirstMessage = false;
-        release();
+      try {
+        const payload = JSON.parse(buffer.toString('utf8').trim().split('\n\n').slice(-2)[0].replace(/^data:\s+/, ''));
+        if (!latestString) {
+          this.conversationId = payload.conversation_id;
+          this.parentId = payload.message.id;
+        }
+        latestString = payload.message.content.parts[0];
+      } catch (e) {
+        return;
       }
-      const message = payload.message.content.parts[0]
-      if (!message) return;
-      onMessage(message);
     });
+    stream.on('end', () => endOrError = true);
+    stream.on('error', (error) => endOrError = error);
 
-    await new Promise((resolve, reject) => {
-      stream.on('end', resolve);
-      stream.on('error', reject);
-    });
+    let lastYieldedString = '';
 
-    if (isFirstMessage) {
-      release();
+    while (!endOrError) {
+      lastYieldedString = latestString;
+      yield latestString; // awaits
+      while (!endOrError && lastYieldedString === latestString) {
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
+
+    if (lastYieldedString !== latestString) {
+      yield latestString; // awaits
+    }
+
+    if (endOrError !== true) {
+      throw endOrError;
     }
   }
 
@@ -96,11 +104,8 @@ class ChatGPT {
       throw new Error('No session token provided');
     }
 
-    const response = await axios.request({
-      method: 'GET',
-      url: 'https://chat.openai.com/api/auth/session',
+    const response = await api.get('/api/auth/session', {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
         'Cookie': `__Secure-next-auth.session-token=${this.token}`
       }
     });
