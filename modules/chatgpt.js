@@ -76,7 +76,7 @@ class ChatGPT {
     let endOrError = false;
 
     const stream = response.data;
-    yield '接收回复中';
+    yield '[接收中]';
 
     stream.on('data', (chunk) => {
       buffer = Buffer.concat([buffer, chunk]);
