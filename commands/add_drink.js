@@ -1,14 +1,8 @@
 const { addDrink, checkDrinks } = require('../modules/database');
 
 module.exports = async (ctx) => {
-  const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
   const content = Array.from(
-    new Set(
-      ctx.message.text
-        .split(/\s+/)
-        .slice(1)
-        .map((e) => escape(e))
-    )
+    new Set(ctx.message.text.split(/\s+/).slice(1))
   );
   const groupId = ctx.message.chat.id;
   if (content.length === 0) return '不可以什么都不加👊';
