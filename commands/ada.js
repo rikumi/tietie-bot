@@ -9,7 +9,7 @@ module.exports = async (ctx) => {
   }
   const res = await axios.post('https://api.openai.com/v1/completions', {
     model: 'ada',
-    prompt: question,
+    prompt: `Q: ${question}\nA: `,
     stop: '\n',
     max_tokens: 1000,
     temperature: 1,
