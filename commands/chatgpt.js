@@ -21,7 +21,7 @@ module.exports = async (ctx) => {
     for await (const answer of chatbot.ask(question)) {
       await Promise.all([
         ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, answer + '…'),
-        new Promise(r => setTimeout(r, 1000)),
+        new Promise(r => setTimeout(r, 2000)),
       ]);
       lastAnswer = answer;
     }
