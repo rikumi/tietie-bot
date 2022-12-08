@@ -9,7 +9,7 @@ module.exports = async (ctx) => {
     ctx.reply('当前会话未设置 Token，请使用 /chatgpt_token <session_token> 设置。Token 需要在 chat.openai.com/chat 页面上获取 Cookie 获得。', { reply_to_message_id: message.message_id });
     return;
   }
-  const question = message.text.trim().split(/\s+/)[1];
+  const question = message.text.trim().replace(/^.*?\s+/, '');
   if (!question) {
     ctx.reply('问题不能为空。', { reply_to_message_id: message.message_id });
     return;
