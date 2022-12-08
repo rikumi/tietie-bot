@@ -11,7 +11,7 @@ module.exports = async (ctx) => {
     model: 'ada',
     prompt: `Q: ${question}\nA: `,
     stop: '\n',
-    max_tokens: 1000,
+    max_tokens: 140,
     temperature: 1,
   }, {
     headers: { 'Authorization': `Bearer ${openaiApiKey}` }
