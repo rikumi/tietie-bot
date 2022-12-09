@@ -13,8 +13,9 @@ module.exports = async (ctx) => {
     return '问题不能为空。';
   }
   const chatbot = ChatGPT.getInstance(token);
+  const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id });
   const setTyping = () => ctx.telegram.sendChatAction(chatId, 'typing');
-  const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id }).then(setTyping);
+  await setTyping();
   try {
     let lastAnswer = '';
     for await (const answer of chatbot.ask(question)) {
