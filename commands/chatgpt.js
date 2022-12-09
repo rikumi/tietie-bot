@@ -15,13 +15,14 @@ module.exports = async (ctx) => {
     return;
   }
   const chatbot = ChatGPT.getInstance(token);
-  const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id });
+  const setTyping = () => ctx.telegram.sendChatAction(chatId, 'typing');
+  const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id }).then(setTyping);
   try {
     let lastAnswer = '';
     for await (const answer of chatbot.ask(question)) {
       await Promise.all([
-        ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, answer + '…'),
-        new Promise(r => setTimeout(r, 1000)),
+        ctx.telegram.editMessageText(chatId, replyMessage.message_id, undefined, answer + '…').then(setTyping),
+        new Promise(r => setTimeout(r, 5000)),
       ]);
       lastAnswer = answer;
     }
