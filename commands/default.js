@@ -1,3 +1,8 @@
+const msgOptions = {
+  parse_mode: 'MarkdownV2',
+  disable_web_page_preview: true,
+};
+
 module.exports = (ctx, bot) => {
   const { message } = ctx;
   if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) return;
@@ -17,5 +22,5 @@ module.exports = (ctx, bot) => {
   const receiverLink = formatUser(receiver, receiver.id === sender.id ? '自己' : undefined);
   const [action, ...rest] = message.text.slice(1).split(/\s+/).map(escape);
   const postfix = rest.join(' ').trim();
-  return `${senderLink} ${action}${postfix ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
+  ctx.reply(`${senderLink} ${action}${postfix ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！', msgOptions);
 };

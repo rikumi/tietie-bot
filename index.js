@@ -8,20 +8,19 @@ process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
 
-const msgOptions = {
-  parse_mode: 'MarkdownV2',
-  disable_web_page_preview: true,
-};
-
 bot.on('message', async (ctx) => {
   const { message } = ctx;
   if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].slice(1);
   let module = `./commands/${action}.js`;
   if (!/^\w+$/.test(action) || !fs.existsSync(module)) module = `./commands/default.js`;
-  const result = await require(module)(ctx, bot);
-  if (!result) return;
-  ctx.reply(result, msgOptions);
+  try {
+    const result = await require(module)(ctx, bot);
+    if (result) ctx.reply(result, { reply_to_message_id: message.message_id });
+  } catch (e) {
+    console.error(e);
+    ctx.reply('Error: ' + e.message, { reply_to_message_id: message.message_id });
+  }
 });
 
 bot.launch().then(() => {
