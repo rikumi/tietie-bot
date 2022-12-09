@@ -23,6 +23,7 @@ module.exports = async (ctx) => {
         await new Promise(r => setTimeout(r, 1000));
         return editMessage(text);
       };
+      throw e;
     }
   };
 
