@@ -10,7 +10,7 @@ const startDatabase = async () => {
 
   await db.run(`CREATE TABLE IF NOT EXISTS chatgpt (
     group_id INTEGER PRIMARY KEY,
-    token text NOT NULL
+    system_message text NOT NULL
   )`);
 
   await db.run(`CREATE TABLE IF NOT EXISTS drinks (
@@ -20,19 +20,19 @@ const startDatabase = async () => {
   )`);
 }
 
-const getChatGPTToken = async (groupId) => {
+const getChatGPTSystemMessage = async (groupId) => {
   const db = await getDatabase();
-  const record = await db.get(`SELECT token FROM chatgpt WHERE group_id = ?`, groupId);
-  return record && record.token;
+  const record = await db.get(`SELECT system_message FROM chatgpt WHERE group_id = ?`, groupId);
+  return record && record.system_message;
 };
 
-const setChatGPTToken = async (groupId, token) => {
+const setChatGPTSystemMessage = async (groupId, systemMessage) => {
   const db = await getDatabase();
   const exists = await db.get(`SELECT * FROM chatgpt WHERE group_id = ?`, [groupId]);
   if (exists) {
-    await db.run(`UPDATE chatgpt SET token = ? WHERE group_id = ?`, [token, groupId]);
+    await db.run(`UPDATE chatgpt SET system_message = ? WHERE group_id = ?`, [systemMessage, groupId]);
   } else {
-    await db.run(`INSERT INTO chatgpt (group_id, token) VALUES (?, ?)`, [groupId, token]);
+    await db.run(`INSERT INTO chatgpt (group_id, system_message) VALUES (?, ?)`, [groupId, systemMessage]);
   }
 };
 
@@ -58,4 +58,4 @@ const pickDrink = async (groupId) => {
   return record.name;
 };
 
-module.exports = { getDatabase, startDatabase, getChatGPTToken, setChatGPTToken, checkDrinks, addDrink, pickDrink };
+module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink };
