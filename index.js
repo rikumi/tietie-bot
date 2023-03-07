@@ -11,7 +11,7 @@ const bot = new Telegraf(config.telegramBotToken);
 bot.on('message', async (ctx) => {
   const { message } = ctx;
   if (!message.text || !message.text.startsWith('/')) return;
-  const action = message.text.split(' ')[0].slice(1);
+  const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
   if (!/^\w+$/.test(action) || !fs.existsSync(module)) module = `./commands/default.js`;
   try {

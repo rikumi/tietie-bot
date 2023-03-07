@@ -86,4 +86,23 @@ async function* ask(prompt, systemMessage) {
   }
 }
 
-module.exports = ask;
+async function askImage(prompt) {
+  const { data } = await api.post('/v1/images/generations', {
+    prompt,
+    n: 1,
+    size: '1024x1024',
+  }, {
+    headers: {
+      'Accept': 'application/json',
+      'Authorization': `Bearer ${config.openaiApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    timeout: 20000,
+  });
+  return data.data[0].url;
+}
+
+module.exports = {
+  ask,
+  askImage,
+};

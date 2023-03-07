@@ -1,13 +1,11 @@
-const ask = require('../modules/chatgpt');
+const { ask } = require('../modules/chatgpt');
 const { getChatGPTSystemMessage } = require('../modules/database');
 
 module.exports = async (ctx) => {
   const { message } = ctx;
   const chatId = message.chat.id;
   const question = message.text.trim().replace(/^.*?\s+/, '');
-  if (!question) {
-    return '问题不能为空。';
-  }
+  if (!question) return;
   const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id });
 
   const editMessage = async (text) => {
