@@ -15,7 +15,7 @@ async function* ask(prompt, systemMessage) {
 
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
-      model: 'gpt-3.5-turbo-0301',
+      model: 'gpt-4',
       messages: [{
         role: 'system',
         content: systemMessage,
