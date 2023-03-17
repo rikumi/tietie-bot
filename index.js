@@ -8,7 +8,7 @@ process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
 
-bot.on('message', async (ctx) => {
+const handleMessage = async (ctx) => {
   const { message } = ctx;
   if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
@@ -21,7 +21,9 @@ bot.on('message', async (ctx) => {
     console.error(e);
     ctx.reply('Error: ' + e.message, { reply_to_message_id: message.message_id });
   }
-});
+};
+
+bot.on('message', (ctx) => void handleMessage(ctx));
 
 bot.launch().then(() => {
   startDatabase();
