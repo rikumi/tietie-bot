@@ -1,7 +1,7 @@
 const { ask } = require('../modules/chatgpt');
 const { getChatGPTSystemMessage } = require('../modules/database');
 
-const defaultSystemMessage = '你是贴贴 Bot，一个 Telegram 聊天机器人。你的每次回答尽量简短，不能超过 140 字。'
+const defaultSystemMessage = '你是贴贴 Bot，一个 Telegram 聊天机器人。你的每次回答尽量简短，通常不超过 250 字。'
 
 module.exports = async (ctx) => {
   const { message } = ctx;
