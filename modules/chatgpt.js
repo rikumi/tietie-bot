@@ -21,6 +21,7 @@ async function* ask(prompt, systemMessage) {
         role: 'user',
         content: prompt,
       }],
+      max_tokens: 500,
     }, {
       responseType: 'stream',
       headers: {
