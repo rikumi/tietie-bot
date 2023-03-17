@@ -1,19 +1,17 @@
 const axios = require('axios');
 const config = require('../config.json');
-const { getChatGPTSystemMessage } = require('./database');
 
 const api = axios.create({
   baseURL: 'https://api.openai.com/',
   headers: {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
   },
-  timeout: 20000,
 });
 
 async function* ask(prompt, systemMessage) {
   yield `[请求中]`;
 
-  const sendRequest = async () => {
+  const sendRequest = async (retries) => {
     return await api.post('/v1/chat/completions', {
       model: 'gpt-4',
       messages: [{
@@ -30,6 +28,7 @@ async function* ask(prompt, systemMessage) {
         'Authorization': `Bearer ${config.openaiApiKey}`,
         'Content-Type': 'application/json',
       },
+      timeout: 20000 * (1 << retries),
     });
   }
 
@@ -37,13 +36,10 @@ async function* ask(prompt, systemMessage) {
   for (let retries = 0; retries < 5; retries++) {
     try {
       if (retries) yield `[第 ${retries} 次重试]`;
-      response = await sendRequest();
+      response = await sendRequest(retries);
       break;
     } catch (e) {
-      if (e.message.startsWith('timeout')) {
-        await new Promise(r => setTimeout(r, (1 << retries) * 1000));
-        continue;
-      }
+      if (e.message.startsWith('timeout')) continue;
       throw e;
     }
   }
