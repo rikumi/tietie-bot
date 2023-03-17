@@ -15,7 +15,7 @@ async function* ask(prompt, systemMessage) {
 
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
-      model: 'gpt-3.5-turbo-0301',
+      model: 'gpt-4',
       messages: [{
         role: 'system',
         content: systemMessage,
@@ -40,7 +40,10 @@ async function* ask(prompt, systemMessage) {
       response = await sendRequest();
       break;
     } catch (e) {
-      if (e.message.startsWith('timeout')) continue;
+      if (e.message.startsWith('timeout')) {
+        await new Promise(r => setTimeout(r, (1 << retries) * 1000));
+        continue;
+      }
       throw e;
     }
   }
