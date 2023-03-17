@@ -6,12 +6,13 @@ const api = axios.create({
   headers: {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
   },
+  timeout: 60000,
 });
 
 async function* ask(prompt, systemMessage) {
   yield `[请求中]`;
 
-  const sendRequest = async (retries) => {
+  const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
       model: 'gpt-4',
       messages: [{
@@ -28,7 +29,6 @@ async function* ask(prompt, systemMessage) {
         'Authorization': `Bearer ${config.openaiApiKey}`,
         'Content-Type': 'application/json',
       },
-      timeout: 20000 * (1 << retries),
     });
   }
 
@@ -36,7 +36,7 @@ async function* ask(prompt, systemMessage) {
   for (let retries = 0; retries < 5; retries++) {
     try {
       if (retries) yield `[第 ${retries} 次重试]`;
-      response = await sendRequest(retries);
+      response = await sendRequest();
       break;
     } catch (e) {
       if (e.message.startsWith('timeout')) continue;
