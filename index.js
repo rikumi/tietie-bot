@@ -23,7 +23,10 @@ const handleMessage = async (ctx) => {
   }
 };
 
-bot.on('message', (ctx) => void handleMessage(ctx));
+bot.on('message', (ctx) => {
+  if (ctx.message.date * 1000 < Date.now() - 10000) return;
+  handleMessage(ctx);
+});
 
 bot.launch().then(() => {
   startDatabase();
