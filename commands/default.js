@@ -56,6 +56,6 @@ module.exports = (ctx, bot) => {
 
   ctx.reply(result, {
     ...msgOptions,
-    reply_to_message_id: message.id,
+    reply_to_message_id: message.message_id,
   });
 };
