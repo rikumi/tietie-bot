@@ -54,5 +54,8 @@ module.exports = (ctx, bot) => {
     result += '\n\n\\#ImpartImpact';
   }
 
-  ctx.reply(result, msgOptions);
+  ctx.reply(result, {
+    ...msgOptions,
+    reply_to_message_id: message.id,
+  });
 };
