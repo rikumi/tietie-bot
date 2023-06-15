@@ -11,6 +11,6 @@ module.exports = async (ctx) => {
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
   ctx.reply(`${formatUser(message.from)} ${escape(content)}！`, {
     ...msgOptions,
-    reply_to_message_id: message.id,
+    reply_to_message_id: message.message_id,
   });
 };
