@@ -1,13 +1,21 @@
 const impart = require('./impart');
+const { getVideoReply } = require('../modules/database');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
   disable_web_page_preview: true,
 };
 
-module.exports = (ctx, bot) => {
+module.exports = async (ctx, bot) => {
   const { message } = ctx;
-  if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) return;
+  if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) {
+    const command = message.text.trim().split(/\s+/)[0].replace(/^\//, '');
+    const videoId = await getVideoReply(message.chat.id, command);
+    if (videoId) {
+      ctx.telegram.sendVideo(message.chat.id, videoId, { reply_to_message_id: message.message_id });
+    }
+    return;
+  }
   const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
   const extractUser = (message, entity) => ({
