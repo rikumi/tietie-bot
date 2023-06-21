@@ -5,6 +5,6 @@ module.exports = async (ctx) => {
   const videoId = await pickVideo(groupId);
 
   if (videoId) {
-    ctx.telegram.sendVideo(message.chat.id, videoId, { reply_to_message_id: message.message_id });
+    ctx.telegram.sendVideo(ctx.message.chat.id, videoId, { reply_to_message_id: ctx.message.message_id });
   }
 };
