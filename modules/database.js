@@ -81,4 +81,13 @@ const getVideoReply = async (groupId, command) => {
   return record && record.video_id;
 };
 
-module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply };
+const pickVideo = async (groupId) => {
+  const db = await getDatabase();
+  const count = (await db.get(`SELECT count(*) FROM video_reply WHERE group_id = ?`, groupId))['count(*)'];
+  if (count === 0) return;
+  const index = Math.floor(Math.random() * count);
+  const record = await db.get(`SELECT video_id FROM video_reply WHERE group_id = ? LIMIT 1 OFFSET ?`, [groupId, index]);
+  return record.video_id;
+};
+
+module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo };
