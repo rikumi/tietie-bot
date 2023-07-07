@@ -23,17 +23,10 @@ module.exports = async (ctx) => {
   };
 
   try {
-    let lastAnswer = '';
     const systemMessage = await getChatGPTSystemMessage(chatId) || defaultSystemMessage;
-    for await (const answer of ask(question, systemMessage)) {
-      if (!answer) continue;
-      await Promise.all([
-        editMessage(answer + '…'),
-        new Promise(r => setTimeout(r, 1000)),
-      ]);
-      lastAnswer = answer;
-    }
-    await editMessage(lastAnswer);
+    await editMessage('[请求中]…');
+    const answer = await ask(question, systemMessage);
+    await editMessage(answer);
   } catch (e) {
     console.error(e);
     editMessage('请求失败了，可能是接口被限频或者 token 失效，请过一会再问我这个问题。\n' + e.message);
