@@ -83,10 +83,6 @@ async function* ask(prompt, systemMessage) {
   if (endOrError && endOrError !== true) {
     throw endOrError;
   }
-
-  if (!lastYieldedString) {
-    throw '[Connection Closed]';
-  }
 }
 
 module.exports = {
