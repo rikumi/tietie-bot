@@ -9,9 +9,7 @@ const api = axios.create({
   timeout: 60000,
 });
 
-async function* ask(prompt, systemMessage) {
-  yield `[请求中]`;
-
+const ask = async (prompt, systemMessage) => {
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
       model: 'gpt-4',
@@ -34,7 +32,6 @@ async function* ask(prompt, systemMessage) {
   let response;
   for (let retries = 0; retries < 5; retries++) {
     try {
-      if (retries) yield `[第 ${retries} 次重试]`;
       response = await sendRequest();
       break;
     } catch (e) {
