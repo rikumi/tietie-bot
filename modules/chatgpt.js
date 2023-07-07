@@ -9,10 +9,12 @@ const api = axios.create({
   timeout: 60000,
 });
 
-const ask = async (prompt, systemMessage) => {
+async function* ask(prompt, systemMessage) {
+  yield `[请求中]`;
+
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4',
       messages: [{
         role: 'system',
         content: systemMessage,
@@ -21,6 +23,7 @@ const ask = async (prompt, systemMessage) => {
         content: prompt,
       }],
     }, {
+      responseType: 'stream',
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${config.openaiApiKey}`,
@@ -32,6 +35,7 @@ const ask = async (prompt, systemMessage) => {
   let response;
   for (let retries = 0; retries < 5; retries++) {
     try {
+      if (retries) yield `[第 ${retries} 次重试]`;
       response = await sendRequest();
       break;
     } catch (e) {
@@ -41,8 +45,48 @@ const ask = async (prompt, systemMessage) => {
   }
   if (!response) throw Error('All retries failed with timeout');
 
-  console.log(response.data);
-  return response.data.choices[0].message.content;
+  let buffer = Buffer.alloc(0);
+  let latestString = '';
+  let endOrError = false;
+
+  const stream = response.data;
+  yield '[接收中]';
+
+  stream.on('data', (chunk) => {
+    buffer = Buffer.concat([buffer, chunk]);
+    try {
+      console.log(buffer.toString('utf8'));
+      const payload = JSON.parse(buffer.toString('utf8').trim().split('\n\n').slice(-2)[0].replace(/^data:\s+/, ''));
+      latestString = payload.choices[0].message.content;
+    } catch (e) {
+      console.error(e);
+      return;
+    }
+  });
+  stream.on('end', () => endOrError = true);
+  stream.on('error', (error) => endOrError = error);
+
+  let lastYieldedString = '';
+
+  while (!endOrError) {
+    lastYieldedString = latestString;
+    yield latestString; // awaits
+    while (!endOrError && lastYieldedString === latestString) {
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  }
+
+  if (lastYieldedString !== latestString) {
+    yield latestString; // awaits
+  }
+
+  if (endOrError !== true) {
+    throw endOrError;
+  }
+
+  if (!lastYieldedString) {
+    throw '[Connection Closed]';
+  }
 }
 
 module.exports = {
