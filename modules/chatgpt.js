@@ -44,7 +44,8 @@ async function* ask(prompt, systemMessage) {
   }
   if (!response) throw Error('All retries failed with timeout');
 
-  return response.data;
+  console.log(response.data);
+  return response.data.choices[0].message.content;
 }
 
 module.exports = {
