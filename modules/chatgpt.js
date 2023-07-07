@@ -23,7 +23,6 @@ async function* ask(prompt, systemMessage) {
         content: prompt,
       }],
     }, {
-      responseType: 'stream',
       headers: {
         'Accept': 'application/json',
         'Authorization': `Bearer ${config.openaiApiKey}`,
@@ -45,48 +44,7 @@ async function* ask(prompt, systemMessage) {
   }
   if (!response) throw Error('All retries failed with timeout');
 
-  let buffer = Buffer.alloc(0);
-  let latestString = '';
-  let endOrError = false;
-
-  const stream = response.data;
-  yield '[接收中]';
-
-  stream.on('data', (chunk) => {
-    buffer = Buffer.concat([buffer, chunk]);
-    try {
-      console.log(buffer.toString('utf8'));
-      const payload = JSON.parse(buffer.toString('utf8').trim().split('\n\n').slice(-2)[0].replace(/^data:\s+/, ''));
-      latestString = payload.choices[0].message.content;
-    } catch (e) {
-      console.error(e);
-      return;
-    }
-  });
-  stream.on('end', () => endOrError = true);
-  stream.on('error', (error) => endOrError = error);
-
-  let lastYieldedString = '';
-
-  while (!endOrError) {
-    lastYieldedString = latestString;
-    yield latestString; // awaits
-    while (!endOrError && lastYieldedString === latestString) {
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
-  if (lastYieldedString !== latestString) {
-    yield latestString; // awaits
-  }
-
-  if (endOrError && endOrError !== true) {
-    throw endOrError;
-  }
-
-  if (!lastYieldedString) {
-    throw '[Connection Closed]';
-  }
+  return response.data;
 }
 
 module.exports = {
