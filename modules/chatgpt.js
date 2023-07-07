@@ -80,7 +80,7 @@ async function* ask(prompt, systemMessage) {
     yield latestString; // awaits
   }
 
-  if (endOrError !== true) {
+  if (endOrError && endOrError !== true) {
     throw endOrError;
   }
 
