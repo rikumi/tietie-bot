@@ -1,4 +1,5 @@
 const xhs = require('../modules/xhs');
+const dayjs = require('dayjs');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
@@ -31,7 +32,7 @@ module.exports = async (ctx) => {
     const { id, index, noteCard } = note;
     const { title, time, desc, video } = noteCard;
     const link = `https://www.xiaohongshu.com/explore/${id}`;
-    const caption = `[${escape(title)}](${link})\n${escape(desc)}`;
+    const caption = `[${escape(title)}](${link})\n${escape(desc)}\n\n🐱 发布于${dayjs(time).format('YYYY-MM-DD HH:mm:ss')}}`;
     const firstVideoSource = [
       ...video.media.stream.h264,
       ...video.media.stream.h265,

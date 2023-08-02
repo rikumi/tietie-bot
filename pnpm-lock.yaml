@@ -11,6 +11,9 @@ dependencies:
   axios:
     specifier: ^1.4.0
     version: 1.4.0
+  dayjs:
+    specifier: ^1.11.9
+    version: 1.11.9
   minecraft-protocol:
     specifier: ^1.36.1
     version: 1.36.1
