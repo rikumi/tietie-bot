@@ -85,5 +85,5 @@ module.exports = async (ctx) => {
   if (keywords.length && searchResultIndex === -1) {
     return '最近的土豆视频中未找到相关内容';
   }
-  renderNote(notes[searchResultIndex || 0]);
+  renderNote(notes[searchResultIndex || 0] || notes[0]);
 };
