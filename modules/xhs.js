@@ -12,6 +12,6 @@ exports.getXhsNotes = async (userId) => {
   const match = data.match(/<script>window\.__INITIAL_STATE__=(.+?)<\/script>/);
   if (!match) return null;
   const json = JSON.parse(match[1].replace(/undefined/g, 'null'));
-  console.log('xhs notes length', json.user.notes.length);
+  console.log('xhs notes', json.user.notes[0].length);
   return json.user.notes[0];
 };
