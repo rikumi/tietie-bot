@@ -80,6 +80,11 @@ module.exports = async (ctx) => {
     const note = notes[index];
     return renderNote(note, message);
   }
-  const searchResult = notes.map(note => note.noteCard.title).filter(title => keywords.some(keyword => title.includes(keyword)));
+  const searchResult = notes.map(note => note.noteCard && note.noteCard.title || '')
+    .filter(title => keywords.some(keyword => title.includes(keyword)));
+
+  if (!searchResult) {
+    return '最近的土豆视频中未找到相关内容';
+  }
   renderNote(searchResult[0] || notes[0]);
 };
