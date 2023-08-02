@@ -4,7 +4,9 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 delete tietie && pm2 start index.js --name tietie",
+    "start": "pm2 start tietie",
+    "restart": "pm2 restart tietie",
+    "stop": "pm2 stop tietie",
     "dev": "node index.js",
     "format": "prettier --write ."
   },
