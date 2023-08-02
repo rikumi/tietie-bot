@@ -6,7 +6,7 @@ const msgOptions = {
 };
 
 const makeReplyMarkup = (currentIndex, totalLength) => ({
-  inline_keyboard: [
+  inline_keyboard: [[
     ...(currentIndex > 0 ? [{
       text: '⬅️',
       callback_data: `tudou:${currentIndex - 1}`,
@@ -19,7 +19,7 @@ const makeReplyMarkup = (currentIndex, totalLength) => ({
       text: '🎲',
       callback_data: 'tudou:random',
     },
-  ],
+  ]],
 });
 
 const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');

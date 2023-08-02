@@ -28,6 +28,18 @@ bot.on('message', (ctx) => {
   handleMessage(ctx);
 });
 
+bot.on('callback_query', async (ctx) => {
+  const moduleName = ctx.callbackQuery.data.split(':')[0];
+  const module = `./commands/${moduleName}.js`;
+  try {
+    const result = await require(module)(ctx, bot);
+    if (result) ctx.reply(result, { reply_to_message_id: message.message_id });
+  } catch (e) {
+    console.error(e);
+    ctx.reply('Error: ' + e.message, { reply_to_message_id: message.message_id });
+  }
+});
+
 bot.launch().then(() => {
   startDatabase();
   console.log('Service started!');
