@@ -29,6 +29,7 @@ bot.on('message', (ctx) => {
 });
 
 bot.on('callback_query', async (ctx) => {
+  const { message } = ctx;
   const moduleName = ctx.callbackQuery.data.split(':')[0];
   const module = `./commands/${moduleName}.js`;
   try {
