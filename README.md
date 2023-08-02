@@ -13,11 +13,16 @@
 ## 指令功能
 
 ```
-pick - 从给出的多个选项中随机选择一个
-add_drink - 添加一种饮料
+add_drink - <name> 添加一种饮料
+chatgpt - <question> 调用 ChatGPT 聊天
+chatgpt_prompt - <prompt> 修改当前会话的 ChatGPT 前置 Prompt
+del - 删除被引用的贴贴 Bot 消息
 drink - 随机选择一种饮料
-mcinfo - 查询 Minecraft 服务器信息
-chatgpt - 调用 ChatGPT 聊天
-chatgpt_token - 设置当前会话的 ChatGPT Session Token，可在 chat.openai.com/chat 页面上获取 Cookie 得到
-chatgpt_reset - 重置当前会话的 ChatGPT 上下文
+impart - <on|off> 开启/关闭万能指令的 impart 模式
+jieba - [sentence] 使用 jieba 进行马尔可夫分词
+mcinfo - <server>[:port] 查询 Minecraft 服务器信息
+me - <描述性文字> 代表自己说一句话
+pick - 从给出的多个选项中随机选择一个
+pick_video - 从本群的视频指令中随机选择一个视频发送
+set_video - <command> 将被引用的视频设置为视频指令
 ```
