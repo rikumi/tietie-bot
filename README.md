@@ -21,7 +21,7 @@ drink - 随机选择一种饮料
 impart - <on|off> 开启/关闭万能指令的 impart 模式
 jieba - [sentence] 使用 jieba 进行马尔可夫分词
 mcinfo - <server>[:port] 查询 Minecraft 服务器信息
-me - <描述性文字> 代表自己说一句话
+me - <description> 代表自己说一句话
 pick - 从给出的多个选项中随机选择一个
 pick_video - 从本群的视频指令中随机选择一个视频发送
 set_video - <command> 将被引用的视频设置为视频指令
