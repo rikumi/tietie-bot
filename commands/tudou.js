@@ -41,7 +41,7 @@ module.exports = async (ctx) => {
     const replyMarkup = makeReplyMarkup(index, notes.length);
     if (!videoUrl) {
       if (message) {
-        return ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, caption);
+        return ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, caption, msgOptions);
       }
       return ctx.telegram.sendMessage(ctx.message.chat.id, caption, {
         ...msgOptions,
@@ -53,6 +53,7 @@ module.exports = async (ctx) => {
         type: 'video',
         media: videoUrl,
         caption,
+        ...msgOptions,
       });
     }
     ctx.telegram.sendVideo(ctx.message.chat.id, videoUrl, {
