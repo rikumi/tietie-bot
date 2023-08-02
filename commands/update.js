@@ -14,6 +14,6 @@ module.exports = async (ctx) => {
   const cwd = path.resolve(__dirname, '..');
   const message = await ctx.reply('代码更新执行中');
   const pullResult = await exec('git pull', { cwd });
-  await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, `${pullResult}\n\n代码更新执行完成，即将重启`);
+  await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, pullResult);
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();
 };
