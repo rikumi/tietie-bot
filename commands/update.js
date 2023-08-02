@@ -1,17 +1,19 @@
 const path = require('path');
 const cp = require('child_process');
 
-const exec = async (command, args, options) => {
-  await new Promise((resolve, reject) => {
-    const child = cp.spawn(command, args, options);
-    child.on('exit', (code) => code ? reject(`Process ${command} exited with code ${code}`) : resolve());
+const exec = async (command, options) => {
+  return await new Promise((resolve, reject) => {
+    cp.exec(command, options, (error, stdout) => {
+      if (error) reject(error);
+      else resolve(stdout.toString('utf8'));
+    });
   });
 };
 
 module.exports = async (ctx) => {
   const cwd = path.resolve(__dirname, '..');
-  await ctx.reply('代码更新执行中');
-  await exec('git', ['pull'], { cwd });
-  await ctx.reply('代码更新执行完成，即将重启');
+  const message = await ctx.reply('代码更新执行中');
+  const pullResult = await exec('git pull', { cwd });
+  await ctx.telegram.editMessage(message.chat.id, message.message_id, undefined, `${pullResult}\n\n代码更新执行完成，即将重启`);
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();
 };
