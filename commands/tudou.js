@@ -56,6 +56,7 @@ module.exports = async (ctx) => {
         type: 'video',
         media: videoUrl,
         caption,
+      }, {
         ...msgOptions,
         reply_markup: replyMarkup,
       });
