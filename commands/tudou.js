@@ -1,4 +1,5 @@
 const xhs = require('../modules/xhs');
+const dayjs = require('dayjs');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
@@ -28,15 +29,21 @@ module.exports = async (ctx) => {
   const keywords = ctx.message.text.trim().split(/\s+/).slice(1);
   const notes = await xhs.getXhsNotes('5d85f6a600000000010037d8');
 
-  const renderNote = async (note, index, messageToEdit) => {
-    const { note_id: id, display_title: title } = note;
+  const renderNote = (note, message) => {
+    const { id, index, noteCard } = note;
+    const { title, time, desc, video } = noteCard;
     const link = `https://www.xiaohongshu.com/explore/${id}`;
-    const caption = `[${escape(title)}](${link})`;
+    const caption = `[${escape(title)}](${link})\n${escape(desc)}\n\n🐱 发布于 ${escape(dayjs(time).format('YYYY-MM-DD HH:mm:ss'))}`;
+    const firstVideoSource = [
+      ...video.media.stream.h264,
+      ...video.media.stream.h265,
+      ...video.media.stream.av1,
+    ][0];
+    const videoUrl = firstVideoSource && firstVideoSource.masterUrl;
     const replyMarkup = makeReplyMarkup(index, notes.length);
-    const videoUrl = await xhs.getNoteVideoUrl(id);
     if (!videoUrl) {
-      if (messageToEdit) {
-        return ctx.telegram.editMessageText(messageToEdit.chat.id, messageToEdit.message_id, undefined, caption, {
+      if (message) {
+        return ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, caption, {
           ...msgOptions,
           reply_markup: replyMarkup,
         });
@@ -46,8 +53,8 @@ module.exports = async (ctx) => {
         reply_markup: replyMarkup,
       });
     }
-    if (messageToEdit) {
-      return ctx.telegram.editMessageMedia(messageToEdit.chat.id, messageToEdit.message_id, undefined, {
+    if (message) {
+      return ctx.telegram.editMessageMedia(message.chat.id, message.message_id, undefined, {
         type: 'video',
         media: videoUrl,
         caption,
@@ -66,12 +73,13 @@ module.exports = async (ctx) => {
   if (ctx.callbackQuery) {
     const { data, message } = ctx.callbackQuery;
     if (data === 'tudou:random') {
-      const index = Math.floor(Math.random() * notes.length);
-      return await renderNote(notes[index], index, message);
+      const note = notes[Math.floor(Math.random() * notes.length)];
+      return renderNote(note, message);
     }
     const index = parseInt(data.split(':')[1]);
-    return await renderNote(notes[index], index, message);
+    const note = notes[index];
+    return renderNote(note, message);
   }
-  const searchResultIndex = notes.findIndex((note) => keywords.some(keyword => note.noteCard.title.includes(keyword))) || 0;
-  return await renderNote(notes[searchResultIndex], searchResultIndex);
+  const searchResult = notes.map(note => note.noteCard.title).filter(title => keywords.some(keyword => title.includes(keyword)));
+  renderNote(searchResult[0] || notes[0]);
 };
