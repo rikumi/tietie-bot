@@ -12,6 +12,10 @@ exports.getXhsNotes = async (userId) => {
   const match = data.match(/<script>window\.__INITIAL_STATE__=(.+?)<\/script>/);
   if (!match) return null;
   const json = JSON.parse(match[1].replace(/undefined/g, 'null'));
-  console.log('xhs notes', json.user.notes[0].length);
-  return json.user.notes[0];
+  const notes = json.user.notes[0];
+  console.log('xhs notes', notes.length);
+  if (!notes.length) {
+    throw new Error('帖子列表为空，登录态可能过期');
+  }
+  return notes;
 };
