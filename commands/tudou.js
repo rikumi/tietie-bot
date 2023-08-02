@@ -26,6 +26,7 @@ const makeReplyMarkup = (currentIndex, totalLength) => ({
 const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
 
 module.exports = async (ctx) => {
+  const keywords = ctx.message.text.trim().split(/\s+/).slice(1);
   const notes = await xhs.getXhsNotes('5d85f6a600000000010037d8');
 
   const renderNote = (note, message) => {
@@ -79,5 +80,6 @@ module.exports = async (ctx) => {
     const note = notes[index];
     return renderNote(note, message);
   }
-  renderNote(notes[0]);
+  const searchResult = notes.map(note => note.noteCard.title).filter(title => keywords.some(keyword => title.includes(keyword)));
+  renderNote(searchResult[0] || notes[0]);
 };

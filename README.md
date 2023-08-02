@@ -26,5 +26,5 @@ me - <description> 代表自己说一句话
 pick - 从给出的多个选项中随机选择一个
 pick_video - 从本群的视频指令中随机选择一个视频发送
 set_video - <command> 将被引用的视频设置为视频指令
-tudou - 播放土豆猫视频
+tudou - <keyword> 播放土豆猫视频
 ```
