@@ -1,4 +1,6 @@
 {
   "telegramBotToken": "",
-  "openaiApiKey": ""
+  "openaiApiKey": "",
+  "xhsWebId": "",
+  "xhsWebSession": ""
 }
