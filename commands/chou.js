@@ -15,6 +15,6 @@ module.exports = () => {
     }
     return 1;
   }).sort((a, b) => b - a).map(k => {
-    return ' ⬛🟫🟦🟪🟨'[k];
-  });
+    return ' ⬛🟫🟦🟪🟨'.split('')[k];
+  }).join('');
 };
