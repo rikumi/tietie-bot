@@ -35,9 +35,19 @@ module.exports = (ctx) => {
     }]],
   };
 
-  if (ctx.callbackQuery) {
-    ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, text, { reply_markup: replyMarkup });
-  } else {
-    ctx.telegram.sendMessage(message.chat.id, text, { reply_markup: replyMarkup });
+  if (!ctx.callbackQuery) {
+    ctx.telegram.sendMessage(message.chat.id, text, {
+      reply_markup: replyMarkup,
+      reply_to_message_id: message.message_id,
+    });
+    return;
   }
+  if (message.reply_to_message && ctx.callbackQuery.from.id !== message.reply_to_message.from.id) {
+    ctx.telegram.answerCbQuery(ctx.callbackQuery.id, '这不是你的消息！');
+    return;
+  }
+  ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, text, {
+    reply_markup: replyMarkup,
+    reply_to_message_id: message.reply_to_message ? message.reply_to_message.message_id : undefined,
+  });
 };
