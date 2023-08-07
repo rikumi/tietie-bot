@@ -25,6 +25,11 @@ const startDatabase = async () => {
     name TEXT NOT NULL,
     group_id INTEGER NOT NULL
   )`);
+
+  await db.run(`CREATE TABLE IF NOT EXISTS kachi (
+    group_id INTEGER PRIMARY KEY,
+    json text NOT NULL
+  )`);
 }
 
 const getChatGPTSystemMessage = async (groupId) => {
@@ -90,4 +95,27 @@ const pickVideo = async (groupId) => {
   return record.video_id;
 };
 
-module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo };
+const setKachi = async (groupId, object) => {
+  const db = await getDatabase();
+  const exists = await db.get(`SELECT * FROM kachi WHERE group_id = ?`, [groupId]);
+  if (exists) {
+    await db.run(`UPDATE kachi SET json = ? WHERE group_id = ?`, [JSON.stringify(object), groupId]);
+  } else {
+    await db.run(`INSERT INTO kachi (group_id, json) VALUES (?, ?)`, [groupId, JSON.stringify(object)]);
+  }
+};
+
+const getKachi = async (groupId) => {
+  const db = await getDatabase();
+  const record = await db.get(`SELECT json FROM kachi WHERE group_id = ?`, groupId);
+  if (!record) {
+    return {};
+  }
+  try {
+    return JSON.parse(record.json);
+  } catch (e) {
+    return {};
+  }
+};
+
+module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo, setKachi, getKachi };
