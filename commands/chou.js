@@ -19,7 +19,7 @@ module.exports = (ctx) => {
   const newCounts = counts.map((k, i) => k + numberResults.filter(k => k === i + 1).length);
   const totalCount = newCounts.reduce((a, b) => a + b, 0);
   const totalGolds = newCounts[4];
-  const tierIndex = Math.min(5, Math.max(0, Math.round(totalGolds / totalCount / 0.01 + 3))) || 3;
+  const tierIndex = Math.min(5, Math.max(0, Math.round(totalGolds / totalCount / 0.01 + 3))) || 1;
 
   const stats = [
     `总计抽数：${totalCount}`,
