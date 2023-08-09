@@ -16,10 +16,14 @@ const handleMessage = async (ctx) => {
   if (!/^\w+$/.test(action) || !fs.existsSync(module)) module = `./commands/default.js`;
   try {
     const result = await require(module)(ctx, bot);
-    if (result) ctx.reply(result);
+    if (result) ctx.reply(result, {
+      reply_to_message_id: message.message_id,
+    });
   } catch (e) {
     console.error(e);
-    ctx.reply('Error: ' + e.message);
+    ctx.reply('Error: ' + e.message, {
+      reply_to_message_id: message.message_id,
+    });
   }
 };
 
@@ -29,10 +33,10 @@ const handleCallbackQuery = async (ctx) => {
   const module = `./commands/${moduleName}.js`;
   try {
     const result = await require(module)(ctx, bot);
-    if (result) ctx.reply(result, { reply_to_message_id: message.message_id });
+    if (result) ctx.reply(result);
   } catch (e) {
     console.error(e);
-    ctx.reply('Error: ' + e.message, { reply_to_message_id: message.message_id });
+    ctx.reply('Error: ' + e.message);
   }
 };
 
