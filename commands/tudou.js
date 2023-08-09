@@ -23,7 +23,7 @@ const makeReplyMarkup = (currentIndex, totalLength) => ({
   ]],
 });
 
-const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
+const escape = (text) => text.replace(/([\u0000-\u007f])/g, '\\$1');
 
 module.exports = async (ctx) => {
   const keywords = ctx.message ? ctx.message.text.trim().split(/\s+/).slice(1) : [];

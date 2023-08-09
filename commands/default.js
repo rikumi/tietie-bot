@@ -16,7 +16,7 @@ module.exports = async (ctx, bot) => {
     }
     return;
   }
-  const escape = (text) => text.replace(/([\u0000-\u00ff])/g, '\\$1');
+  const escape = (text) => text.replace(/([\u0000-\u007f])/g, '\\$1');
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
   const extractUser = (message, entity) => ({
     first_name: message.text.substr(entity.offset, entity.length),
