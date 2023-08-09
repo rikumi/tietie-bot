@@ -1,7 +1,8 @@
 const jieba = require('nodejieba');
 
 module.exports = async (ctx) => {
-  const { message, reply_to_message: repliedMessage } = ctx;
+  const { message } = ctx;
+  const { reply_to_message: repliedMessage } = message;
   let sentence = message.text.trim().replace(/^\S*\s*/, '');
   if (!sentence) {
     if (!repliedMessage) {
@@ -13,7 +14,7 @@ module.exports = async (ctx) => {
     return '句子太长了！';
   }
   try {
-    return jieba.cutHMM(sentence).join(' ');
+    return jieba.cut(sentence).join(' ');
   } catch (e) {
     return '分词失败！';
   }
