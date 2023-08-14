@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { setAlias, getAlias } = require('../modules/database');
 
 module.exports = async (ctx) => {
@@ -11,7 +13,7 @@ module.exports = async (ctx) => {
     await setAlias(groupId, name, '');
     return '已清除该别名。';
   }
-  if (!/^([a-z]+_)*[a-z]+$/.test(target)) {
+  if (!/^\w+$/.test(target) || !fs.existsSync(path.resolve(__dirname, `${target}.js`))) {
     return '别名指向的指令无效。';
   }
   await setAlias(groupId, name, target);
