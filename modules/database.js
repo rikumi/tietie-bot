@@ -26,9 +26,10 @@ const startDatabase = async () => {
     group_id INTEGER NOT NULL
   )`);
 
-  await db.run(`CREATE TABLE IF NOT EXISTS kachi (
-    group_id INTEGER PRIMARY KEY,
-    json text NOT NULL
+  await db.run(`CREATE TABLE IF NOT EXISTS alias (
+    name TEXT NOT NULL,
+    target TEXT NOT NULL,
+    group_id INTEGER NOT NULL
   )`);
 }
 
@@ -95,27 +96,20 @@ const pickVideo = async (groupId) => {
   return record.video_id;
 };
 
-const setKachi = async (groupId, object) => {
+const setAlias = async (groupId, name, target) => {
   const db = await getDatabase();
-  const exists = await db.get(`SELECT * FROM kachi WHERE group_id = ?`, [groupId]);
+  const exists = await db.get(`SELECT * FROM alias WHERE group_id = ? AND name = ?`, [groupId, name]);
   if (exists) {
-    await db.run(`UPDATE kachi SET json = ? WHERE group_id = ?`, [JSON.stringify(object), groupId]);
+    await db.run(`UPDATE alias SET target = ? WHERE group_id = ? AND name = ?`, [target, groupId, name]);
   } else {
-    await db.run(`INSERT INTO kachi (group_id, json) VALUES (?, ?)`, [groupId, JSON.stringify(object)]);
+    await db.run(`INSERT INTO alias (name, target, group_id) VALUES (?, ?, ?)`, [name, target, groupId]);
   }
 };
 
-const getKachi = async (groupId) => {
+const getAlias = async (groupId, name) => {
   const db = await getDatabase();
-  const record = await db.get(`SELECT json FROM kachi WHERE group_id = ?`, groupId);
-  if (!record) {
-    return {};
-  }
-  try {
-    return JSON.parse(record.json);
-  } catch (e) {
-    return {};
-  }
+  const record = await db.get(`SELECT target FROM alias WHERE group_id = ? AND name = ?`, [groupId, name]);
+  return record && record.target;
 };
 
-module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo, setKachi, getKachi };
+module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo, setAlias, getAlias };
