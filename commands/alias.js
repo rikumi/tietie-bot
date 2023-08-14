@@ -6,7 +6,7 @@ module.exports = async (ctx) => {
   const groupId = ctx.message.chat.id;
   const [name, target] = ctx.message.text.split(/\s+/).slice(1);
   
-  if (!name || !/^([a-z]+_)*[a-z]+$/.test(name)) {
+  if (!name || !/^\w+$/.test(name) || fs.existsSync(path.resolve(__dirname, `${name}.js`))) {
     return '别名无效。';
   }
   if (!target) {
