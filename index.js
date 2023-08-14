@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { startDatabase } = require('./modules/database');
+const { startDatabase, getAlias } = require('./modules/database');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -13,7 +13,15 @@ const handleMessage = async (ctx) => {
   if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
-  if (!/^\w+$/.test(action) || !fs.existsSync(module)) module = `./commands/default.js`;
+  if (!fs.existsSync(module)) {
+    const alias = await getAlias(message.chat.id, action);
+    if (alias && /^\w+$/.test(alias)) {
+      module = `./commands/${alias}.js`;
+    }
+  }
+  if (!/^\w+$/.test(action) || !fs.existsSync(module)) {
+    module = `./commands/default.js`;
+  }
   try {
     const result = await require(module)(ctx, bot);
     if (result) ctx.reply(result, {
