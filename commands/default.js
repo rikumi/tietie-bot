@@ -56,7 +56,7 @@ module.exports = async (ctx, bot) => {
   const receiverLink = formatUser(receiver, receiver.id === sender.id ? '自己' : undefined);
   const [action, ...rest] = message.text.slice(1).split(/\s+/).map(escape);
   const postfix = rest.join(' ').trim();
-  let result = `${senderLink} ${action}${postfix ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
+  let result = `${senderLink} ${action}${postfix || action.endsWith('了') ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
 
   if (impartImpact) {
     result += '\n\n\\#ImpartImpact';
