@@ -14,7 +14,7 @@ module.exports = async (ctx) => {
     return '句子太长了！';
   }
   try {
-    return jieba.cut(sentence).join(' ');
+    return jieba.tag(sentence).map(({ word, tag }) => `${word}(${tag})`).join('');
   } catch (e) {
     return '分词失败！';
   }
