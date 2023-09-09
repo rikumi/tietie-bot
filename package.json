@@ -26,6 +26,7 @@
     "dayjs": "^1.11.9",
     "minecraft-protocol": "^1.36.1",
     "nodejieba": "^2.6.0",
+    "pinyin": "3.0.0-alpha.5",
     "pm2": "^5.2.2",
     "prettier": "^2.7.1",
     "sqlite-async": "^1.1.5",
