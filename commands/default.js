@@ -1,13 +1,31 @@
 const impart = require('./impart');
-const { getVideoReply } = require('../modules/database');
+const { getVideoReply, appendCharacter } = require('../modules/database');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
   disable_web_page_preview: true,
 };
 
+const batchForwardReplyTimeoutMap = {};
+
 module.exports = async (ctx, bot) => {
   const { message } = ctx;
+
+  // 私聊转发聊天记录：添加到人物设定集
+  if (message.chat && message.chat.type === 'private' && message.forward_from) {
+    const userId = message.forward_from.id;
+    await appendCharacter(userId, message.text.slice(0, 140), message.from.id);
+    if (batchForwardReplyTimeoutMap[message.from.id]) {
+      clearTimeout(batchForwardReplyTimeoutMap[message.from.id]);
+      delete batchForwardReplyTimeoutMap[message.from.id];
+    }
+    batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
+      ctx.reply('已将以上转发内容添加到发送者的人设集');
+    }, 1000);
+    return;
+  }
+
+  // 视频别名
   if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) {
     const command = message.text.trim().split(/\s+/)[0].replace(/^\//, '');
     const videoId = await getVideoReply(message.chat.id, command);
@@ -16,6 +34,8 @@ module.exports = async (ctx, bot) => {
     }
     return;
   }
+
+  // 默认行为 /贴贴
   const escape = (text) => text.replace(/([\u0000-\u007f])/g, '\\$1');
   const formatUser = (user, customName) => `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
   const extractUser = (message, entity) => ({
@@ -32,6 +52,7 @@ module.exports = async (ctx, bot) => {
   let receiver = lastMentionUser || (replied && replied.from) || sender;
   let impartImpact = false;
 
+  // impart 模式
   if (impart.isInImpart(message.chat.id) && sender.id !== receiver.id) {
     const random = Math.random();
     const originalReceiver = receiver;
