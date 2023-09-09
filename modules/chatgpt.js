@@ -9,7 +9,7 @@ const api = axios.create({
   timeout: 60000,
 });
 
-async function* ask(prompt, systemMessage) {
+async function* ask(prompt, systemMessage, model) {
   yield `[请求中]`;
 
   console.log('[SYSTEM]', systemMessage);
@@ -17,7 +17,7 @@ async function* ask(prompt, systemMessage) {
 
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
-      model: 'gpt-4',
+      model,
       messages: [{
         role: 'system',
         content: systemMessage,

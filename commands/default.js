@@ -24,7 +24,7 @@ module.exports = async (ctx, bot) => {
 
     try {
       let lastAnswer = '';
-      for await (const answer of ask(userPrompt, systemMessage)) {
+      for await (const answer of ask(userPrompt, systemMessage, 'gpt-3.5')) {
         if (answer) lastAnswer = answer;
       }
       await ctx.telegram.editMessageText(message.chat.id, replyMessage.message_id, undefined, lastAnswer);

@@ -25,7 +25,7 @@ module.exports = async (ctx) => {
   try {
     let lastAnswer = '';
     const systemMessage = await getChatGPTSystemMessage(chatId) || defaultSystemMessage;
-    for await (const answer of ask(question, systemMessage)) {
+    for await (const answer of ask(question, systemMessage, 'gpt-4')) {
       if (!answer) continue;
       await Promise.all([
         editMessage(answer + '…'),
