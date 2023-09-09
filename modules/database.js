@@ -121,7 +121,7 @@ const getAlias = async (groupId, name) => {
 
 const appendCharacter = async (userId, message, contributor) => {
   const db = await getDatabase();
-  await db.run(`INSERT INTO character (user_id, message, contributor) VALUES (?, ?)`, [userId, message, contributor]);
+  await db.run(`INSERT INTO character (user_id, message, contributor) VALUES (?, ?, ?)`, [userId, message, contributor]);
   const { count } = await db.get(`SELECT count(*) count FROM character WHERE user_id = ? AND message = ?`, [userId, message]);
   if (count > 50) {
     await db.run(`DELETE FROM character WHERE user_id = ? LIMIT ?`, [userId, count - 50]);
