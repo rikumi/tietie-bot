@@ -31,6 +31,12 @@ const startDatabase = async () => {
     target TEXT NOT NULL,
     group_id INTEGER NOT NULL
   )`);
+
+  await db.run(`CREATE TABLE IF NOT EXISTS character (
+    id INTEGER PRIMARY KEY,
+    user_id TEXT NOT NULL,
+    message TEXT NOT NULL
+  )`);
 }
 
 const getChatGPTSystemMessage = async (groupId) => {
@@ -112,4 +118,36 @@ const getAlias = async (groupId, name) => {
   return record && record.target;
 };
 
-module.exports = { getDatabase, startDatabase, getChatGPTSystemMessage, setChatGPTSystemMessage, checkDrinks, addDrink, pickDrink, setVideoReply, getVideoReply, pickVideo, setAlias, getAlias };
+const appendCharacter = async (userId, message) => {
+  const db = await getDatabase();
+  const existing = await db.get(`SELECT * FROM character WHERE user_id = ? AND message = ?`, [userId, message]);
+  if (existing) {
+    return false;
+  }
+  await db.run(`INSERT INTO character (user_id, message) VALUES (?, ?)`, [userId, message]);
+  return true;
+};
+
+const clearCharacter = async (userId) => {
+  const db = await getDatabase();
+  const existing = await db.get(`SELECT * FROM character WHERE user_id = ?`, [userId]);
+  if (!existing) {
+    return false;
+  }
+  await db.run(`DELETE FROM character WHERE user_id = ?`, [userId]);
+  return true;
+};
+
+const getCharacterMessages = async (userId) => {
+  const result = await db.all(`SELECT message FROM character WHERE user_id = ?`, [userId]);
+  return result.map(record => record.message);
+};
+
+module.exports = {
+  getDatabase, startDatabase,
+  getChatGPTSystemMessage, setChatGPTSystemMessage,
+  checkDrinks, addDrink, pickDrink,
+  setVideoReply, getVideoReply, pickVideo,
+  setAlias, getAlias,
+  appendCharacter, clearCharacter, getCharacterMessages
+};
