@@ -1,5 +1,5 @@
 const pinyin = require('pinyin');
-const { deleteCharacter } = require('../modules/database');
+const { clearCharacter } = require('../modules/database');
 
 module.exports = async (ctx) => {
   const { message } = ctx;
@@ -9,9 +9,9 @@ module.exports = async (ctx) => {
   }
   const keyword = content.replace(/^all$/, '')
   const { id, username, first_name, last_name } = message.from;
-  await deleteCharacter('user_' + id, keyword);
-  await deleteCharacter(username, keyword);
-  await deleteCharacter(pinyin.pinyin(`${first_name} ${last_name}`.toLowerCase(), {
+  await clearCharacter('user_' + id, keyword);
+  await clearCharacter(username, keyword);
+  await clearCharacter(pinyin.pinyin(`${first_name} ${last_name}`.toLowerCase(), {
     style: 'NORMAL',
     compact: true,
     segment: 'segmentit',
