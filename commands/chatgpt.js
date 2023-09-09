@@ -6,7 +6,7 @@ const defaultSystemMessage = '你是贴贴 Bot，一个 Telegram 聊天机器人
 module.exports = async (ctx) => {
   const { message } = ctx;
   const chatId = message.chat.id;
-  const question = message.text.trim().replace(/^.*?\s+/, '');
+  const question = message.text.trim().replace(/^.*?(\s+|$)/, '');
   if (!question) return;
   const replyMessage = await ctx.reply('…', { reply_to_message_id: message.message_id });
 

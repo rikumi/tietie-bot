@@ -12,6 +12,9 @@ const api = axios.create({
 async function* ask(prompt, systemMessage) {
   yield `[请求中]`;
 
+  console.log('[SYSTEM]', systemMessage);
+  console.log('[USER]', prompt);
+
   const sendRequest = async () => {
     return await api.post('/v1/chat/completions', {
       model: 'gpt-4',
@@ -79,6 +82,8 @@ async function* ask(prompt, systemMessage) {
   if (lastYieldedString !== latestString) {
     yield latestString; // awaits
   }
+
+  console.log('[CHATGPT]', latestString);
 
   if (endOrError && endOrError !== true) {
     throw endOrError;

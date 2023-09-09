@@ -34,7 +34,7 @@ const startDatabase = async () => {
 
   await db.run(`CREATE TABLE IF NOT EXISTS character (
     id INTEGER PRIMARY KEY,
-    user_id INTEGER NOT NULL,
+    username TEXT NOT NULL,
     message TEXT NOT NULL,
     contributor INTEGER NOT NULL
   )`);
@@ -119,27 +119,39 @@ const getAlias = async (groupId, name) => {
   return record && record.target;
 };
 
-const appendCharacter = async (userId, message, contributor) => {
+const appendCharacter = async (username, message, contributor) => {
+  username = username.toLowerCase();
+  message = message.slice(0, 140);
   const db = await getDatabase();
-  await db.run(`INSERT INTO character (user_id, message, contributor) VALUES (?, ?, ?)`, [userId, message, contributor]);
-  const { count } = await db.get(`SELECT count(*) count FROM character WHERE user_id = ? AND message = ?`, [userId, message]);
+  await db.run(`INSERT INTO character (username, message, contributor) VALUES (?, ?, ?)`, [username, message, contributor]);
+  const { count } = await db.get(`SELECT count(*) count FROM character WHERE username = ? AND message = ?`, [username, message]);
   if (count > 50) {
-    await db.run(`DELETE FROM character WHERE user_id = ? LIMIT ?`, [userId, count - 50]);
+    await db.run(`DELETE FROM character WHERE username = ? LIMIT ?`, [username, count - 50]);
   }
 };
 
-const clearCharacter = async (userId) => {
+const hasCharacter = async (username) => {
+  username = username.toLowerCase();
   const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character WHERE user_id = ?`, [userId]);
+  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
+  return !!existing;
+}
+
+const clearCharacter = async (username) => {
+  username = username.toLowerCase();
+  const db = await getDatabase();
+  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
   if (!existing) {
     return false;
   }
-  await db.run(`DELETE FROM character WHERE user_id = ?`, [userId]);
+  await db.run(`DELETE FROM character WHERE username = ?`, [username]);
   return true;
 };
 
-const getCharacterMessages = async (userId) => {
-  const result = await db.all(`SELECT message FROM character WHERE user_id = ?`, [userId]);
+const getCharacterMessages = async (username) => {
+  username = username.toLowerCase();
+  const db = await getDatabase();
+  const result = await db.all(`SELECT message FROM character WHERE username = ?`, [username]);
   return result.map(record => record.message);
 };
 
@@ -149,5 +161,5 @@ module.exports = {
   checkDrinks, addDrink, pickDrink,
   setVideoReply, getVideoReply, pickVideo,
   setAlias, getAlias,
-  appendCharacter, clearCharacter, getCharacterMessages
+  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages
 };
