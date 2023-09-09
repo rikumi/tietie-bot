@@ -36,7 +36,7 @@ const startDatabase = async () => {
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
     message TEXT NOT NULL,
-    contributor TEXT NOT NULL,
+    contributor INTEGER NOT NULL
   )`);
 }
 
