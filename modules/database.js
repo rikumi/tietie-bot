@@ -137,15 +137,10 @@ const hasCharacter = async (username) => {
   return !!existing;
 }
 
-const clearCharacter = async (username) => {
+const clearCharacter = async (username, keyword = '') => {
   username = username.toLowerCase();
   const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
-  if (!existing) {
-    return false;
-  }
-  await db.run(`DELETE FROM character WHERE username = ?`, [username]);
-  return true;
+  await db.run(`DELETE FROM character WHERE username = ? AND keyword LIKE %?%`, [username, keyword]);
 };
 
 const getCharacterMessages = async (username) => {
