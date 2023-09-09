@@ -6,8 +6,6 @@ const msgOptions = {
   disable_web_page_preview: true,
 };
 
-const batchForwardReplyTimeoutMap = {};
-
 module.exports = async (ctx, bot) => {
   const { message } = ctx;
 
