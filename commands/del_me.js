@@ -10,7 +10,9 @@ module.exports = async (ctx) => {
   const keyword = content.replace(/^all$/, '')
   const { id, username, first_name, last_name } = message.from;
   await clearCharacter('user_' + id, keyword);
-  await clearCharacter(username, keyword);
+  if (username) {
+    await clearCharacter(username, keyword);
+  }
   await clearCharacter(pinyin.pinyin(`${first_name} ${last_name}`.toLowerCase(), {
     style: 'NORMAL',
     compact: true,
