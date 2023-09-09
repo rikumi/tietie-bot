@@ -1,15 +1,32 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { startDatabase, getAlias } = require('./modules/database');
+const { startDatabase, getAlias, appendCharacter } = require('./modules/database');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
+const batchForwardReplyTimeoutMap = {};
 
 const handleMessage = async (ctx) => {
   const { message } = ctx;
+
+  // 私聊转发聊天记录：添加到人物设定集
+  if (message.chat && message.chat.type === 'private' && message.forward_from) {
+    const userId = message.forward_from.id;
+    await appendCharacter(userId, message.text.slice(0, 140), message.from.id);
+    if (batchForwardReplyTimeoutMap[message.from.id]) {
+      clearTimeout(batchForwardReplyTimeoutMap[message.from.id]);
+      delete batchForwardReplyTimeoutMap[message.from.id];
+    }
+    batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
+      ctx.reply('已将以上转发内容添加到发送者的人设集');
+    }, 1000);
+    return;
+  }
+
+  // 调用 slash commands
   if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
