@@ -1,7 +1,7 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const punycode = require('punycode');
+const pinyin = require('pinyin');
 const { startDatabase, getAlias, appendCharacter } = require('./modules/database');
 
 process.on('uncaughtException', (e) => { console.error(e); });
@@ -14,10 +14,16 @@ const handleMessage = async (ctx) => {
   const { message } = ctx;
 
   // 私聊转发聊天记录：添加到人物设定集
-  if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name)) {
+  if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name) && message.text) {
     const username = message.forward_from
       ? message.forward_from.username || 'user_' + message.forward_from.id
-      : punycode.encode(message.forward_sender_name.toLowerCase()).replace(/[\-\s]/g, '_');
+      : pinyin.pinyin(message.forward_sender_name.toLowerCase(), {
+        style: pinyin.STYLE_NORMAL,
+        compact: true,
+        segment: 'segmentit',
+        group: true,
+      })[0].join('').replace(/[^\w]/g, '_');
+
     await appendCharacter(username, message.text, message.from.id);
     if (batchForwardReplyTimeoutMap[message.from.id]) {
       clearTimeout(batchForwardReplyTimeoutMap[message.from.id]);
