@@ -18,7 +18,7 @@ const handleMessage = async (ctx) => {
     const username = message.forward_from
       ? message.forward_from.username || 'user_' + message.forward_from.id
       : pinyin.pinyin(message.forward_sender_name.toLowerCase(), {
-        style: pinyin.STYLE_NORMAL,
+        style: 'NORMAL',
         compact: true,
         segment: 'segmentit',
         group: true,
