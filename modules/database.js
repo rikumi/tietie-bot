@@ -34,8 +34,9 @@ const startDatabase = async () => {
 
   await db.run(`CREATE TABLE IF NOT EXISTS character (
     id INTEGER PRIMARY KEY,
-    user_id TEXT NOT NULL,
-    message TEXT NOT NULL
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    contributor TEXT NOT NULL,
   )`);
 }
 
@@ -118,9 +119,9 @@ const getAlias = async (groupId, name) => {
   return record && record.target;
 };
 
-const appendCharacter = async (userId, message) => {
+const appendCharacter = async (userId, message, contributor) => {
   const db = await getDatabase();
-  await db.run(`INSERT INTO character (user_id, message) VALUES (?, ?)`, [userId, message]);
+  await db.run(`INSERT INTO character (user_id, message, contributor) VALUES (?, ?)`, [userId, message, contributor]);
   const { count } = await db.get(`SELECT count(*) count FROM character WHERE user_id = ? AND message = ?`, [userId, message]);
   if (count > 50) {
     await db.run(`DELETE FROM character WHERE user_id = ? LIMIT ?`, [userId, count - 50]);
