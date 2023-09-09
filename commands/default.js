@@ -1,5 +1,5 @@
 const impart = require('./impart');
-const { getVideoReply, appendCharacter } = require('../modules/database');
+const { getVideoReply } = require('../modules/database');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
@@ -10,20 +10,6 @@ const batchForwardReplyTimeoutMap = {};
 
 module.exports = async (ctx, bot) => {
   const { message } = ctx;
-
-  // 私聊转发聊天记录：添加到人物设定集
-  if (message.chat && message.chat.type === 'private' && message.forward_from) {
-    const userId = message.forward_from.id;
-    await appendCharacter(userId, message.text.slice(0, 140), message.from.id);
-    if (batchForwardReplyTimeoutMap[message.from.id]) {
-      clearTimeout(batchForwardReplyTimeoutMap[message.from.id]);
-      delete batchForwardReplyTimeoutMap[message.from.id];
-    }
-    batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
-      ctx.reply('已将以上转发内容添加到发送者的人设集');
-    }, 1000);
-    return;
-  }
 
   // 视频别名
   if (!/[^\u0000-\u00ff]/.test(message.text.split(/\s+/)[0])) {
