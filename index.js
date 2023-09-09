@@ -21,7 +21,7 @@ const handleMessage = async (ctx) => {
       delete batchForwardReplyTimeoutMap[message.from.id];
     }
     batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
-      ctx.reply(`已将以上转发内容添加到 /${username} 的人设集`);
+      ctx.reply(`已将以上转发内容添加到各自发送者的人设集，可输入 /${username} 等进行尝试`);
     }, 1000);
     return;
   }
