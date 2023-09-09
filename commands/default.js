@@ -14,7 +14,7 @@ module.exports = async (ctx, bot) => {
   // 人设用户名
   if (await hasCharacter(command)) {
     if (!userPrompt) {
-      return `用法：/${command} <提问>`;
+      return `用法：/${command} <提问>；\n提示：私聊转发 ${command} 发送的消息可补充人设语料。`;
     }
 
     const characterMessages = await getCharacterMessages(command)
