@@ -83,6 +83,7 @@ module.exports = async (ctx) => {
   const successUsernames = [];
   if (command === 'off') {
     for (const username of usernames) {
+      await clearCharacter(username);
       const result = await setCharacterOptOut(username, true);
       if (result) successUsernames.push(username);
     }
