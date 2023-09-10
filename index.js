@@ -8,7 +8,6 @@ process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
-const batchForwardReplyTimeoutMap = {};
 
 const handleMessage = async (ctx) => {
   const { message } = ctx;
