@@ -160,20 +160,20 @@ const getCharacterMessages = async (username) => {
 
 const isCharacterOptOut = async (username) => {
   const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
+  const existing = await db.get(`SELECT * FROM character_opt_out WHERE username = ?`, [username]);
   return !!existing;
 };
 
 const setCharacterOptOut = async (username, optOut) => {
   const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
+  const existing = await db.get(`SELECT * FROM character_opt_out WHERE username = ?`, [username]);
   if (optOut) {
     if (existing) return false;
-    await db.run(`INSERT INTO character (username) values (?)`, [username]);
+    await db.run(`INSERT INTO character_opt_out (username) values (?)`, [username]);
     return true;
   }
   if (!existing) return false;
-  await db.run(`DELETE FROM character WHERE username = ?`, [username]);
+  await db.run(`DELETE FROM character_opt_out WHERE username = ?`, [username]);
   return true;
 };
 
