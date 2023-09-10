@@ -46,6 +46,8 @@ const generateUsernames = (user) => {
   return usernames;
 };
 
+const batchForwardReplyTimeoutMap = {};
+
 const handlePrivateForward = async (ctx) => {
   const { message } = ctx;
   const username = message.forward_from ? generateUsernames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
