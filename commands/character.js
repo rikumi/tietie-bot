@@ -1,3 +1,4 @@
+const pinyin = require('pinyin');
 const { appendCharacter, clearCharacter, isCharacterOptOut, setCharacterOptOut } = require('../modules/database');
 
 const intro = `【模拟人格功能介绍】
