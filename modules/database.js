@@ -40,7 +40,7 @@ const startDatabase = async () => {
   )`);
 
   await db.run(`CREATE TABLE IF NOT EXISTS character_opt_out (
-    username TEXT PRIMARY KEY,
+    username TEXT PRIMARY KEY
   )`);
 }
 
