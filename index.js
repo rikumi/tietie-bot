@@ -2,7 +2,7 @@ const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
 const { startDatabase, getAlias } = require('./modules/database');
-const { handlePrivateForward } = require('./commands/character');
+const { handlePrivateForward } = require('./commands/ask');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });

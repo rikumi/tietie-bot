@@ -32,15 +32,15 @@ const startDatabase = async () => {
     group_id INTEGER NOT NULL
   )`);
 
-  await db.run(`CREATE TABLE IF NOT EXISTS character (
-    id INTEGER PRIMARY KEY,
-    username TEXT NOT NULL,
-    message TEXT NOT NULL,
-    contributor INTEGER NOT NULL
+  await db.run(`CREATE TABLE IF NOT EXISTS character_v2 (
+    user_id INTEGER PRIMARY KEY,
+    command TEXT NOT NULL
   )`);
 
-  await db.run(`CREATE TABLE IF NOT EXISTS character_opt_out (
-    username TEXT PRIMARY KEY
+  await db.run(`CREATE TABLE IF NOT EXISTS character_message_v2 (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    message TEXT NOT NULL
   )`);
 }
 
@@ -123,58 +123,32 @@ const getAlias = async (groupId, name) => {
   return record && record.target;
 };
 
-const appendCharacter = async (username, message, contributor) => {
-  username = username.toLowerCase();
+const hasCharacterV1 = async (username) => {
+  const db = await getDatabase();
+  const messages = await db.get(`SELECT message FROM character WHERE username = ?`, [username]);
+  return !!messages;
+};
+
+const appendCharacterMessageV2 = async (userId, message) => {
   message = message.slice(0, 140);
   const db = await getDatabase();
-  await db.run(`INSERT INTO character (username, message, contributor) VALUES (?, ?, ?)`, [username, message, contributor]);
-  const { count } = await db.get(`SELECT count(*) count FROM character WHERE username = ? AND message = ?`, [username, message]);
+  await db.run(`INSERT INTO character_message_v2 (user_id, message) VALUES (?, ?)`, [userId, message]);
+  const { count } = await db.get(`SELECT count(*) count FROM character_message_v2 WHERE user_id = ? AND message = ?`, [userId, message]);
   if (count > 50) {
-    await db.run(`DELETE FROM character WHERE username = ? LIMIT ?`, [username, count - 50]);
+    await db.run(`DELETE FROM character WHERE user_id = ? LIMIT ?`, [userId, count - 50]);
   }
 };
 
-const hasCharacter = async (username) => {
-  username = username.toLowerCase();
+const getCharacterMessagesV2 = async (userId) => {
   const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
-  return !!existing;
-}
-
-const clearCharacter = async (username, keyword = '') => {
-  username = username.toLowerCase();
-  const db = await getDatabase();
-  if (!keyword) {
-    await db.run(`DELETE FROM character WHERE username = ?`, [username]);
-  } else {
-    await db.run(`DELETE FROM character WHERE username = ? AND message LIKE ?`, [username, '%' + keyword + '%']);
-  }
+  const messages = await db.all(`SELECT message FROM character_message_v2 WHERE user_id = ?`, [userId]);
+  return messages.map(k => k.message);
 };
 
-const getCharacterMessages = async (username) => {
-  username = username.toLowerCase();
+const clearCharacterMessageV2 = async (userId) => {
   const db = await getDatabase();
-  const result = await db.all(`SELECT message FROM character WHERE username = ?`, [username]);
-  return result.map(record => record.message);
-};
-
-const isCharacterOptOut = async (username) => {
-  const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character_opt_out WHERE username = ?`, [username]);
-  return !!existing;
-};
-
-const setCharacterOptOut = async (username, optOut) => {
-  const db = await getDatabase();
-  const existing = await db.get(`SELECT * FROM character_opt_out WHERE username = ?`, [username]);
-  if (optOut) {
-    if (existing) return false;
-    await db.run(`INSERT INTO character_opt_out (username) values (?)`, [username]);
-    return true;
-  }
-  if (!existing) return false;
-  await db.run(`DELETE FROM character_opt_out WHERE username = ?`, [username]);
-  return true;
+  const result = await db.run(`DELETE FROM character_message_v2 WHERE user_id = ?`, [userId]);
+  return result.changes;
 };
 
 module.exports = {
@@ -183,5 +157,5 @@ module.exports = {
   checkDrinks, addDrink, pickDrink,
   setVideoReply, getVideoReply, pickVideo,
   setAlias, getAlias,
-  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages, setCharacterOptOut, isCharacterOptOut,
+  hasCharacterV1, appendCharacterMessageV2, getCharacterMessagesV2, clearCharacterMessageV2,
 };
