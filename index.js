@@ -14,7 +14,12 @@ const handleMessage = async (ctx) => {
   const { message } = ctx;
 
   // 私聊转发聊天记录：添加到人物设定集
-  if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name) && message.text) {
+  if (message.chat 
+      && message.chat.type === 'private' 
+      // 为防止同一人出现两个人设指令，禁止自己给自己人设
+      && (message.forward_from && message.from && message.forward_from.id !== message.from.id || message.forward_sender_name)
+      && message.text
+  ) {
     const username = message.forward_from
       ? message.forward_from.username || 'user_' + message.forward_from.id
       : pinyin.pinyin(message.forward_sender_name.toLowerCase(), {
