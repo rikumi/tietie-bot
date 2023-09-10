@@ -48,7 +48,7 @@ const generateUsernames = (user) => {
 
 const handlePrivateForward = async (ctx) => {
   const { message } = ctx;
-  const username = message.forward_from ? generateUserNames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
+  const username = message.forward_from ? generateUsernames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
   if (await isCharacterOptOut(username)) {
     ctx.reply(`用户 ${username} 的设置不允许为其建立人设。`);
     return;
