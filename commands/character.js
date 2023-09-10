@@ -48,10 +48,6 @@ const generateUsernames = (user) => {
 
 const handlePrivateForward = async (ctx) => {
   const { message } = ctx;
-  if (message.forward_from && message.from && message.forward_from.id === message.from.id) {
-    ctx.reply('为防止同一人出现两个人设指令，暂不支持为自己设定人设');
-    return;
-  }
   const username = message.forward_from ? generateUserNames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
   if (await isCharacterOptOut(username)) {
     ctx.reply(`用户 ${username} 的设置不允许为其建立人设。`);
@@ -59,6 +55,10 @@ const handlePrivateForward = async (ctx) => {
   }
   if (await isCharacterOptOut('user_' + message.from.id)) {
     ctx.reply('你的设置不允许为他人建立人设。');
+    return;
+  }
+  if (message.forward_from && message.from && message.forward_from.id === message.from.id) {
+    ctx.reply('为防止同一人出现两个人设指令，暂不支持为自己设定人设');
     return;
   }
   await appendCharacter(username, message.text, message.from.id);
