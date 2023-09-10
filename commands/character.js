@@ -107,5 +107,6 @@ module.exports = async (ctx) => {
   }
 };
 
-module.exports.generateUsernames = generateUsernames;
 module.exports.intro = intro;
+module.exports.generateUsernames = generateUsernames;
+module.exports.handlePrivateForward = handlePrivateForward;
