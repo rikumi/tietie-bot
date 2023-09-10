@@ -1,4 +1,3 @@
-const impart = require('./impart');
 const { getVideoReply, hasCharacter, getCharacterMessages } = require('../modules/database');
 const { ask } = require('../modules/chatgpt');
 
@@ -11,11 +10,11 @@ module.exports = async (ctx, bot) => {
   const { message } = ctx;
   const command = message.text.trim().split(/\s+/)[0].replace(/^\//, '');
 
-  // 人设用户名
+  // 人格用户名
   if (await hasCharacter(command)) {
     const userPrompt = `${message.text.split(' ').slice(1).join(' ')}`;
     if (!userPrompt) {
-      return `用法：/${command} <提问>；\n提示：私聊转发 ${command} 发送的消息可补充人设语料。`;
+      return `用法：/${command} <提问>；\n提示：私聊转发 ${command} 发送的消息可补充人格语料。`;
     }
 
     const characterMessages = await getCharacterMessages(command)
@@ -58,38 +57,12 @@ module.exports = async (ctx, bot) => {
 
   let sender = message.from;
   let receiver = lastMentionUser || (replied && replied.from) || sender;
-  let impartImpact = false;
-
-  // impart 模式
-  if (impart.isInImpart(message.chat.id) && sender.id !== receiver.id) {
-    const random = Math.random();
-    const originalReceiver = receiver;
-    // 50% 概率变为自己操作自己
-    if (random > 0.5) {
-      receiver = sender;
-      impartImpact = true;
-    }
-    // 25% 概率变为对方操作自己
-    if (random > 0.75) {
-      sender = originalReceiver;
-      impartImpact = true;
-    }
-    // 2% 概率变为对方操作对方
-    if (random < 0.02) {
-      sender = originalReceiver;
-      impartImpact = true;
-    }
-  }
 
   const senderLink = formatUser(sender);
   const receiverLink = formatUser(receiver, receiver.id === sender.id ? '自己' : undefined);
   const [action, ...rest] = message.text.slice(1).split(/\s+/).map(escape);
   const postfix = rest.join(' ').trim();
   let result = `${senderLink} ${action}${postfix || action.endsWith('了') ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
-
-  if (impartImpact) {
-    result += '\n\n\\#ImpartImpact';
-  }
 
   ctx.reply(result, {
     ...msgOptions,
