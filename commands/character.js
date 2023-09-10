@@ -1,4 +1,4 @@
-const { clearCharacter, setCharacterOptOut } = require('../modules/database');
+const { appendCharacter, clearCharacter, isCharacterOptOut, setCharacterOptOut } = require('../modules/database');
 
 const intro = `【模拟人格功能介绍】
 
@@ -39,6 +39,31 @@ const generateUsernames = (user) => {
   usernames.push(toPinyin(user.first_name + ' ' + user.last_name));
   usernames.push(toPinyin(user.last_name + ' ' + user.first_name));
   return usernames;
+};
+
+const handlePrivateForward = async (ctx) => {
+  const { message } = ctx;
+  if (message.forward_from && message.from && message.forward_from.id === message.from.id) {
+    ctx.reply('为防止同一人出现两个人设指令，暂不支持为自己设定人设');
+    return;
+  }
+  const username = message.forward_from ? generateUserNames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
+  if (await isCharacterOptOut(username)) {
+    ctx.reply(`用户 ${username} 的设置不允许为其建立人设。`);
+    return;
+  }
+  if (await isCharacterOptOut('user_' + message.from.id)) {
+    ctx.reply('你的设置不允许为他人建立人设。');
+    return;
+  }
+  await appendCharacter(username, message.text, message.from.id);
+  if (batchForwardReplyTimeoutMap[message.from.id]) {
+    clearTimeout(batchForwardReplyTimeoutMap[message.from.id]);
+    delete batchForwardReplyTimeoutMap[message.from.id];
+  }
+  batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
+    ctx.reply(`已将以上转发内容添加到各自发送者的人设集，可输入 /${username.toLowerCase()} 进行尝试；转发单条消息可查询用户对应的指令名`);
+  }, 1000);
 };
 
 module.exports = async (ctx) => {
