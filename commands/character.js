@@ -37,8 +37,8 @@ const generateUsernames = (user) => {
   if (user.id) {
     usernames.push('user_' + user.id);
   }
-  usernames.push(toPinyin(user.first_name + ' ' + user.last_name));
-  usernames.push(toPinyin(user.last_name + ' ' + user.first_name));
+  usernames.push(toPinyin([user.first_name, user.last_name].filter(k => k).join(' ')));
+  usernames.push(toPinyin([user.last_name, user.first_name].filter(k => k).join(' ')));
   return usernames;
 };
 
