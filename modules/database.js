@@ -38,6 +38,10 @@ const startDatabase = async () => {
     message TEXT NOT NULL,
     contributor INTEGER NOT NULL
   )`);
+
+  await db.run(`CREATE TABLE IF NOT EXISTS character_opt_out (
+    username TEXT PRIMARY KEY,
+  )`);
 }
 
 const getChatGPTSystemMessage = async (groupId) => {
@@ -154,11 +158,24 @@ const getCharacterMessages = async (username) => {
   return result.map(record => record.message);
 };
 
+const setCharacterOptOut = async (username, optOut) => {
+  const db = await getDatabase();
+  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
+  if (optOut) {
+    if (existing) return false;
+    await db.run(`INSERT INTO character (username) values (?)`, [username]);
+    return true;
+  }
+  if (!existing) return false;
+  await db.run(`DELETE FROM character WHERE username = ?`, [username]);
+  return true;
+};
+
 module.exports = {
   getDatabase, startDatabase,
   getChatGPTSystemMessage, setChatGPTSystemMessage,
   checkDrinks, addDrink, pickDrink,
   setVideoReply, getVideoReply, pickVideo,
   setAlias, getAlias,
-  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages
+  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages, setCharacterOptOut
 };
