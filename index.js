@@ -30,7 +30,7 @@ const handleMessage = async (ctx) => {
       delete batchForwardReplyTimeoutMap[message.from.id];
     }
     batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
-      ctx.reply(`已将以上转发内容添加到各自发送者的人设集，可输入 /${username} 进行尝试；转发单条消息可查询用户对应的指令名`);
+      ctx.reply(`已将以上转发内容添加到各自发送者的人设集，可输入 /${username.toLowerCase()} 进行尝试；转发单条消息可查询用户对应的指令名`);
     }, 1000);
     return;
   }
