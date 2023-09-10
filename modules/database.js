@@ -32,11 +32,6 @@ const startDatabase = async () => {
     group_id INTEGER NOT NULL
   )`);
 
-  await db.run(`CREATE TABLE IF NOT EXISTS character_v2 (
-    user_id INTEGER PRIMARY KEY,
-    command TEXT NOT NULL
-  )`);
-
   await db.run(`CREATE TABLE IF NOT EXISTS character_message_v2 (
     id INTEGER PRIMARY KEY,
     user_id INTEGER NOT NULL,
