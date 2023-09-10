@@ -158,6 +158,12 @@ const getCharacterMessages = async (username) => {
   return result.map(record => record.message);
 };
 
+const isCharacterOptOut = async (username) => {
+  const db = await getDatabase();
+  const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
+  return !!existing;
+};
+
 const setCharacterOptOut = async (username, optOut) => {
   const db = await getDatabase();
   const existing = await db.get(`SELECT * FROM character WHERE username = ?`, [username]);
@@ -177,5 +183,5 @@ module.exports = {
   checkDrinks, addDrink, pickDrink,
   setVideoReply, getVideoReply, pickVideo,
   setAlias, getAlias,
-  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages, setCharacterOptOut
+  appendCharacter, hasCharacter, clearCharacter, getCharacterMessages, setCharacterOptOut, isCharacterOptOut,
 };
