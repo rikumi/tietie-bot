@@ -1,18 +1,18 @@
 const pinyin = require('pinyin');
 const { appendCharacter, clearCharacter, isCharacterOptOut, setCharacterOptOut } = require('../modules/database');
 
-const intro = `【模拟人格功能介绍】
+const intro = `【虚拟人格功能介绍】
 
-1. 私聊转发别人的消息，可为每条消息的原始发送者建立模拟人格，转发的消息越多，人格越完善；
+1. 私聊转发别人的消息，可为每条消息的原始发送者建立虚拟人格，转发的消息越多，人格越完善；
 2. 在任意有贴贴 Bot 的聊天使用 /用户名 <提问> 可向该人格提问（用户名以 Bot 回复为准）；
-3. 使用 /character off 可屏蔽该功能，屏蔽后别人不可为当前用户建立人设，为了保证公平性，当前用户也不可为别人建立人设；使用 /character on 重新启用；
+3. 使用 /character off 可屏蔽该功能，屏蔽后别人不可为当前用户建立人格，为了保证公平性，当前用户也不可为别人建立人格；使用 /character on 重新启用；
 
-【模拟人格使用规范】
+【虚拟人格使用规范】
 1. 请尊重别人的选择，征得对方同意再使用；
 2. 请勿选择过分偏颇的言论，歪曲他人形象；
 3. 禁止对不再上线的用户（如退圈、身故等）使用；
 
-【模拟人格指令生成规则】
+【虚拟人格指令生成规则】
 1. 若用户开启了【转发显示用户名】功能，且设置了用户名，将使用用户名作为该用户的人格指令；
 2. 若用户开启了【转发显示用户名】功能，但没有设置用户名，将使用 user_ + uid 作为该用户的人格指令；
 3. 若用户关闭了【转发显示用户名】功能，将使用 "first_name last_name" 的拼音转写作为该用户的人格指令；
@@ -49,16 +49,16 @@ const generateUsernames = (user) => {
 const handlePrivateForward = async (ctx) => {
   const { message } = ctx;
   const username = message.forward_from ? generateUsernames(message.forward_from)[0] : toPinyin(message.forward_sender_name);
-  if (await isCharacterOptOut(username)) {
-    ctx.reply(`用户 ${username} 的设置不允许为其建立人设。`);
+  if (await isCharacterOptOut('user_' + message.from.id)) {
+    ctx.reply('你的设置不允许为他人建立人格。');
     return;
   }
-  if (await isCharacterOptOut('user_' + message.from.id)) {
-    ctx.reply('你的设置不允许为他人建立人设。');
+  if (await isCharacterOptOut(username)) {
+    ctx.reply(`用户 ${username} 的设置不允许为其建立人格。`);
     return;
   }
   if (message.forward_from && message.from && message.forward_from.id === message.from.id) {
-    ctx.reply('为防止同一人出现两个人设指令，暂不支持为自己设定人设');
+    ctx.reply('为防止同一人出现两个人格指令，暂不支持为自己设定人格');
     return;
   }
   await appendCharacter(username, message.text, message.from.id);
@@ -67,7 +67,7 @@ const handlePrivateForward = async (ctx) => {
     delete batchForwardReplyTimeoutMap[message.from.id];
   }
   batchForwardReplyTimeoutMap[message.from.id] = setTimeout(() => {
-    ctx.reply(`已将以上转发内容添加到各自发送者的人设集，可输入 /${username.toLowerCase()} 进行尝试；转发单条消息可查询用户对应的指令名`);
+    ctx.reply(`已将以上转发内容添加到各自发送者的人格集，可输入 /${username.toLowerCase()} 进行尝试；转发单条消息可查询用户对应的指令名`);
   }, 1000);
 };
 
@@ -85,9 +85,9 @@ module.exports = async (ctx) => {
       if (result) successUsernames.push(username);
     }
     if (!successUsernames.length) {
-      return '当前使用的所有用户名均已屏蔽模拟人格功能。';
+      return '当前使用的所有用户名均已屏蔽虚拟人格功能。';
     }
-    return '已屏蔽以下可能指令的模拟人格功能，屏蔽后别人不可为当前用户建立人设，为了保证公平性，当前用户也不可为别人建立人设：' + successUsernames.join(';');
+    return '已屏蔽以下可能指令的虚拟人格功能，屏蔽后别人不可为当前用户建立人格，为了保证公平性，当前用户也不可为别人建立人格：' + successUsernames.join(';');
   }
   if (command === 'on') {
     for (const username of usernames) {
@@ -95,15 +95,15 @@ module.exports = async (ctx) => {
       if (result) successUsernames.push(username);
     }
     if (!successUsernames.length) {
-      return '当前使用的所有用户名均已开启模拟人格功能。';
+      return '当前使用的所有用户名均已开启虚拟人格功能。';
     }
-    return '已开启以下可能指令的模拟人格功能：' + successUsernames.join(';');
+    return '已开启以下可能指令的虚拟人格功能：' + successUsernames.join(';');
   }
   if (command === 'clear') {
     for (const username of usernames) {
       await clearCharacter(username);
     }
-    return '已清空以下可能指令的模拟人格语料：' + usernames.join(';') + '。如需屏蔽模拟人格功能，请使用 /character off';
+    return '已清空以下可能指令的虚拟人格语料：' + usernames.join(';') + '。如需屏蔽虚拟人格功能，请使用 /character off';
   }
 };
 
