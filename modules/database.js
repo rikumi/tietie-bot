@@ -143,7 +143,7 @@ const clearCharacter = async (username, keyword = '') => {
   if (!keyword) {
     await db.run(`DELETE FROM character WHERE username = ?`, [username]);
   } else {
-    await db.run(`DELETE FROM character WHERE username = ? AND keyword LIKE ?`, [username, '%' + keyword + '%']);
+    await db.run(`DELETE FROM character WHERE username = ? AND message LIKE ?`, [username, '%' + keyword + '%']);
   }
 };
 
