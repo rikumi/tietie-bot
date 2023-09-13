@@ -17,6 +17,10 @@ const makeReplyMarkup = (currentIndex, totalLength) => ({
       callback_data: `tudou:${currentIndex + 1}`,
     }] : []),
     {
+      text: '🔄',
+      callback_data: `tudou:${currentIndex}`,
+    },
+    {
       text: '🎲',
       callback_data: 'tudou:random',
     },
