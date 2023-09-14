@@ -13,18 +13,19 @@ const bot = new Telegraf(config.telegramBotToken);
 const handleMessage = async (ctx) => {
   const { message } = ctx;
 
-  // 私聊转发聊天记录：添加到人物设定集
-  if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name)) {
-    handlePrivateForward(ctx);
-    return;
-  }
-
-  if (await discord.handleTelegramMessage(ctx) !== false) {
-    return;
+  if (!message.text || !message.text.startsWith('/')) {
+    // 私聊转发聊天记录：添加到人物设定集
+    if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name)) {
+      handlePrivateForward(ctx);
+      return;
+    }
+  
+    if (await discord.handleTelegramMessage(ctx) !== false) {
+      return;
+    }
   }
 
   // 调用 slash commands
-  if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
   if (!fs.existsSync(module)) {
