@@ -10,8 +10,6 @@ process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
 
-discord.init(bot.telegram);
-
 const handleMessage = async (ctx) => {
   const { message } = ctx;
 
@@ -72,7 +70,8 @@ bot.on('callback_query', (ctx) => {
   handleCallbackQuery(ctx);
 });
 
-bot.launch().then(() => {
-  startDatabase();
+bot.launch().then(async () => {
+  await startDatabase();
+  await discord.init(bot.telegram);
   console.log('Service started!');
 });
