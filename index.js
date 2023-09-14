@@ -72,6 +72,6 @@ bot.on('callback_query', (ctx) => {
 
 bot.launch().then(async () => {
   await startDatabase();
-  await discord.init(bot.telegram);
+  await discord.init(bot);
   console.log('Service started!');
 });
