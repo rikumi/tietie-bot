@@ -8,7 +8,7 @@ const discordLinkMap = {};
 
 const convertDiscordEmoji = (text) => {
     return text.replace(/:(\w+):/g, (match, emojiName) => {
-        for (const category in dismoji) {
+        for (const category of Object.keys(dismoji)) {
             if (typeof dismoji[category][emojiName] === 'string') {
                 return dismoji[category][emojiName];
             }
