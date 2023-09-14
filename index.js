@@ -3,11 +3,14 @@ const config = require('./config.json');
 const fs = require('fs');
 const { startDatabase, getAlias } = require('./modules/database');
 const { handlePrivateForward } = require('./commands/ask');
+const discord = require('./commands/discord');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
 const bot = new Telegraf(config.telegramBotToken);
+
+discord.init(bot.telegram);
 
 const handleMessage = async (ctx) => {
   const { message } = ctx;
@@ -15,6 +18,10 @@ const handleMessage = async (ctx) => {
   // 私聊转发聊天记录：添加到人物设定集
   if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name)) {
     handlePrivateForward(ctx);
+    return;
+  }
+
+  if (await discord.handleTelegramMessage(ctx) !== false) {
     return;
   }
 
