@@ -1,6 +1,7 @@
 const discord = require('discord-user-bots');
 const config = require('../config.json');
 const crypto = require('crypto');
+const dismoji = require('discord-emoji');
 const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
 const discordLinkMap = {};
@@ -26,10 +27,13 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
     client.on.message_create = (message) => {
         if (message.channel_id !== discordChannelId) return;
         if (message.author.username === config.discordUsername) return;
+        const messageContent = message.content.replace(/:(\w+):/g, (match, emojiName) => {
+            return typeof dismoji[emojiName] === 'string' ? dismoji[emojiName] : match;
+        });
         if (!message.author || message.author.bot) {
-            telegram.sendMessage(chatId, message.content);
+            telegram.sendMessage(chatId, messageContent);
         } else {
-            telegram.sendMessage(chatId, `${message.author.username}: ${message.content}`);
+            telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
         }
     };
 };

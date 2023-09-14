@@ -14,6 +14,9 @@ dependencies:
   dayjs:
     specifier: ^1.11.9
     version: 1.11.9
+  discord-emoji:
+    specifier: ^2.3.0
+    version: 2.3.0
   discord-user-bots:
     specifier: ^1.6.0
     version: 1.6.0
@@ -669,6 +672,10 @@ packages:
   /detect-libc@2.0.2:
     resolution: {integrity: sha512-UX6sGumvvqSaXgdKGUsgZWqcUyIXZ/vZTrlRT/iobiKhGL0zL4d3osHj3uqllWJK+i+sixDS/3COVEOFbupFyw==}
     engines: {node: '>=8'}
+    dev: false
+
+  /discord-emoji@2.3.0:
+    resolution: {integrity: sha512-OBa4Yn0+esidXTaCKDderhcyq0ylNAqAB9G1DUOl0D/Hn0BQ0jA05+qHIU193VuxvnLwT442i4CWFWy41BNfmQ==}
     dev: false
 
   /discord-user-bots@1.6.0:
