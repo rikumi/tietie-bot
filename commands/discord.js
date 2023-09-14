@@ -26,6 +26,7 @@ if (!crypto.getRandomValues) {
 }
 
 const createLinkBot = (telegram, chatId, discordChannelId) => {
+    chatId = parseInt(chatId);
     if (discordLinkMap[chatId]) {
         discordLinkMap[chatId].client.close();
         delete discordLinkMap[chatId];
