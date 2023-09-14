@@ -53,9 +53,10 @@ module.exports.init = async (bot) => {
 };
 
 module.exports.handleTelegramMessage = async (ctx) => {
+    const { message } = ctx;
     const link = discordLinkMap[ctx.chat.id];
     if (!link) return false;
     const { client, discordChannelId } = link;
-    const username = ctx.from.username || (ctx.from.first_name + ' ' + ctx.from.last_name);
-    client.send(discordChannelId, { content: `${username}: ${ctx.message.text}` });
+    const username = message.from.username || (message.from.first_name + ' ' + message.from.last_name);
+    client.send(discordChannelId, { content: `${username}: ${message.text}` });
 };
