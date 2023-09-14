@@ -46,6 +46,11 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
             telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
         }
     };
+    client.on.discord_disconnect = () => {
+        console.log('discord_disconnect');
+        createLinkBot(telegram, String(chatId), discordChannelId);
+        client.close();
+    };
 };
 
 module.exports = async (ctx) => {
