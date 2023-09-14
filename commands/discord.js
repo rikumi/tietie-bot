@@ -6,6 +6,17 @@ const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
 const discordLinkMap = {};
 
+const convertDiscordEmoji = (text) => {
+    return text.replace(/:(\w+):/g, (match, emojiName) => {
+        for (const category of dismoji) {
+            if (typeof category[emojiName] === 'string') {
+                return dismoji[emojiName];
+            }
+        }
+        return match;
+    });
+};
+
 if (!crypto.getRandomValues) {
     crypto.getRandomValues = function (arr) {
         for (var i = 0; i < arr.length; i++) {
@@ -27,9 +38,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
     client.on.message_create = (message) => {
         if (message.channel_id !== discordChannelId) return;
         if (message.author.username === config.discordUsername) return;
-        const messageContent = message.content.replace(/:(\w+):/g, (match, emojiName) => {
-            return typeof dismoji[emojiName] === 'string' ? dismoji[emojiName] : match;
-        });
+        const messageContent = convertDiscordEmoji(message.content);
         if (!message.author || message.author.bot) {
             telegram.sendMessage(chatId, messageContent);
         } else {
@@ -52,7 +61,7 @@ module.exports = async (ctx) => {
 module.exports.init = async (bot) => {
     const discordLinks = await getDiscordLinks();
     for (const link of discordLinks) {
-        createLinkBot(bot, link.chatId, link.discordChannelId);
+        createLinkBot(bot.telegram, link.chatId, link.discordChannelId);
     }
 };
 
