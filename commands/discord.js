@@ -71,5 +71,5 @@ module.exports.handleTelegramMessage = async (ctx) => {
     if (!link) return false;
     const { client, discordChannelId } = link;
     const username = message.from.username || (message.from.first_name + ' ' + message.from.last_name);
-    client.send(discordChannelId, { content: `${username}: ${message.text}` });
+    client.send(discordChannelId, { content: `${username}: ${message.text || 'Unsupported message'}` });
 };
