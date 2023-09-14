@@ -39,8 +39,8 @@ const startDatabase = async () => {
   )`);
 
   await db.run(`CREATE TABLE IF NOT EXISTS discord_link (
-    chat_id TEXT PRIMARY KEY,
-    discord_channel_id TEXT NOT NULL
+    chat_id INTEGER NOT NULL,
+    discord_channel_id INTEGER NOT NULL
   )`);
 }
 
