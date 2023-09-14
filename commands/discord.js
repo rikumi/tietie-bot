@@ -37,7 +37,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         discordChannelId,
     };
     client.on.message_create = (message) => {
-        if (message.channel_id !== discordChannelId) return;
+        if (Number(message.channel_id) !== discordChannelId) return;
         if (message.author.username === config.discordUsername) return;
         const messageContent = convertDiscordEmoji(message.content);
         if (!message.author || message.author.bot) {
