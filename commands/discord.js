@@ -76,6 +76,16 @@ module.exports.handleTelegramMessage = async (ctx) => {
     const link = discordLinkMap[message.chat.id];
     if (!link) return false;
     const { client, discordChannelId } = link;
-    const username = message.from.username || ((message.from.first_name || '') + ' ' + (message.from.last_name || '')).trim();
-    client.send(discordChannelId, { content: `${username}: ${message.text || '[Unsupported message]'}` });
+    const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
+    const username = formatUser(message.from);
+
+    client.send(discordChannelId, {
+        content: [
+            `**${username}**`,
+            ': ',
+            message.forward_from ? `[Fw:${formatUser(message.forward_from)}]` : '',
+            message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}]` : '',
+            message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
+        ].join(''),
+    });
 };
