@@ -58,7 +58,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
                 client._heartbeatStopTimeout = setTimeout(() => {
                     console.log('_heartbeatStopTimeout');
                     createLinkBot(telegram, chatId, discordChannelId);
-                });
+                }, 60000);
             };
             // Log default events
             return (...args) => {
