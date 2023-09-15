@@ -39,23 +39,33 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         client,
         discordChannelId,
     };
-    client.on.message_create = (message) => {
-        if (String(message.channel_id) !== String(discordChannelId)) return;
-        if (message.author.username === config.discordUsername) return;
-        const messageContent = convertDiscordEmoji(message.content);
-        if (!message.author || message.author.bot) {
-            telegram.sendMessage(chatId, messageContent);
-        } else {
-            telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
-        }
-    };
-    client.on.heartbeat_received = () => {
-        if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
-        client._heartbeatStopTimeout = setTimeout(() => {
-            console.log('_heartbeatStopTimeout');
-            createLinkBot(telegram, chatId, discordChannelId);
-        });
-    }
+    client.on = new Proxy({}, {
+        get: (_, eventName) => {
+            if (eventName === 'message_create') return (message) => {
+                console.log(Date(), eventName, JSON.stringify([message]));
+                if (String(message.channel_id) !== String(discordChannelId)) return;
+                if (message.author.username === config.discordUsername) return;
+                const messageContent = convertDiscordEmoji(message.content);
+                if (!message.author || message.author.bot) {
+                    telegram.sendMessage(chatId, messageContent);
+                } else {
+                    telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
+                }
+            };
+            if (eventName === 'heartbeat_received') return (...args) => {
+                console.log(Date(), eventName, JSON.stringify(args));
+                if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
+                client._heartbeatStopTimeout = setTimeout(() => {
+                    console.log('_heartbeatStopTimeout');
+                    createLinkBot(telegram, chatId, discordChannelId);
+                });
+            };
+            // Log default events
+            return (...args) => {
+                console.log(Date(), eventName, JSON.stringify(args));
+            };
+        },
+    });
 };
 
 module.exports = async (ctx) => {
