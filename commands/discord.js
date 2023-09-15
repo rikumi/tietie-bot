@@ -80,7 +80,7 @@ module.exports.handleTelegramMessage = async (ctx) => {
 
     client.send(discordChannelId, {
         content: [
-            `**${username}**`,
+            username,
             ': ',
             message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
             message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
