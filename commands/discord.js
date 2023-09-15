@@ -26,7 +26,6 @@ if (!crypto.getRandomValues) {
 }
 
 const createLinkBot = (telegram, chatId, discordChannelId) => {
-    chatId = parseInt(chatId);
     if (discordLinkMap[chatId]) {
         discordLinkMap[chatId].client.close();
         delete discordLinkMap[chatId];
@@ -37,7 +36,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         discordChannelId,
     };
     client.on.message_create = (message) => {
-        if (Number(message.channel_id) !== Number(discordChannelId)) return;
+        if (String(message.channel_id) !== String(discordChannelId)) return;
         if (message.author.username === config.discordUsername) return;
         const messageContent = convertDiscordEmoji(message.content);
         if (!message.author || message.author.bot) {
@@ -48,7 +47,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
     };
     client.on.discord_disconnect = () => {
         console.log('discord_disconnect');
-        createLinkBot(telegram, String(chatId), discordChannelId);
+        createLinkBot(telegram, chatId, discordChannelId);
         client.close();
     };
 };
@@ -59,7 +58,7 @@ module.exports = async (ctx) => {
         ctx.reply('用法：/discord <服务器 ID> <频道 ID>');
         return;
     }
-    const chatId = ctx.message.chat.id;
+    const chatId = String(ctx.message.chat.id);
     await setDiscordLink(chatId, channelId);
     createLinkBot(ctx.telegram, chatId, channelId);
 };
