@@ -26,7 +26,6 @@ if (!crypto.getRandomValues) {
 }
 
 const createLinkBot = (telegram, chatId, discordChannelId) => {
-    chatId = parseInt(chatId);
     if (discordLinkMap[chatId]) {
         discordLinkMap[chatId].client.close();
         delete discordLinkMap[chatId];
@@ -46,20 +45,27 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
             telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
         }
     };
-    client.on.discord_disconnect = () => {
-        console.log('discord_disconnect');
-        createLinkBot(telegram, String(chatId), discordChannelId);
-        client.close();
-    };
+    client.on.heartbeat_received = () => {
+        if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
+        client._heartbeatStopTimeout = setTimeout(() => {
+            console.log('_heartbeatStopTimeout');
+            createLinkBot(telegram, chatId, discordChannelId);
+            client.close();
+        });
+    }
 };
 
 module.exports = async (ctx) => {
     const channelId = ctx.message.text.split(' ')[1];
-    if (!channelId) {
+    if (channelId === 'rejoin') {
+        module.exports.init();
+        return '已重新加入所有频道';
+    }
+    if (!channelId || !/^\d+$/.test(channelId)) {
         ctx.reply('用法：/discord <服务器 ID> <频道 ID>');
         return;
     }
-    const chatId = ctx.message.chat.id;
+    const chatId = String(ctx.message.chat.id);
     await setDiscordLink(chatId, channelId);
     createLinkBot(ctx.telegram, chatId, channelId);
 };
