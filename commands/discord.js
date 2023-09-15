@@ -8,8 +8,8 @@ const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 config.discordUsername = 'nyaacat_tg';
 const discordLinkMap = {};
 
-const convertDiscordEmoji = (text) => {
-    return text.replace(/:(\w+):/g, (match, emojiName) => {
+const convertDiscordMessage = (text) => {
+    return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
         for (const category of Object.keys(dismoji)) {
             if (typeof dismoji[category][emojiName] === 'string') {
                 return dismoji[category][emojiName];
@@ -45,11 +45,11 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
                 console.log(Date(), eventName, JSON.stringify([message]));
                 if (String(message.channel_id) !== String(discordChannelId)) return;
                 if (message.author.username === config.discordUsername) return;
-                const messageContent = convertDiscordEmoji(message.content);
+                const messageContent = convertDiscordMessage(message.content);
                 if (!message.author || message.author.bot) {
-                    telegram.sendMessage(chatId, messageContent, { parse_mode: 'MarkdownV2' });
+                    telegram.sendMessage(chatId, messageContent);
                 } else {
-                    telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`, { parse_mode: 'MarkdownV2' });
+                    telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
                 }
             };
             if (eventName === 'heartbeat_received') return (...args) => {
@@ -93,7 +93,7 @@ module.exports.init = async (bot) => {
 module.exports.handleTelegramMessage = async (ctx) => {
     const { message } = ctx;
     const link = discordLinkMap[message.chat.id];
-    if (!link) return false;
+    if (!link) return;
     const { client, discordChannelId } = link;
     const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
     const username = formatUser(message.from);
