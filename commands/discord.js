@@ -37,7 +37,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         discordChannelId,
     };
     client.on.message_create = (message) => {
-        if (Number(message.channel_id) !== discordChannelId) return;
+        if (Number(message.channel_id) !== Number(discordChannelId)) return;
         if (message.author.username === config.discordUsername) return;
         const messageContent = convertDiscordEmoji(message.content);
         if (!message.author || message.author.bot) {
@@ -83,8 +83,8 @@ module.exports.handleTelegramMessage = async (ctx) => {
         content: [
             `**${username}**`,
             ': ',
-            message.forward_from ? `[Fw:${formatUser(message.forward_from)}]` : '',
-            message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}]` : '',
+            message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
+            message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
             message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
         ].join(''),
     });
