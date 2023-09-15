@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const dismoji = require('discord-emoji');
 const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
+// temporary 
+config.discordUsername = 'nyaacat_tg';
 const discordLinkMap = {};
 
 const convertDiscordEmoji = (text) => {
