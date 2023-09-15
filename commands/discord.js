@@ -6,7 +6,7 @@ const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
 const discordLinkMap = {};
 
-const forwardCommands = ['list'];
+const forwardCommands = ['/list'];
 
 const convertDiscordMessage = (text) => {
     return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
