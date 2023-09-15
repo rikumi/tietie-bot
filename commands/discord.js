@@ -4,6 +4,8 @@ const crypto = require('crypto');
 const dismoji = require('discord-emoji');
 const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
+// temporary
+config.discordUsername = 'nyaacat_tg';
 const discordLinkMap = {};
 
 const convertDiscordEmoji = (text) => {
@@ -36,7 +38,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         discordChannelId,
     };
     client.on.message_create = (message) => {
-        if (Number(message.channel_id) !== discordChannelId) return;
+        if (String(message.channel_id) !== String(discordChannelId)) return;
         if (message.author.username === config.discordUsername) return;
         const messageContent = convertDiscordEmoji(message.content);
         if (!message.author || message.author.bot) {
@@ -87,10 +89,10 @@ module.exports.handleTelegramMessage = async (ctx) => {
 
     client.send(discordChannelId, {
         content: [
-            `**${username}**`,
+            username,
             ': ',
-            message.forward_from ? `[Fw:${formatUser(message.forward_from)}]` : '',
-            message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}]` : '',
+            message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
+            message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
             message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
         ].join(''),
     });
