@@ -47,9 +47,9 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
                 if (message.author.username === config.discordUsername) return;
                 const messageContent = convertDiscordEmoji(message.content);
                 if (!message.author || message.author.bot) {
-                    telegram.sendMessage(chatId, messageContent);
+                    telegram.sendMessage(chatId, messageContent, { parse_mode: 'MarkdownV2' });
                 } else {
-                    telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
+                    telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`, { parse_mode: 'MarkdownV2' });
                 }
             };
             if (eventName === 'heartbeat_received') return (...args) => {
