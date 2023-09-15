@@ -4,9 +4,9 @@ const crypto = require('crypto');
 const dismoji = require('discord-emoji');
 const { getDiscordLinks, setDiscordLink } = require('../modules/database');
 
-// temporary
-config.discordUsername = 'nyaacat_tg';
 const discordLinkMap = {};
+
+const forwardCommands = ['list'];
 
 const convertDiscordMessage = (text) => {
     return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
@@ -97,6 +97,17 @@ module.exports.handleTelegramMessage = async (ctx) => {
     const { client, discordChannelId } = link;
     const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
     const username = formatUser(message.from);
+
+    // forward commands
+    if (message.text && forwardCommands.includes(message.text)) {
+        await client.send(discordChannelId, {
+            content: message.text,
+        });
+        client.send(discordChannelId, {
+            content: `[Command forwarded for ${username}]`,
+        });
+        return;
+    }
 
     client.send(discordChannelId, {
         content: [
