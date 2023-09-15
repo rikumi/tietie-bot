@@ -22,6 +22,10 @@ const handleMessage = async (ctx) => {
   // 并行将消息转发到 Discord
   discord.handleTelegramMessage(ctx);
 
+  if (!message.text || !message.text.startsWith('/')) {
+    return;
+  }
+
   // 调用 slash commands
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
