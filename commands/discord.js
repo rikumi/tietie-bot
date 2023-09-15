@@ -29,7 +29,9 @@ if (!crypto.getRandomValues) {
 
 const createLinkBot = (telegram, chatId, discordChannelId) => {
     if (discordLinkMap[chatId]) {
-        discordLinkMap[chatId].client.close();
+        try {
+            discordLinkMap[chatId].client.close();
+        } catch (e) {}
         delete discordLinkMap[chatId];
     }
     const client = new discord.Client(config.discordUserToken);
@@ -52,7 +54,6 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         client._heartbeatStopTimeout = setTimeout(() => {
             console.log('_heartbeatStopTimeout');
             createLinkBot(telegram, chatId, discordChannelId);
-            client.close();
         });
     }
 };
