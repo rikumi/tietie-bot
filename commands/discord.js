@@ -91,7 +91,7 @@ module.exports.init = async (bot) => {
 module.exports.handleTelegramMessage = async (ctx) => {
     const { message } = ctx;
     const link = discordLinkMap[message.chat.id];
-    if (!link) return;
+    if (!link) return false;
     const { client, discordChannelId } = link;
     const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
     const username = formatUser(message.from);
