@@ -19,8 +19,10 @@ const handleMessage = async (ctx) => {
     return;
   }
 
-  // 并行将消息转发到 Discord
-  discord.handleTelegramMessage(ctx);
+  // 将消息转发到 Discord，开启消息转发的群不响应其它指令
+  if (discord.handleTelegramMessage(ctx) !== false) {
+    return;
+  }
 
   if (!message.text || !message.text.startsWith('/')) {
     return;
