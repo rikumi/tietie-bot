@@ -20,7 +20,7 @@ const handleMessage = async (ctx) => {
   }
 
   // 将消息转发到 Discord，开启消息转发的群不响应其它指令
-  if (discord.handleTelegramMessage(ctx) !== false) {
+  if (await discord.handleTelegramMessage(ctx) !== false) {
     return;
   }
 
