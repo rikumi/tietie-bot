@@ -40,7 +40,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
     client.on = new Proxy({}, {
         get: (_, eventName) => {
             if (eventName === 'message_create') return (message) => {
-                console.log(Date(), eventName, JSON.stringify([message]));
+                console.log(Date(), eventName, JSON.stringify(message));
                 if (String(message.channel_id) !== String(discordChannelId)) return;
                 if (message.author.username === config.discordUsername) return;
                 const messageContent = convertDiscordMessage(message.content);
@@ -50,14 +50,21 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
                     telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
                 }
             };
-            if (eventName === 'heartbeat_received') return (...args) => {
-                console.log(Date(), eventName, JSON.stringify(args));
+            if (eventName === 'heartbeat_received') return () => {
+                console.log(Date(), eventName);
                 if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
                 client._heartbeatStopTimeout = setTimeout(() => {
                     console.log('_heartbeatStopTimeout');
                     createLinkBot(telegram, chatId, discordChannelId);
                 }, 60000);
             };
+            if (eventName === 'message_edit') return (message) => {
+                console.log(Date(), eventName, JSON.stringify(message));
+                if (String(message.channel_id) !== String(discordChannelId)) return;
+                if (!message.interaction || message.interaction.name !== 'list') return;
+                const messageContent = convertDiscordMessage(message.content);
+                telegram.sendMessage(chatId, messageContent);
+            }
             // Log default events
             return (...args) => {
                 console.log(Date(), eventName, JSON.stringify(args));
@@ -95,6 +102,31 @@ module.exports.handleTelegramMessage = async (ctx) => {
     const { client, discordChannelId } = link;
     const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
     const username = formatUser(message.from);
+
+    if (/^\/list(\s|$)/.test(message.text)) {
+        const commands = await client.requester.fetch_request(
+            `channels/${discordChannelId}/application-commands/search?type=1&query=list&limit=1&include_applications=false`,
+            undefined, client.clientData, 'GET'
+        );
+        const listCommand = commands.application_commands[0];
+        const payload = {
+            type: 2,
+            application_id: listCommand.application_id,
+            guild_id: listCommand.guild_id,
+            channel_id: discordChannelId,
+            session_id: require('crypto').randomBytes(16).toString('hex'),
+            data: {
+                ...listCommand,
+                application_command: listCommand,
+                options: [],
+                attachments: [],
+            },
+            nonce: String(Math.floor(Date.now() * 666666)),
+        };
+        const interactionRes = await client.requester.fetch_request('interactions', payload);
+        console.log('Sent Discord interaction:', interactionRes);
+        return;
+    }
 
     client.send(discordChannelId, {
         content: [
