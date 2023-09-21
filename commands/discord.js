@@ -103,6 +103,10 @@ module.exports.handleTelegramMessage = async (ctx) => {
     const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
     const username = formatUser(message.from);
 
+    if (/^\/update(\s|$)/.test(message.text)) {
+        return require('./update')(ctx);
+    }
+
     if (/^\/list(\s|$)/.test(message.text)) {
         const commands = await client.requester.fetch_request(
             `channels/${discordChannelId}/application-commands/search?type=1&query=list&limit=1&include_applications=false`,
