@@ -61,7 +61,7 @@ const handleCallbackQuery = async (ctx) => {
     if (result) ctx.reply(result);
   } catch (e) {
     console.error(e);
-    ctx.reply('Error: ' + e.message);
+    // ctx.reply('Error: ' + e.message);
   }
 };
 
