@@ -45,11 +45,16 @@ module.exports = async (ctx) => {
     ].filter(k => k).join('\n');
 
     const videoUrl = note.video ? note.video.media.stream.h264[0].masterUrl : undefined;
+    const firstPhotoUrl = note.imageList ? note.imageList[0].infoList[0].url : '';
     const replyMarkup = makeReplyMarkup(index, notes.length);
     if (!videoUrl) {
       if (message) {
-        ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, '[暂不支持渲染非视频消息，你可以查看其它消息]\n\n' + caption, {
+        ctx.telegram.editMessageMedia(message.chat.id, message.message_id, undefined, '[暂不支持渲染非视频消息，你可以查看其它消息]\n\n' + caption, {
+          type: 'photo',
+          media: firstPhotoUrl || 'https://placehold.co/600x400?text=No+Image',
+          caption,
           ...msgOptions,
+        }, {
           reply_markup: replyMarkup,
         });
         return;
