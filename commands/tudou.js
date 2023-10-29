@@ -44,11 +44,11 @@ module.exports = async (ctx) => {
         `💗 ${escape(note.interactInfo.likedCount)} \\| ⭐️ ${escape(note.interactInfo.collectedCount)} \\| 💬 ${escape(note.interactInfo.commentCount)}`, // 里面可能有 + 号，需要转义
     ].filter(k => k).join('\n');
 
-    const videoUrl = note.video.media.stream.h264[0].masterUrl;
+    const videoUrl = note.video ? note.video.media.stream.h264[0].masterUrl : undefined;
     const replyMarkup = makeReplyMarkup(index, notes.length);
     if (!videoUrl) {
       if (message) {
-        ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, caption, {
+        ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, '[暂不支持渲染非视频消息，你可以查看其它消息]\n\n' + caption, {
           ...msgOptions,
           reply_markup: replyMarkup,
         });
