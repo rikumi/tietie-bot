@@ -6,8 +6,6 @@ const dayjs = require('dayjs');
 const { splitToKeywords } = require('../commands/search');
 const { putSearchData, deleteMessageById } = require('./search');
 
-const dirs = fs.readdirSync(path.resolve(__dirname, './search_imports'));
-
 const importSearchDataFromFile = async (filePath, chatId) => {
   console.log('解析文件：', filePath);
   const content = await util.promisify(fs.readFile)(filePath, 'utf8');
@@ -30,28 +28,33 @@ const importSearchDataFromFile = async (filePath, chatId) => {
   }
 };
 
+const importSearchDataFromFolder = async (dir) => {
+  if (!fs.statSync(path.resolve(__dirname, `./search_imports/${dir}`)).isDirectory()) return;
+  const files = fs.readdirSync(path.resolve(__dirname, `./search_imports/${dir}`))
+    .sort((a, b) => Number(/\d+/.exec(a)?.[0] ?? '1') - Number(/\d+/.exec(b)?.[0] ?? '1'));
+
+  for (const file of files) {
+    if (!file.endsWith('.html')) continue;
+    try {
+      await importSearchDataFromFile(path.resolve(__dirname, `./search_imports/${dir}/${file}`), dir);
+      fs.rmSync(path.resolve(__dirname, `./search_imports/${dir}/${file}`));
+      console.log('已完成导入并删除文件：', `${dir}/${file}`);
+    } catch (e) {
+      console.error('search_import 解析文件失败：', `${dir}/${file}`, e);
+    }
+  }
+  fs.rmdirSync(path.resolve(__dirname, `./search_imports/${dir}`), { recursive: true });
+  console.log('已完成导入并删除目录：', dir);
+};
+
 const importAllSearchData = async () => {
+  const dirs = fs.readdirSync(path.resolve(__dirname, './search_imports'));
   for (const dir of dirs) {
     if (!/^-?\d+$/.test(dir)) {
       console.warn('跳过不符合格式的目录名：', dir);
       continue;
     }
-    if (!fs.statSync(path.resolve(__dirname, `./search_imports/${dir}`)).isDirectory()) continue;
-    const files = fs.readdirSync(path.resolve(__dirname, `./search_imports/${dir}`))
-      .sort((a, b) => Number(/\d+/.exec(a)?.[0] ?? '1') - Number(/\d+/.exec(b)?.[0] ?? '1'));
-
-    for (const file of files) {
-      if (!file.endsWith('.html')) continue;
-      try {
-        await importSearchDataFromFile(path.resolve(__dirname, `./search_imports/${dir}/${file}`), dir);
-        fs.rmSync(path.resolve(__dirname, `./search_imports/${dir}/${file}`));
-        console.log('已完成导入并删除文件：', `${dir}/${file}`);
-      } catch (e) {
-        console.error('search_import 解析文件失败：', `${dir}/${file}`, e);
-      }
-    }
-    fs.rmdirSync(path.resolve(__dirname, `./search_imports/${dir}`), { recursive: true });
-    console.log('已完成导入并删除目录：', dir);
+    await importSearchDataFromFolder(dir);
   }
 };
 
