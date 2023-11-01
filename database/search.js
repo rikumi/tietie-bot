@@ -67,19 +67,22 @@ const deleteMessageById = async (chatId, messageId) => {
 
 const fixTimestamps = async () => {
   const db = await getSearchDatabase();
-  let offset = 0;
-  while (true) {
-    const record = await db.get(`SELECT rowid, * FROM search LIMIT 1 OFFSET ?`, [offset]);
-    if (!record) return;
-    if (/^\d+$/.test(record.timestamp)) {
-      offset += 1;
-      continue;
-    };
-    const newDate = new Date(record.timestamp).getTime();
-    await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
-    offset += 1;
-    console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate, new Date(newDate));
-  }
+  const batchSize = 20;
+  await Promise.all(Array(batchSize).fill().map(async (k, index) => {
+    let offset = index;
+    while (true) {
+      const record = await db.get(`SELECT rowid, * FROM search WHERE rowid >= ?`, [offset]);
+      if (!record) return;
+      if (record.rowid > offset || /^\d+$/.test(record.timestamp)) {
+        offset += batchSize;
+        continue;
+      };
+      const newDate = new Date(record.timestamp).getTime();
+      await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
+      offset += batchSize;
+      console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate, new Date(newDate));
+    }
+  }));
 }
 
 module.exports = {
