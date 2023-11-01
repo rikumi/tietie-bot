@@ -68,10 +68,10 @@ const deleteMessageById = async (chatId, messageId) => {
 const fixTimestamps = async () => {
   const db = await getSearchDatabase();
   while (true) {
-    const record = await db.get(`SELECT * FROM search WHERE TYPEOF(timestamp) != 'integer' LIMIT 1`, []);
+    const record = await db.get(`SELECT rowid, * FROM search WHERE TYPEOF(timestamp) != 'integer' LIMIT 1`, []);
     if (!record) return;
     const newDate = new Date(record.timestamp).getTime();
-    await db.run(`UPDATE search SET timestamp = ? WHERE timestamp = ?`, [newDate, record.timestamp]);
+    await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
     console.log('已修正 timestamp：', record.timestamp, '->', newDate, new Date(newDate));
   }
 }
