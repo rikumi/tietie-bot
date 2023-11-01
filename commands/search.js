@@ -107,7 +107,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   if (!record) {
     await replyOrEditMessage([
       skipCount ? `没有找到其它有关 ${keywordsStr} 的消息` : `没有找到有关 ${keywordsStr} 的消息`,
-      debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map((value, key) => key + '：' + value).join('\n')}` : ``
+      debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``
     ].filter(k => k).join('\n\n').trim(), {
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
