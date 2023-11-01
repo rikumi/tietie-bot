@@ -25,39 +25,33 @@ const importSearchDataFromFile = async (filePath, chatId) => {
     await deleteMessageById(chatId, messageId);
     await putSearchData(chatId, messageId, words, time);
     console.log('已导入消息', messageId);
+    process.stdout.moveCursor(0, -1);
   }
 };
 
 const importSearchDataFromFolder = async (dir) => {
-  if (!fs.statSync(path.resolve(__dirname, `./search_imports/${dir}`)).isDirectory()) return;
-  const files = fs.readdirSync(path.resolve(__dirname, `./search_imports/${dir}`))
+  if (!fs.statSync(dir).isDirectory()) return;
+
+  const chatId = 'imported';
+  const files = fs.readdirSync(dir)
     .sort((a, b) => Number(/\d+/.exec(a)?.[0] ?? '1') - Number(/\d+/.exec(b)?.[0] ?? '1'));
 
   for (const file of files) {
     if (!file.endsWith('.html')) continue;
     try {
-      await importSearchDataFromFile(path.resolve(__dirname, `./search_imports/${dir}/${file}`), dir);
-      fs.rmSync(path.resolve(__dirname, `./search_imports/${dir}/${file}`));
-      console.log('已完成导入并删除文件：', `${dir}/${file}`);
+      await importSearchDataFromFile(path.resolve(dir, file), chatId);
+      console.log('已完成导入文件：', file);
     } catch (e) {
-      console.error('search_import 解析文件失败：', `${dir}/${file}`, e);
+      console.error('search_import 解析文件失败：', file, e);
     }
   }
-  fs.rmdirSync(path.resolve(__dirname, `./search_imports/${dir}`), { recursive: true });
-  console.log('已完成导入并删除目录：', dir);
+  console.log('已完成导入所有数据：', path.resolve(__dirname, '../search-v2-imported.db'));
 };
 
-const importAllSearchData = async () => {
-  const dirs = fs.readdirSync(path.resolve(__dirname, './search_imports'));
-  for (const dir of dirs) {
-    if (!/^-?\d+$/.test(dir)) {
-      console.warn('跳过不符合格式的目录名：', dir);
-      continue;
-    }
-    await importSearchDataFromFolder(dir);
-  }
-};
+const [dir] = process.argv.slice(2);
+if (!dir) {
+  console.log(`用法：node search_import.js <tdesktop 导出的聊天记录路径>`);
+  process.exit(0);
+}
 
-module.exports = {
-  importAllSearchData,
-};
+importSearchDataFromFolder(dir);

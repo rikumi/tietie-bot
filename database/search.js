@@ -21,6 +21,9 @@ const hashKeyword = (chatId, keyword) => {
 };
 
 const formatChatId = (chatId) => {
+  if (chatId === 'imported') {
+    return chatId;
+  }
   return parseInt(/\d+/.exec(String(chatId).replace(/^-100/, ''))[0]);
 };
 

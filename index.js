@@ -4,7 +4,6 @@ const fs = require('fs');
 const { getAlias } = require('./database');
 const discord = require('./commands/discord');
 const { recordChatMessage, recordEditedMessage } = require('./commands/search');
-const { importAllSearchData } = require('./database/search_import');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -78,5 +77,3 @@ bot.launch().then(async () => {
   await discord.init(bot);
   console.log('Service started!');
 });
-
-importAllSearchData();
