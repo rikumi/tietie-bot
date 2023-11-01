@@ -14,12 +14,24 @@ const getAllKeywords = (text) => {
 
 const recordChatMessage = (ctx) => {
   try {
-    const { message_id: messageId, text, caption } = ctx.message;
+    const { message_id: messageId, text, date, caption } = ctx.message;
     if (!text || text.startsWith('/')) return;
     const words = getAllKeywords(text || caption || '');
     if (!words.length) return;
-    console.log('记录消息', messageId, words);
-    putSearchData(ctx.chat.id, messageId, words, Math.floor(ctx.message.date * 1000));
+    putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+const recordEditedMessage = (ctx) => {
+  try {
+    const { message_id: messageId, text, date, caption } = ctx.editedMessage;
+    deleteMessageById(ctx.chat.id, messageId);
+    if (!text || text.startsWith('/')) return;
+    const words = getAllKeywords(text || caption || '');
+    if (!words.length) return;
+    putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
   } catch (e) {
     console.error(e);
   }
@@ -35,7 +47,6 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
   const finalKeywords = [...splittedKeywords.values()];
   const generators = finalKeywords.map(kw => generateSearchResultsByKeyword(chatId, kw));
   const generatorCurrentItems = await Promise.all(generators.map(async gen => (await gen.next()).value));
-  console.log('搜索初始结果', generatorCurrentItems);
 
   while (generatorCurrentItems.some(k => k)) {
     // 检查此时所有关键词中匹配同一条消息的数量是否达到标准
@@ -48,11 +59,9 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
         mostHitMessageId = messageId;
       }
     }
-    console.log('符合条件的关键词数量', messageCountMap[mostHitMessageId]);
     if (mostHitMessageId && messageCountMap[mostHitMessageId] >= generators.length * HIT_RATIO) {
       // 超过一定比例的关键词命中了同一条消息
       const message = generatorCurrentItems.find(k => k.message_id === mostHitMessageId);
-      console.log('符合条件的消息', message);
       if (skipCount <= 0) {
         return message;
       }
@@ -66,7 +75,6 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
 
     if (!indexedItems.length) break;
     const latestIndex = indexedItems.reduce((a, b) => a.item.timestamp > b.item.timestamp ? a : b)?.index;
-    console.log('搜索前一条', finalKeywords[latestIndex], generatorCurrentItems[latestIndex])
     generatorCurrentItems[latestIndex] = (await generators[latestIndex].next()).value;
   }
 
@@ -162,3 +170,4 @@ module.exports = async (ctx) => {
 }
 
 module.exports.recordChatMessage = recordChatMessage;
+module.exports.recordEditedMessage = recordEditedMessage;

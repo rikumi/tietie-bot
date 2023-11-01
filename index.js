@@ -3,7 +3,7 @@ const config = require('./config.json');
 const fs = require('fs');
 const { getAlias } = require('./database');
 const discord = require('./commands/discord');
-const { recordChatMessage } = require('./commands/search');
+const { recordChatMessage, recordEditedMessage } = require('./commands/search');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -70,7 +70,7 @@ bot.on('callback_query', (ctx) => {
 });
 
 bot.on('edited_message', (ctx) => {
-
+  recordEditedMessage(ctx);
 });
 
 bot.launch().then(async () => {
