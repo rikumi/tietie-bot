@@ -6,7 +6,7 @@ const HIT_RATIO = 0.75;
 
 const forwardedMessageMap = {};
 
-const getAllKeywords = (text) => {
+const splitToKeywords = (text) => {
   const words = jieba.cut(text, true);
   const wordsForSearch = jieba.cutForSearch(text).filter(k => !/^\w$/.test(k));
   return [...new Set([...words, ...wordsForSearch])];
@@ -16,7 +16,7 @@ const recordChatMessage = (ctx) => {
   try {
     const { message_id: messageId, text, date, caption } = ctx.message;
     if (!text || text.startsWith('/')) return;
-    const words = getAllKeywords(text || caption || '');
+    const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
     putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
   } catch (e) {
@@ -29,7 +29,7 @@ const recordEditedMessage = (ctx) => {
     const { message_id: messageId, text, date, caption } = ctx.editedMessage;
     deleteMessageById(ctx.chat.id, messageId);
     if (!text || text.startsWith('/')) return;
-    const words = getAllKeywords(text || caption || '');
+    const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
     putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
   } catch (e) {
@@ -39,7 +39,7 @@ const recordEditedMessage = (ctx) => {
 
 const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
   const splittedKeywords = new Set();
-  const splittedKw = getAllKeywords(keywordsStr).map((k) => k.trim()).filter((k) => k);
+  const splittedKw = splitToKeywords(keywordsStr).map((k) => k.trim()).filter((k) => k);
 
   for (const k of splittedKw) {
     if ('的一不是了我人在有这来它中大上个国说也子'.split('').includes(k)) continue;
@@ -187,5 +187,6 @@ module.exports = async (ctx) => {
   await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
 }
 
+module.exports.splitToKeywords = splitToKeywords;
 module.exports.recordChatMessage = recordChatMessage;
 module.exports.recordEditedMessage = recordEditedMessage;

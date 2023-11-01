@@ -2,4 +2,7 @@
 node_modules
 config.json
 *.db
+*.db-journal
 package-lock.json
+database/search_imports/*
+!database/search_imports/README.md
