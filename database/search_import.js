@@ -17,8 +17,8 @@ const importSearchDataFromFile = async (filePath, chatId) => {
     const messageId = parseInt($(messageEl).attr('id').replace('message', ''));
     const text = $(messageEl).find('.text').text();
     const timeStr = $(messageEl).find('.date').attr('title');
-    const [day, month, year, hour, minute, second, utc] = [...timeStr?.matchAll(/\d+/g)].map((s) => s[0]);
-    const time = dayjs(`${year}-${month}-${day} ${hour}:${minute}:${second}+08:00`, 'YYYY-MM-DD HH:mm:ssZ').toDate().getTime();
+    const [day, month, year, hour, minute, second, tzh, tzm] = [...timeStr?.matchAll(/\d+/g)].map((s) => s[0]);
+    const time = dayjs(`${year}-${month}-${day} ${hour}:${minute}:${second}+${tzh}:${tzm}`, 'YYYY-MM-DD HH:mm:ssZ').unix();
     if (!time) {
       console.error('日期格式错误：', timeStr);
       process.exit(1);
@@ -37,7 +37,9 @@ const importAllSearchData = async () => {
       continue;
     }
     if (!fs.statSync(path.resolve(__dirname, `./search_imports/${dir}`)).isDirectory()) continue;
-    const files = fs.readdirSync(path.resolve(__dirname, `./search_imports/${dir}`));
+    const files = fs.readdirSync(path.resolve(__dirname, `./search_imports/${dir}`))
+      .sort((a, b) => Number(/\d+/.exec(a)?.[0] ?? '1') - Number(/\d+/.exec(b)?.[0] ?? '1'));
+
     for (const file of files) {
       if (!file.endsWith('.html')) continue;
       try {

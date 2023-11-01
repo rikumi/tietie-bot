@@ -19,7 +19,7 @@ const recordChatMessage = (ctx) => {
     if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
-    putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
+    putSearchData(ctx.chat.id, messageId, words, Math.floor(date));
   } catch (e) {
     console.error(e);
   }
@@ -33,20 +33,18 @@ const recordEditedMessage = (ctx) => {
     if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
-    putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
+    putSearchData(ctx.chat.id, messageId, words, Math.floor(date));
   } catch (e) {
     console.error(e);
   }
 }
 
 const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
-  const splittedKeywords = new Set();
-  const splittedKw = splitToKeywords(keywordsStr).map((k) => k.trim()).filter((k) => k);
-
-  for (const k of splittedKw) {
-    if ('的一不是了我人在有这来它中大上个国说也子'.split('').includes(k)) continue;
-    splittedKeywords.add(k);
-  }
+  const splittedKeywords = new Set(
+    splitToKeywords(keywordsStr)
+      .map((k) => k.trim())
+      .filter((k) => k && !'的一不是了我人在有这'.split('').includes(k))
+  );
   const finalKeywords = [...splittedKeywords.values()];
   const generators = finalKeywords.map(kw => generateSearchResultsByKeyword(chatId, kw));
   const generatorCurrentItems = await Promise.all(generators.map(async gen => (await gen.next()).value));
@@ -87,7 +85,7 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
       .filter(({ item }) => item);
 
     if (!indexedItems.length) break;
-    const latestIndex = indexedItems.reduce((a, b) => a.item.timestamp > b.item.timestamp ? a : b)?.index;
+    const latestIndex = indexedItems.reduce((a, b) => a.item.unixtime > b.item.unixtime ? a : b)?.index;
     generatorCurrentItems[latestIndex] = (await generators[latestIndex].next()).value;
     keywordFoundTimes[finalKeywords[latestIndex]] += 1;
   }
@@ -124,8 +122,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
 
   const url = `https://t.me/c/${String(chatId).replace(/^-100/, '')}/${record.message_id}`;
   await replyOrEditMessage([
-    `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.timestamp).toLocaleString('zh-CN')}`,
-    !/^\d+$/.test(record.timestamp) ? '⚠️ 该数据为日期存储错误的老数据，可能存在排序不正确的情况，我们将尽快修复此问题。' : '',
+    `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
     debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
     !debugInfo && !ctx.callbackQuery ? '🔐 Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : '',
   ].filter(k => k).join('\n\n').trim(), {
@@ -134,7 +131,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       inline_keyboard: [[
         { text: '前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
         ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
-        { text: '🔗', url },
+        { text: '🔗 查看', url },
         ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
       ]],
     },

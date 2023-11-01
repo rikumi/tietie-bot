@@ -3,7 +3,7 @@ const crypto = require('crypto');
 
 const dbPromise = (async () => {
   const { Database } = await import('sqlite-async');
-  return await Database.open(path.resolve(__dirname, '../search.db'));
+  return await Database.open(path.resolve(__dirname, '../search-v2.db'));
 })();
 
 const getSearchDatabase = () => dbPromise;
@@ -13,10 +13,10 @@ getSearchDatabase().then(async db => {
     chat_id INT NOT NULL,
     message_id INT NOT NULL,
     hashed_keyword TEXT NOT NULL,
-    timestamp INT NOT NULL
+    unixtime INT NOT NULL
   )`);
   await db.run(`CREATE INDEX IF NOT EXISTS search_id_index ON search (chat_id, message_id)`);
-  await db.run(`CREATE INDEX IF NOT EXISTS search_kw_index ON search (chat_id, hashed_keyword, timestamp)`);
+  await db.run(`CREATE INDEX IF NOT EXISTS search_kw_index ON search (chat_id, hashed_keyword, unixtime)`);
 });
 
 const hashKeyword = (chatId, keyword) => {
@@ -24,12 +24,12 @@ const hashKeyword = (chatId, keyword) => {
   return crypto.createHash('sha256').update(chatId + '|' + keyword).digest('hex').substring(0, 8); // 不怕碰撞
 }
 
-const putSearchData = async (chatId, messageId, keywords, timestamp) => {
+const putSearchData = async (chatId, messageId, keywords, unixtime) => {
   chatId = parseInt(chatId);
   const db = await getSearchDatabase();
-  const stmt = await db.prepare(`INSERT INTO search (chat_id, message_id, hashed_keyword, timestamp) VALUES (?, ?, ?, ?)`);
+  const stmt = await db.prepare(`INSERT INTO search (chat_id, message_id, hashed_keyword, unixtime) VALUES (?, ?, ?, ?)`);
   for (const keyword of keywords) {
-    await stmt.run(chatId, messageId, hashKeyword(chatId, keyword), timestamp);
+    await stmt.run(chatId, messageId, hashKeyword(chatId, keyword), Math.floor(Number(unixtime)));
   }
   await stmt.finalize();
 };
@@ -37,7 +37,7 @@ const putSearchData = async (chatId, messageId, keywords, timestamp) => {
 async function* generateSearchResultsByKeyword(chatId, keyword) {
   chatId = parseInt(chatId);
   const db = await getSearchDatabase();
-  const stmt = await db.prepare(`SELECT message_id, timestamp FROM search WHERE chat_id = ? AND hashed_keyword = ? ORDER BY timestamp DESC LIMIT 1 OFFSET ?`);
+  const stmt = await db.prepare(`SELECT message_id, unixtime FROM search WHERE chat_id = ? AND hashed_keyword = ? ORDER BY unixtime DESC LIMIT 1 OFFSET ?`);
   let offset = 0;
   const hashedKeyword = hashKeyword(chatId, keyword);
   console.log('搜索关键词', hashedKeyword);
@@ -48,15 +48,15 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
     yield {
       chat_id: chatId,
       message_id: row.message_id,
-      timestamp: row.timestamp,
+      unixtime: row.unixtime,
     };
   }
 }
 
-const updateMessageById = async (chatId, messageId, newKeywords, timestamp) => {
+const updateMessageById = async (chatId, messageId, newKeywords, unixtime) => {
   chatId = parseInt(chatId);
   await deleteMessageById(chatId, messageId);
-  await putSearchData(chatId, messageId, newKeywords, timestamp);
+  await putSearchData(chatId, messageId, newKeywords, unixtime);
 };
 
 const deleteMessageById = async (chatId, messageId) => {
@@ -65,24 +65,9 @@ const deleteMessageById = async (chatId, messageId) => {
   await db.run(`DELETE FROM search WHERE chat_id = ? AND message_id = ?`, chatId, messageId);
 };
 
-const fixTimestamps = async () => {
-  const db = await getSearchDatabase();
-  let lastRowId = 0;
-  while (true) {
-    const record = await db.get(`SELECT rowid, * FROM search WHERE rowid > ? AND TYPEOF(timestamp) != 'integer' LIMIT 1`, [lastRowId]);
-    if (!record) return;
-    const newDate = new Date(record.timestamp).getTime();
-    await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
-    console.log('已修正 messageId:', record.message_id, 'timestamp:', record.timestamp, '->', newDate, new Date(newDate));
-    lastRowId = record.rowid;
-  }
-}
-
 module.exports = {
   putSearchData,
   updateMessageById,
   deleteMessageById,
   generateSearchResultsByKeyword,
 };
-
-fixTimestamps();
