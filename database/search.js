@@ -75,7 +75,7 @@ const fixTimestamps = async () => {
     const newDate = new Date(record.timestamp).getTime();
     await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
     offset += 1;
-    console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate);
+    console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate, new Date(newDate));
   }
 }
 
