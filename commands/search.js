@@ -15,7 +15,7 @@ const splitToKeywords = (text) => {
 const recordChatMessage = (ctx) => {
   try {
     const { message_id: messageId, text, date, caption } = ctx.message;
-    if (!text || text.startsWith('/')) return;
+    if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
     putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
@@ -28,7 +28,7 @@ const recordEditedMessage = (ctx) => {
   try {
     const { message_id: messageId, text, date, caption } = ctx.editedMessage;
     deleteMessageById(ctx.chat.id, messageId);
-    if (!text || text.startsWith('/')) return;
+    if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
     putSearchData(ctx.chat.id, messageId, words, Math.floor(date * 1000));
