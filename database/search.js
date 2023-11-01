@@ -67,22 +67,13 @@ const deleteMessageById = async (chatId, messageId) => {
 
 const fixTimestamps = async () => {
   const db = await getSearchDatabase();
-  const batchSize = 20;
-  await Promise.all(Array(batchSize).fill().map(async (k, index) => {
-    let offset = index;
-    while (true) {
-      const record = await db.get(`SELECT rowid, * FROM search WHERE rowid >= ?`, [offset]);
-      if (!record) return;
-      if (record.rowid > offset || /^\d+$/.test(record.timestamp)) {
-        offset += batchSize;
-        continue;
-      };
-      const newDate = new Date(record.timestamp).getTime();
-      await db.run(`UPDATE search SET timestamp = ? WHERE timestamp = ?`, [newDate, record.timestamp]);
-      offset += batchSize;
-      console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate, new Date(newDate));
-    }
-  }));
+  while (true) {
+    const record = await db.get(`SELECT * FROM search WHERE TYPEOF(timestamp) != 'integer' LIMIT 1`, []);
+    if (!record) return;
+    const newDate = new Date(record.timestamp).getTime();
+    await db.run(`UPDATE search SET timestamp = ? WHERE timestamp = ?`, [newDate, record.timestamp]);
+    console.log('已修正 timestamp：', record.timestamp, '->', newDate, new Date(newDate));
+  }
 }
 
 module.exports = {
