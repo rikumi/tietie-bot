@@ -48,7 +48,7 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
     yield {
       chat_id: chatId,
       message_id: row.message_id,
-      timestamp: new Date(row.timestamp).getTime(),
+      timestamp: row.timestamp,
     };
   }
 }
