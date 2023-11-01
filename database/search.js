@@ -21,7 +21,7 @@ getSearchDatabase().then(async db => {
 
 const hashKeyword = (chatId, keyword) => {
   chatId = parseInt(chatId);
-  return crypto.createHash('sha256').update(chatId + '|' + keyword).digest('hex');
+  return crypto.createHash('sha256').update(chatId + '|' + keyword).digest('hex').substring(0, 8); // 不怕碰撞
 }
 
 const putSearchData = async (chatId, messageId, keywords, timestamp) => {
