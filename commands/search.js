@@ -1,5 +1,5 @@
 const jieba = require('nodejieba');
-const { putSearchData, generateSearchResultsByKeyword, deleteMessageById } = require('../database/search');
+const { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId } = require('../database/search');
 
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
@@ -19,7 +19,7 @@ const recordChatMessage = (ctx) => {
     if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
-    putSearchData(ctx.chat.id, messageId, words, Math.floor(date));
+    putSearchData(formatChatId(ctx.chat.id), messageId, words, Math.floor(date));
   } catch (e) {
     console.error(e);
   }
@@ -29,11 +29,11 @@ const recordEditedMessage = (ctx) => {
   try {
     if (ctx.chat.type === 'private') return; // 不记录与 bot 的对话
     const { message_id: messageId, text, date, caption } = ctx.editedMessage;
-    deleteMessageById(ctx.chat.id, messageId);
+    deleteMessageById(formatChatId(ctx.chat.id), messageId);
     if (!text) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
-    putSearchData(ctx.chat.id, messageId, words, Math.floor(date));
+    putSearchData(formatChatId(ctx.chat.id), messageId, words, Math.floor(date));
   } catch (e) {
     console.error(e);
   }
@@ -120,7 +120,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
     return;
   }
 
-  const url = `https://t.me/c/${String(chatId).replace(/^-100/, '')}/${record.message_id}`;
+  const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
     debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
@@ -161,7 +161,7 @@ module.exports = async (ctx) => {
     return;
   }
   if (ctx.message.chat.type !== 'private') {
-    ctx.reply(`请在私聊中使用 \`/search ${ctx.message.chat.id}\` 加关键词搜索当前会话`, {
+    ctx.reply(`请在私聊中使用 \`/search ${formatChatId(ctx.message.chat.id)}\` 加关键词搜索当前会话`, {
       reply_to_message_id: ctx.message.message_id,
       parse_mode: 'MarkdownV2',
     });
@@ -176,7 +176,7 @@ module.exports = async (ctx) => {
     });
     return;
   }
-  if (chatId === ctx.message.chat.id) {
+  if (formatChatId(chatId) === formatChatId(ctx.message.chat.id)) {
     ctx.reply('暂不支持搜索与机器人之间的会话。', {
       reply_to_message_id: ctx.message.message_id,
     });

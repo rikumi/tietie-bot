@@ -20,12 +20,16 @@ getSearchDatabase().then(async db => {
 });
 
 const hashKeyword = (chatId, keyword) => {
-  chatId = parseInt(chatId);
+  chatId = formatChatId(chatId);
   return crypto.createHash('sha256').update(chatId + '|' + keyword).digest('hex').substring(0, 8); // 不怕碰撞
-}
+};
+
+const formatChatId = (chatId) => {
+  return parseInt(String(chatId).replace(/^-100/, ''));
+};
 
 const putSearchData = async (chatId, messageId, keywords, unixtime) => {
-  chatId = parseInt(chatId);
+  chatId = formatChatId(chatId);
   const db = await getSearchDatabase();
   const stmt = await db.prepare(`INSERT INTO search (chat_id, message_id, hashed_keyword, unixtime) VALUES (?, ?, ?, ?)`);
   for (const keyword of keywords) {
@@ -35,7 +39,7 @@ const putSearchData = async (chatId, messageId, keywords, unixtime) => {
 };
 
 async function* generateSearchResultsByKeyword(chatId, keyword) {
-  chatId = parseInt(chatId);
+  chatId = formatChatId(chatId);
   const db = await getSearchDatabase();
   const stmt = await db.prepare(`SELECT message_id, unixtime FROM search WHERE chat_id = ? AND hashed_keyword = ? ORDER BY unixtime DESC LIMIT 1 OFFSET ?`);
   let offset = 0;
@@ -54,18 +58,19 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
 }
 
 const updateMessageById = async (chatId, messageId, newKeywords, unixtime) => {
-  chatId = parseInt(chatId);
+  chatId = formatChatId(chatId);
   await deleteMessageById(chatId, messageId);
   await putSearchData(chatId, messageId, newKeywords, unixtime);
 };
 
 const deleteMessageById = async (chatId, messageId) => {
-  chatId = parseInt(chatId);
+  chatId = formatChatId(chatId);
   const db = await getSearchDatabase();
   await db.run(`DELETE FROM search WHERE chat_id = ? AND message_id = ?`, chatId, messageId);
 };
 
 module.exports = {
+  formatChatId,
   putSearchData,
   updateMessageById,
   deleteMessageById,

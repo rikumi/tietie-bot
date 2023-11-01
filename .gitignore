@@ -1,6 +1,7 @@
 .DS_Store
 node_modules
 config.json
+config.test.json
 *.db
 *.db-journal
 package-lock.json
