@@ -7,9 +7,8 @@ const HIT_RATIO = 0.75;
 const forwardedMessageMap = {};
 
 const getAllKeywords = (text) => {
-  const words = jieba.cut(text, true);
-  const markovWords = jieba.cutHMM(text);
-  return [...new Set([...words, ...markovWords])];
+  const words = jieba.cutForSearch(text);
+  return [...new Set([...words])];
 };
 
 const recordChatMessage = (ctx) => {
