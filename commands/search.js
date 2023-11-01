@@ -155,10 +155,8 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       if (e.description.includes('chat not found')) continue;
       console.error(e);
       if (e.description.includes('message to forward not found')) {
-        await replyOrEditMessage('[该条消息不存在或已被删除，对应的索引将被清理]', {
-          reply_to_message_id: ctx.message?.message_id,
-        });
-        delete forwardedMessageMap[ctx.chat.id];
+        const { message_id } = await ctx.reply('[该条消息不存在或已被删除]');
+        forwardedMessageMap[ctx.chat.id] = message_id;
         break;
       }
     }
