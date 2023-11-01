@@ -37,7 +37,7 @@ const putSearchData = async (chatId, messageId, keywords, timestamp) => {
 async function* generateSearchResultsByKeyword(chatId, keyword) {
   chatId = parseInt(chatId);
   const db = await getSearchDatabase();
-  const stmt = await db.prepare(`SELECT * FROM search WHERE chat_id = ? AND hashed_keyword = ? ORDER BY timestamp DESC LIMIT 1 OFFSET ?`);
+  const stmt = await db.prepare(`SELECT message_id, timestamp FROM search WHERE chat_id = ? AND hashed_keyword = ? ORDER BY timestamp DESC LIMIT 1 OFFSET ?`);
   let offset = 0;
   const hashedKeyword = hashKeyword(chatId, keyword);
   console.log('搜索关键词', hashedKeyword);
@@ -45,7 +45,11 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
     const row = await stmt.get(chatId, hashedKeyword, offset++);
     if (!row) break;
     console.log('搜索结果', row);
-    yield row;
+    yield {
+      chat_id: chatId,
+      message_id: row.message_id,
+      timestamp: row.timestamp,
+    };
   }
 }
 
