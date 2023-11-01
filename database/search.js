@@ -48,7 +48,7 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
     yield {
       chat_id: chatId,
       message_id: row.message_id,
-      timestamp: row.timestamp,
+      timestamp: new Date(row.timestamp).getTime(),
     };
   }
 }
@@ -65,9 +65,24 @@ const deleteMessageById = async (chatId, messageId) => {
   await db.run(`DELETE FROM search WHERE chat_id = ? AND message_id = ?`, chatId, messageId);
 };
 
+const fixTimestamps = async () => {
+  const db = await getSearchDatabase();
+  let offset = 0;
+  while (true) {
+    const record = await db.get(`SELECT rowid, * FROM search LIMIT 1 OFFSET ?`, [offset]);
+    if (!record) return;
+    const newDate = new Date(record.timestamp).getTime();
+    await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
+    offset += 1;
+    console.log('已修正 rowid：', record.rowid, 'timestamp：', record.timestamp, '->', newDate);
+  }
+}
+
 module.exports = {
   putSearchData,
   updateMessageById,
   deleteMessageById,
   generateSearchResultsByKeyword,
 };
+
+fixTimestamps();

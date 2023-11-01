@@ -18,7 +18,7 @@ const importSearchDataFromFile = async (filePath, chatId) => {
     const text = $(messageEl).find('.text').text();
     const timeStr = $(messageEl).find('.date').attr('title');
     const [day, month, year, hour, minute, second, utc] = [...timeStr?.matchAll(/\d+/g)].map((s) => s[0]);
-    const time = dayjs(`${year}-${month}-${day} ${hour}:${minute}:${second}+08:00`, 'YYYY-MM-DD HH:mm:ssZ')
+    const time = dayjs(`${year}-${month}-${day} ${hour}:${minute}:${second}+08:00`, 'YYYY-MM-DD HH:mm:ssZ').toDate().getTime();
     if (!time) {
       console.error('日期格式错误：', timeStr);
       process.exit(1);
