@@ -153,13 +153,13 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       break;
     } catch (e) {
       if (e.description.includes('chat not found')) continue;
+      console.error(e);
       if (e.description.includes('message to forward not found')) {
         const { message_id } = await ctx.reply('[该条消息不存在或已被删除，对应的索引将被清理]');
         forwardedMessageMap[ctx.chat.id] = message_id;
         deleteMessageById(chatId, record.message_id);
         break;
       }
-      console.error(e);
     }
   }
 };
