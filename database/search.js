@@ -64,10 +64,18 @@ const deleteMessageById = async (chatId, messageId) => {
   await db.run(`DELETE FROM search WHERE message_id = ?`, messageId);
 };
 
+const getMessageCount = async (chatId) => {
+  chatId = formatChatId(chatId);
+  const db = await getSearchDatabase(chatId);
+  const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search`);
+  return result.message_id;
+}
+
 module.exports = {
   formatChatId,
   putSearchData,
   updateMessageById,
   deleteMessageById,
   generateSearchResultsByKeyword,
+  getMessageCount,
 };

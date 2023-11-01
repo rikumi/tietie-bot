@@ -1,5 +1,5 @@
 const jieba = require('nodejieba');
-const { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId } = require('../database/search');
+const { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId, getMessageCount } = require('../database/search');
 
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
@@ -124,7 +124,6 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
     debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
-    !debugInfo && !ctx.callbackQuery ? '🔐 Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : '',
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
@@ -161,7 +160,13 @@ module.exports = async (ctx) => {
     return;
   }
   if (ctx.message.chat.type !== 'private') {
-    ctx.reply(`请在私聊中使用 \`/search ${formatChatId(ctx.message.chat.id)}\` 加关键词搜索当前会话`, {
+    const chatId = formatChatId(ctx.message.chat.id);
+    const messageCount = await getMessageCount(chatId);
+    ctx.reply([
+      `请在私聊中使用 \`/search ${chatId}\` 加关键词搜索当前会话。`,
+      `🔐 Bot 仅存储匿名的消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，搜索结果的调取和显示由 Telegram 提供。`,
+      `📝 当前会话已索引 ${messageCount} 条消息记录，如需导入全部消息记录请联系管理员。`,
+    ].join('\n\n'), {
       reply_to_message_id: ctx.message.message_id,
       parse_mode: 'MarkdownV2',
     });
