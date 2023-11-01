@@ -40,6 +40,7 @@ const recordEditedMessage = (ctx) => {
 const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
   const splittedKeywords = new Set();
   const splittedKw = getAllKeywords(keywordsStr).map((k) => k.trim()).filter((k) => k);
+
   for (const k of splittedKw) {
     if ('的一不是了我人在有这来它中大上个国说也子'.split('').includes(k)) continue;
     splittedKeywords.add(k);
@@ -47,6 +48,16 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
   const finalKeywords = [...splittedKeywords.values()];
   const generators = finalKeywords.map(kw => generateSearchResultsByKeyword(chatId, kw));
   const generatorCurrentItems = await Promise.all(generators.map(async gen => (await gen.next()).value));
+  const keywordFoundTimes = {};
+
+  generatorCurrentItems.forEach((item, index) => {
+    keywordFoundTimes[finalKeywords[index]] = (keywordFoundTimes[finalKeywords[index]] || 0) + (item ? 1 : 0);
+  });
+
+  const debugInfo = {
+    finalKeywords,
+    keywordFoundTimes,
+  };
 
   while (generatorCurrentItems.some(k => k)) {
     // 检查此时所有关键词中匹配同一条消息的数量是否达到标准
@@ -63,7 +74,7 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
       // 超过一定比例的关键词命中了同一条消息
       const message = generatorCurrentItems.find(k => k.message_id === mostHitMessageId);
       if (skipCount <= 0) {
-        return message;
+        return { result: message, debugInfo };
       }
       skipCount -= 1;
     }
@@ -76,12 +87,13 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
     if (!indexedItems.length) break;
     const latestIndex = indexedItems.reduce((a, b) => a.item.timestamp > b.item.timestamp ? a : b)?.index;
     generatorCurrentItems[latestIndex] = (await generators[latestIndex].next()).value;
+    keywordFoundTimes[finalKeywords[latestIndex]] += 1;
   }
 
-  return null;
+  return { result: null, debugInfo };
 }
 
-const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount) => {
+const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, debugInfo) => {
   if (ctx.callbackQuery) {
     const forwardedMessageId = forwardedMessageMap[ctx.chat.id];
     if (forwardedMessageId) await ctx.telegram.deleteMessage(ctx.chat.id, forwardedMessageId);
@@ -93,12 +105,16 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount) =
     : ctx.reply.bind(ctx);
 
   if (!record) {
-    await replyOrEditMessage(skipCount ? `没有找到其它有关 ${keywordsStr} 的消息` : `没有找到有关 ${keywordsStr} 的消息`, {
+    await replyOrEditMessage([
+      skipCount ? `没有找到其它有关 ${keywordsStr} 的消息` : `没有找到有关 ${keywordsStr} 的消息`,
+      debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map((value, key) => key + '：' + value).join('\n')}` : ``
+    ].filter(k => k).join('\n\n').trim(), {
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
-        inline_keyboard: skipCount ? [[
-          { text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}` },
-        ]] : [],
+        inline_keyboard: [[
+          ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+          ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
+        ]],
       }
     });
     return;
@@ -107,15 +123,17 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount) =
   const url = `https://t.me/c/${String(chatId).replace(/^-100/, '')}/${record.message_id}`;
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.timestamp).toLocaleString('zh-CN')}`,
-    `${!ctx.callbackQuery ? '\n⚠️ Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : ''}`
-  ].join('\n').trim(), {
+    debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
+    !debugInfo && !ctx.callbackQuery ? '⚠️ Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : '',
+  ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
       inline_keyboard: [[
-        { text: '前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}` },
-        ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}` }] : []),
+        { text: '前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
+        ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
         { text: '🔗', url },
-      ]]
+        ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
+      ]],
     },
   });
 
@@ -135,10 +153,10 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount) =
 module.exports = async (ctx) => {
   if (ctx.callbackQuery) {
     const { data } = ctx.callbackQuery;
-    const [command, chatId, keywordsStr, skipCount] = data.split(':');
+    const [command, chatId, keywordsStr, skipCount, debug] = data.split(':');
     if (command === 'search') {
-      const record = await searchForKeywordsInChat(chatId, keywordsStr, Number(skipCount));
-      await renderSearchResult(ctx, chatId, record, keywordsStr, Number(skipCount));
+      const { result: record, debugInfo } = await searchForKeywordsInChat(chatId, keywordsStr, Number(skipCount));
+      await renderSearchResult(ctx, chatId, record, keywordsStr, Number(skipCount), debug ? debugInfo : undefined);
     }
     return;
   }
@@ -165,7 +183,7 @@ module.exports = async (ctx) => {
     return;
   }
   const keywordsStr = keywords.join(' ');
-  const record = await searchForKeywordsInChat(chatId, keywordsStr);
+  const { result: record } = await searchForKeywordsInChat(chatId, keywordsStr);
   await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
 }
 
