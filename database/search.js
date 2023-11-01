@@ -71,7 +71,7 @@ const fixTimestamps = async () => {
   while (true) {
     const record = await db.get(`SELECT rowid, * FROM search LIMIT 1 OFFSET ?`, [offset]);
     if (!record) return;
-    if (typeof record.timestamp === 'number') {
+    if (/^\d+$/.test(record.timestamp)) {
       offset += 1;
       continue;
     };
