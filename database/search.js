@@ -66,7 +66,7 @@ const updateMessageById = async (chatId, messageId, newKeywords, unixtime) => {
 const deleteMessageById = async (chatId, messageId) => {
   chatId = formatChatId(chatId);
   const db = await getSearchDatabase(chatId);
-  await db.run(`DELETE FROM search WHERE message_id = ?`, messageId);
+  await db.run(`DELETE FROM search WHERE message_id = ?`, [messageId]);
 };
 
 const getMessageCount = async (chatId) => {
