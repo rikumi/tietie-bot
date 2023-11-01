@@ -112,7 +112,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
         inline_keyboard: [[
-          ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+          ...(skipCount ? [{ text: '➡️ 后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
           ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
         ]],
       }
@@ -128,10 +128,14 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
       inline_keyboard: [[
-        { text: '前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
-        ...(skipCount ? [{ text: '后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+        { text: '⬅️ 前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
+        ...(skipCount ? [{ text: '➡️ 后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+        ...(debugInfo ? [
+          { text: '🚫 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}` }
+        ] : [
+          { text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }
+        ]),
         { text: '🔗 查看', url },
-        ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
       ]],
     },
   });
