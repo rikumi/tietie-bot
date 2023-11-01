@@ -42,16 +42,18 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
   const db = await getSearchDatabase(chatId);
   const stmt = await db.prepare(`SELECT message_id, unixtime FROM search WHERE hashed_keyword = ? ORDER BY unixtime DESC LIMIT 1 OFFSET ?`);
   let offset = 0;
-  const hashedKeyword = hashKeyword(chatId, keyword);
-  console.log('搜索关键词', hashedKeyword);
-  while (true) {
-    const row = await stmt.get(hashedKeyword, offset++);
-    if (!row) break;
-    console.log('搜索结果', row);
-    yield {
-      message_id: row.message_id,
-      unixtime: row.unixtime,
-    };
+  for (const realChatId of ['imported', chatId]) {
+    const hashedKeyword = hashKeyword(realChatId, keyword);
+    console.log('搜索关键词', hashedKeyword);
+    while (true) {
+      const row = await stmt.get(hashedKeyword, offset++);
+      if (!row) break;
+      console.log('搜索结果', row);
+      yield {
+        message_id: row.message_id,
+        unixtime: row.unixtime,
+      };
+    }
   }
 }
 
