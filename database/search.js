@@ -71,7 +71,7 @@ const getMessageCount = async (chatId) => {
   chatId = formatChatId(chatId);
   const db = await getSearchDatabase(chatId);
   const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search`);
-  return result.message_id;
+  return result.count;
 }
 
 module.exports = {
