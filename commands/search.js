@@ -107,7 +107,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   if (!record) {
     await replyOrEditMessage([
       skipCount ? `没有找到其它有关 ${keywordsStr} 的消息` : `没有找到有关 ${keywordsStr} 的消息`,
-      debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``
+      debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``
     ].filter(k => k).join('\n\n').trim(), {
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
@@ -123,9 +123,9 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   const url = `https://t.me/c/${String(chatId).replace(/^-100/, '')}/${record.message_id}`;
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.timestamp).toLocaleString('zh-CN')}`,
-    !/^\d+$/.test(record.timestamp) ? '该数据为日期存储错误的老数据，可能存在排序不正确的情况，我们将尽快修复此问题。' : '',
-    debugInfo ? `有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
-    !debugInfo && !ctx.callbackQuery ? '⚠️ Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : '',
+    !/^\d+$/.test(record.timestamp) ? '⚠️ 该数据为日期存储错误的老数据，可能存在排序不正确的情况，我们将尽快修复此问题。' : '',
+    debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
+    !debugInfo && !ctx.callbackQuery ? '🔐 Bot 仅存储消息 id、会话 id、关键词 hash 和时间戳信息，不保留消息内容、群组和发送者信息，消息转发功能由 Telegram 提供' : '',
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
