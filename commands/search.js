@@ -14,6 +14,7 @@ const splitToKeywords = (text) => {
 
 const recordChatMessage = (ctx) => {
   try {
+    if (ctx.chat.type === 'private') return; // 不记录与 bot 的对话
     const { message_id: messageId, text, date, caption } = ctx.message;
     if (!text) return;
     const words = splitToKeywords(text || caption || '');
@@ -26,6 +27,7 @@ const recordChatMessage = (ctx) => {
 
 const recordEditedMessage = (ctx) => {
   try {
+    if (ctx.chat.type === 'private') return; // 不记录与 bot 的对话
     const { message_id: messageId, text, date, caption } = ctx.editedMessage;
     deleteMessageById(ctx.chat.id, messageId);
     if (!text) return;
