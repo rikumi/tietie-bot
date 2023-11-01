@@ -69,8 +69,12 @@ const fixTimestamps = async () => {
   const db = await getSearchDatabase();
   let offset = 0;
   while (true) {
-    const record = await db.get(`SELECT rowid, * FROM search WHERE TYPEOF(timestamp) != 'number' LIMIT 1 OFFSET ?`, [offset]);
+    const record = await db.get(`SELECT rowid, * FROM search LIMIT 1 OFFSET ?`, [offset]);
     if (!record) return;
+    if (typeof record.timestamp === 'number') {
+      offset += 1;
+      continue;
+    };
     const newDate = new Date(record.timestamp).getTime();
     await db.run(`UPDATE search SET timestamp = ? WHERE rowid = ?`, [newDate, record.rowid]);
     offset += 1;
