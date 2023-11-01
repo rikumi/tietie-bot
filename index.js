@@ -14,12 +14,16 @@ const handleMessage = async (ctx) => {
   recordChatMessage(ctx);
 
   const { message } = ctx;
+
   if (await discord.handleTelegramMessage(ctx) !== false) {
     return;
   }
 
+  if (!message.text || !message.text.startsWith('/')) {
+    return;
+  }
+
   // 调用 slash commands
-  if (!message.text || !message.text.startsWith('/')) return;
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
   if (!fs.existsSync(module)) {
@@ -52,7 +56,7 @@ const handleCallbackQuery = async (ctx) => {
     if (result) ctx.reply(result);
   } catch (e) {
     console.error(e);
-    ctx.reply('Error: ' + e.message);
+    // ctx.reply('Error: ' + e.message);
   }
 };
 
@@ -70,6 +74,6 @@ bot.on('edited_message', (ctx) => {
 });
 
 bot.launch().then(async () => {
-  await discord.init(bot.telegram);
+  await discord.init(bot);
   console.log('Service started!');
 });

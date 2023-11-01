@@ -27,7 +27,7 @@ const makeReplyMarkup = (currentIndex, totalLength) => ({
   ]],
 });
 
-const escape = (text) => text.replace(/([\u0000-\u007f])/g, '\\$1');
+const escape = (text = '') => text.replace(/([\u0000-\u007f])/g, '\\$1');
 
 module.exports = async (ctx) => {
   const keywords = ctx.message ? ctx.message.text.trim().split(/\s+/).slice(1) : [];
@@ -44,12 +44,17 @@ module.exports = async (ctx) => {
         `💗 ${escape(note.interactInfo.likedCount)} \\| ⭐️ ${escape(note.interactInfo.collectedCount)} \\| 💬 ${escape(note.interactInfo.commentCount)}`, // 里面可能有 + 号，需要转义
     ].filter(k => k).join('\n');
 
-    const videoUrl = note.video.media.stream.h264[0].masterUrl;
+    const videoUrl = note.video ? note.video.media.stream.h264[0].masterUrl : undefined;
+    const firstPhotoUrl = note.imageList ? note.imageList[0].infoList[0].url : '';
     const replyMarkup = makeReplyMarkup(index, notes.length);
     if (!videoUrl) {
       if (message) {
-        ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, caption, {
+        ctx.telegram.editMessageMedia(message.chat.id, message.message_id, undefined, {
+          type: 'photo',
+          media: firstPhotoUrl || 'https://placehold.co/600x400?text=No+Image',
+          caption,
           ...msgOptions,
+        }, {
           reply_markup: replyMarkup,
         });
         return;
