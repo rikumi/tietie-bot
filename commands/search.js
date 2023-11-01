@@ -140,15 +140,25 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
     },
   });
 
-  try {
-    const { message_id } = await ctx.telegram.forwardMessage(ctx.chat.id, chatId, record.message_id);
+  if (record.message_id > 100000000 || record.message_id < 0) {
+    const { message_id } = await ctx.reply('[该条消息属于讨论组消息，无法跳转和显示]');
     forwardedMessageMap[ctx.chat.id] = message_id;
-  } catch (e) {
-    if (e.description === 'Bad Request: message to forward not found') {
-      const { message_id } = await ctx.reply('[该条消息不存在或已被删除，对应的索引将被清理]');
+    return;
+  }
+
+  for (const realChatId of [chatId, parseInt('-100' + chatId)]) {
+    try {
+      const { message_id } = await ctx.telegram.forwardMessage(ctx.chat.id, realChatId, record.message_id);
       forwardedMessageMap[ctx.chat.id] = message_id;
-      deleteMessageById(chatId, record.message_id);
-      return;
+      break;
+    } catch (e) {
+      if (e.description === 'Bad Request: message to forward not found') {
+        const { message_id } = await ctx.reply('[该条消息不存在或已被删除，对应的索引将被清理]');
+        forwardedMessageMap[ctx.chat.id] = message_id;
+        deleteMessageById(chatId, record.message_id);
+        break;
+      }
+      console.error(e);
     }
   }
 };
