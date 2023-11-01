@@ -1,4 +1,4 @@
-const { setVideoReply } = require('../modules/database');
+const { setVideoReply } = require('../database');
 
 module.exports = async (ctx) => {
   const { message } = ctx;

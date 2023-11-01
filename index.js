@@ -1,9 +1,9 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { startDatabase, getAlias } = require('./modules/database');
-const { handlePrivateForward } = require('./commands/ask');
+const { getAlias } = require('./database');
 const discord = require('./commands/discord');
+const { recordChatMessage } = require('./commands/search');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -11,14 +11,9 @@ process.on('unhandledRejection', (e) => { throw e; });
 const bot = new Telegraf(config.telegramBotToken);
 
 const handleMessage = async (ctx) => {
+  recordChatMessage(ctx);
+
   const { message } = ctx;
-
-  // 私聊转发聊天记录：添加到人物设定集
-  if (message.chat && message.chat.type === 'private' && (message.forward_from || message.forward_sender_name)) {
-    handlePrivateForward(ctx);
-    return;
-  }
-
   if (await discord.handleTelegramMessage(ctx) !== false) {
     return;
   }
@@ -70,8 +65,11 @@ bot.on('callback_query', (ctx) => {
   handleCallbackQuery(ctx);
 });
 
+bot.on('edited_message', (ctx) => {
+
+});
+
 bot.launch().then(async () => {
-  await startDatabase();
   await discord.init(bot.telegram);
   console.log('Service started!');
 });

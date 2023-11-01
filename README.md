@@ -15,7 +15,6 @@
 ```
 add_drink - <name> 添加一种饮料
 alias - <name> [target] 设置指令的别名
-ask - 模拟人格功能 v2
 chatgpt - <question> 调用 ChatGPT 聊天
 chatgpt_prompt - <prompt> 修改当前会话的 ChatGPT 前置 Prompt
 chou - 模拟十连抽卡

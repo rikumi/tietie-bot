@@ -1,4 +1,4 @@
-const { pickDrink } = require('../modules/database');
+const { pickDrink } = require('../database');
 
 module.exports = async (ctx) => {
   const groupId = ctx.message.chat.id;

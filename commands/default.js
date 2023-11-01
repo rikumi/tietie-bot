@@ -1,4 +1,4 @@
-const { getVideoReply, hasCharacterV1 } = require('../modules/database');
+const { getVideoReply } = require('../database');
 
 const msgOptions = {
   parse_mode: 'MarkdownV2',
@@ -8,11 +8,6 @@ const msgOptions = {
 module.exports = async (ctx, bot) => {
   const { message } = ctx;
   const command = message.text.trim().split(/\s+/)[0].replace(/^\//, '');
-
-  // 旧版虚拟人格功能下线提示
-  if (command === 'character' || await hasCharacterV1(command)) {
-    return '旧版本虚拟人格功能已下线，请查看 /ask 并训练自己的虚拟人格。';
-  }
 
   // 视频别名
   const videoId = await getVideoReply(message.chat.id, command);

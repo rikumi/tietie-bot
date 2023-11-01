@@ -2,7 +2,7 @@ const discord = require('discord-user-bots');
 const config = require('../config.json');
 const crypto = require('crypto');
 const dismoji = require('discord-emoji');
-const { getDiscordLinks, setDiscordLink } = require('../modules/database');
+const { getDiscordLinks, setDiscordLink } = require('../database');
 
 const discordLinkMap = {};
 
