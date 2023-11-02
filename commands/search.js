@@ -39,6 +39,20 @@ const recordEditedMessage = (ctx) => {
   }
 }
 
+const predicateSearchResultCount = async (chatId, keywordTotalFoundTimes) => {
+  const selectAndMultiplyPossibilities = (possibilityArray, count) => {
+    if (count === 0) return 1;
+    return Array(possibilityArray.length - count + 1).fill(0).map((_, i) => {
+      return selectAndMultiplyPossibilities(possibilityArray.slice(i + 1), count - 1) * possibilityArray[i];
+    }).reduce((a, b) => a + b, 0);
+  };
+  const totalCount = await getMessageCount(chatId);
+  const keywordCounts = Object.values(keywordTotalFoundTimes);
+  const p = selectAndMultiplyPossibilities(keywordCounts.map(count => count / totalCount), Math.ceil(keywordCounts.length * HIT_RATIO));
+  console.log('预测结果数量', p, keywordCounts, totalCount);
+  return Math.round(p * totalCount);
+}
+
 async function* searchForKeywordsInChat(chatId, keywordsStr) {
   const splittedKeywords = new Set(
     splitToKeywords(keywordsStr)
@@ -56,10 +70,13 @@ async function* searchForKeywordsInChat(chatId, keywordsStr) {
     keywordTotalFoundTimes[finalKeywords[index]] = await getMessageCountByKeyword(chatId, finalKeywords[index]);
   }));
 
+  const predicatedTotal = await predicateSearchResultCount(chatId, keywordTotalFoundTimes)
+
   const debugInfo = {
     finalKeywords,
     keywordFoundTimes,
     keywordTotalFoundTimes,
+    predicatedTotal,
   };
 
   let lastHitMessageId = null;
@@ -128,6 +145,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
+    debugInfo ? `🤔 总共约 ${debugInfo.predicatedTotal} 条结果` : ``,
     debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
