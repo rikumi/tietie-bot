@@ -143,7 +143,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
 
   const totalCount = await Promise.race([
     new Promise(r => setTimeout(r, 3000)).then(() => 0),
-    getAccurateResultCount(chatId, keywordsStr);
+    getAccurateResultCount(chatId, keywordsStr),
   ]);
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
   await replyOrEditMessage([
