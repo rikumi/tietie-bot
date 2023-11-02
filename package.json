@@ -4,9 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start tietie",
+    "start": "pm2 start --name tietie ./index.js",
     "restart": "pm2 restart tietie",
     "stop": "pm2 stop tietie",
+    "migrate": "npm run stop; node database/search_migration.js; npm run start",
     "dev": "node index.js",
     "format": "prettier --write ."
   },
