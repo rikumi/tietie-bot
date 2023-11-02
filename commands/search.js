@@ -50,7 +50,8 @@ const predicateSearchResultCount = async (chatId, keywordTotalFoundTimes) => {
   const keywordCounts = Object.values(keywordTotalFoundTimes);
   const p = selectAndMultiplyPossibilities(keywordCounts.map(count => count / totalCount), Math.ceil(keywordCounts.length * HIT_RATIO));
   console.log('预测结果数量', p, keywordCounts, totalCount);
-  return Math.round(p * totalCount);
+  const result = Math.round(p * totalCount);
+  return result < 10 ? '<10' : String(result);
 }
 
 async function* searchForKeywordsInChat(chatId, keywordsStr) {
