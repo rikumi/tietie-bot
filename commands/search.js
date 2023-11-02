@@ -180,7 +180,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       if (e.description.includes('chat not found')) continue;
       console.error(e);
       if (e.description.includes('message to forward not found')) {
-        const { message_id } = await ctx.reply('[消息被删除或不在 Bot 可见时间范围内，可尝试点击链接查看]');
+        const { message_id } = await ctx.reply('[消息被删除或对 Bot 不可见，可尝试点击链接查看]');
         forwardedMessageMap[ctx.chat.id] = message_id;
         break;
       }
