@@ -62,6 +62,8 @@ async function* searchForKeywordsInChat(chatId, keywordsStr) {
     keywordTotalFoundTimes,
   };
 
+  let lastHitMessageId = null;
+
   while (generatorCurrentItems.some(k => k)) {
     // 检查此时所有关键词中匹配同一条消息的数量是否达到标准
     const candidateMessageIds = generatorCurrentItems.filter(k => k).map(k => k.message_id);
@@ -73,10 +75,14 @@ async function* searchForKeywordsInChat(chatId, keywordsStr) {
         mostHitMessageId = messageId;
       }
     }
-    if (mostHitMessageId && messageCountMap[mostHitMessageId] >= generators.length * HIT_RATIO) {
-      // 超过一定比例的关键词命中了同一条消息
-      const message = generatorCurrentItems.find(k => k.message_id === mostHitMessageId);
+    if (mostHitMessageId && mostHitMessageId !== lastHitMessageId && messageCountMap[mostHitMessageId] >= generators.length * HIT_RATIO) {
+      // 超过一定比例的关键词命中了同一条消息，且不是上次查找到的消息
+      const message = generatorCurrentItems.find(k => k?.message_id === mostHitMessageId);
       yield { result: message, debugInfo };
+      lastHitMessageId = mostHitMessageId;
+      for (const [index, item] of Object.entries(generatorCurrentItems)) {
+        if (item?.message_id === mostHitMessageId) debugInfo.keywordFoundTimes[finalKeywords[index]] += 1;
+      }
     }
 
     // 每次取所有关键词中最晚的一条，向前查一次数据
@@ -86,8 +92,10 @@ async function* searchForKeywordsInChat(chatId, keywordsStr) {
 
     if (!indexedItems.length) break;
     const latestIndex = indexedItems.reduce((a, b) => a.item.unixtime > b.item.unixtime ? a : b)?.index;
-    generatorCurrentItems[latestIndex] = (await generators[latestIndex].next()).value;
-    keywordFoundTimes[finalKeywords[latestIndex]] += 1;
+    const nextItem = (await generators[latestIndex].next()).value;
+    generatorCurrentItems[latestIndex] = nextItem;
+
+    if (nextItem) keywordFoundTimes[finalKeywords[latestIndex]] += 1;
   }
   return { result: null, debugInfo };
 }
