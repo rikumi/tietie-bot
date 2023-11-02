@@ -4,7 +4,7 @@ const util = require('util');
 const cheerio = require('cheerio');
 const dayjs = require('dayjs');
 const { splitToKeywords } = require('../commands/search');
-const { putSearchData, deleteMessageById } = require('./search');
+const { putSearchData, deleteMessageById, formatChatId } = require('./search');
 
 const importSearchDataFromFile = async (filePath, chatId) => {
   console.log('解析文件：', filePath);
@@ -29,10 +29,10 @@ const importSearchDataFromFile = async (filePath, chatId) => {
   }
 };
 
-const importSearchDataFromFolder = async (dir) => {
+const importSearchDataFromFolder = async (chatId, dir) => {
   if (!fs.statSync(dir).isDirectory()) return;
 
-  const chatId = 'imported';
+  chatId = formatChatId(chatId);
   const files = fs.readdirSync(dir)
     .sort((a, b) => Number(/\d+/.exec(a)?.[0] ?? '1') - Number(/\d+/.exec(b)?.[0] ?? '1'));
 
@@ -45,13 +45,13 @@ const importSearchDataFromFolder = async (dir) => {
       console.error('search_import 解析文件失败：', file, e);
     }
   }
-  console.log('已完成导入所有数据：', path.resolve(__dirname, '../search-v2-imported.db'));
+  console.log('已完成导入所有数据：', path.resolve(__dirname, `../search-v2-${chatId}.db`));
 };
 
-const [dir] = process.argv.slice(2);
-if (!dir) {
-  console.log(`用法：node search_import.js <tdesktop 导出的聊天记录路径>`);
+const [chatId, dir] = process.argv.slice(2);
+if (!chatId || !/^(-100)?\d+$/.test(chatId) || !dir) {
+  console.log(`用法：node search_import.js <chatId> <tdesktop 导出的聊天记录路径>`);
   process.exit(0);
 }
 
-importSearchDataFromFolder(dir);
+importSearchDataFromFolder(chatId, dir);

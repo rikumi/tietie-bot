@@ -21,9 +21,6 @@ const hashKeyword = (chatId, keyword) => {
 };
 
 const formatChatId = (chatId) => {
-  if (chatId === 'imported') {
-    return chatId;
-  }
   return parseInt(/\d+/.exec(String(chatId).replace(/^-100/, ''))[0]);
 };
 
@@ -42,18 +39,16 @@ async function* generateSearchResultsByKeyword(chatId, keyword) {
   const db = await getSearchDatabase(chatId);
   const stmt = await db.prepare(`SELECT message_id, unixtime FROM search WHERE hashed_keyword = ? ORDER BY unixtime DESC LIMIT 1 OFFSET ?`);
   let offset = 0;
-  for (const realChatId of ['imported', chatId]) {
-    const hashedKeyword = hashKeyword(realChatId, keyword);
-    console.log('搜索关键词', hashedKeyword);
-    while (true) {
-      const row = await stmt.get(hashedKeyword, offset++);
-      if (!row) break;
-      console.log('搜索结果', row);
-      yield {
-        message_id: row.message_id,
-        unixtime: row.unixtime,
-      };
-    }
+  const hashedKeyword = hashKeyword(chatId, keyword);
+  console.log('搜索关键词', hashedKeyword);
+  while (true) {
+    const row = await stmt.get(hashedKeyword, offset++);
+    if (!row) break;
+    console.log('搜索结果', row);
+    yield {
+      message_id: row.message_id,
+      unixtime: row.unixtime,
+    };
   }
 }
 
@@ -69,12 +64,20 @@ const deleteMessageById = async (chatId, messageId) => {
   await db.run(`DELETE FROM search WHERE message_id = ?`, [messageId]);
 };
 
+const getMessageCountByKeyword = async (chatId, keyword) => {
+  chatId = formatChatId(chatId);
+  const hashedKeyword = hashKeyword(chatId, keyword);
+  const db = await getSearchDatabase(chatId);
+  const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search WHERE hashed_keyword = ?`, [hashedKeyword]);
+  return result.count;
+};
+
 const getMessageCount = async (chatId) => {
   chatId = formatChatId(chatId);
   const db = await getSearchDatabase(chatId);
   const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search`);
   return result.count;
-}
+};
 
 module.exports = {
   formatChatId,
@@ -83,4 +86,5 @@ module.exports = {
   deleteMessageById,
   generateSearchResultsByKeyword,
   getMessageCount,
+  getMessageCountByKeyword,
 };

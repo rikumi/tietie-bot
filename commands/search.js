@@ -1,5 +1,5 @@
 const jieba = require('nodejieba');
-const { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId, getMessageCount } = require('../database/search');
+const { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId, getMessageCount, getMessageCountByKeyword } = require('../database/search');
 
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
@@ -39,7 +39,7 @@ const recordEditedMessage = (ctx) => {
   }
 }
 
-const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
+async function* searchForKeywordsInChat(chatId, keywordsStr) {
   const splittedKeywords = new Set(
     splitToKeywords(keywordsStr)
       .map((k) => k.trim())
@@ -49,14 +49,17 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
   const generators = finalKeywords.map(kw => generateSearchResultsByKeyword(chatId, kw));
   const generatorCurrentItems = await Promise.all(generators.map(async gen => (await gen.next()).value));
   const keywordFoundTimes = {};
+  const keywordTotalFoundTimes = {};
 
-  generatorCurrentItems.forEach((item, index) => {
+  await Promise.all(generatorCurrentItems.map(async (item, index) => {
     keywordFoundTimes[finalKeywords[index]] = (keywordFoundTimes[finalKeywords[index]] || 0) + (item ? 1 : 0);
-  });
+    keywordTotalFoundTimes[finalKeywords[index]] = await getMessageCountByKeyword(chatId, finalKeywords[index]);
+  }));
 
   const debugInfo = {
     finalKeywords,
     keywordFoundTimes,
+    keywordTotalFoundTimes,
   };
 
   while (generatorCurrentItems.some(k => k)) {
@@ -73,10 +76,7 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
     if (mostHitMessageId && messageCountMap[mostHitMessageId] >= generators.length * HIT_RATIO) {
       // 超过一定比例的关键词命中了同一条消息
       const message = generatorCurrentItems.find(k => k.message_id === mostHitMessageId);
-      if (skipCount <= 0) {
-        return { result: message, debugInfo };
-      }
-      skipCount -= 1;
+      yield { result: message, debugInfo };
     }
 
     // 每次取所有关键词中最晚的一条，向前查一次数据
@@ -89,7 +89,6 @@ const searchForKeywordsInChat = async (chatId, keywordsStr, skipCount = 0) => {
     generatorCurrentItems[latestIndex] = (await generators[latestIndex].next()).value;
     keywordFoundTimes[finalKeywords[latestIndex]] += 1;
   }
-
   return { result: null, debugInfo };
 }
 
@@ -107,7 +106,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   if (!record) {
     await replyOrEditMessage([
       skipCount ? `没有找到其它有关 ${keywordsStr} 的消息` : `没有找到有关 ${keywordsStr} 的消息`,
-      debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``
+      debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
     ].filter(k => k).join('\n\n').trim(), {
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
@@ -123,7 +122,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
   await replyOrEditMessage([
     `${keywordsStr} 的第 ${skipCount + 1} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
-    debugInfo ? `🐛 有效关键词及命中次数：\n${Object.entries(debugInfo.keywordFoundTimes).map(([key, value]) => key + '：' + value).join('\n')}` : ``,
+    debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
@@ -168,7 +167,9 @@ module.exports = async (ctx) => {
     const { data } = ctx.callbackQuery;
     const [command, chatId, keywordsStr, skipCount, debug] = data.split(':');
     if (command === 'search') {
-      const { result: record, debugInfo } = await searchForKeywordsInChat(chatId, keywordsStr, Number(skipCount));
+      const generator = searchForKeywordsInChat(chatId, keywordsStr);
+      for (let i = 0; i < Number(skipCount); i++) await generator.next();
+      const { result: record, debugInfo } = (await generator.next()).value;
       await renderSearchResult(ctx, chatId, record, keywordsStr, Number(skipCount), debug ? debugInfo : undefined);
     }
     return;
@@ -202,7 +203,7 @@ module.exports = async (ctx) => {
     return;
   }
   const keywordsStr = keywords.join(' ');
-  const { result: record } = await searchForKeywordsInChat(chatId, keywordsStr);
+  const { result: record } = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
   await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
 }
 
