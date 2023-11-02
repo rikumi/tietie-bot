@@ -94,8 +94,6 @@ async function* searchForKeywordsInChat(chatId, keywordsStr) {
     const latestIndex = indexedItems.reduce((a, b) => a.item.unixtime > b.item.unixtime ? a : b)?.index;
     const nextItem = (await generators[latestIndex].next()).value;
     generatorCurrentItems[latestIndex] = nextItem;
-
-    if (nextItem) keywordFoundTimes[finalKeywords[latestIndex]] += 1;
   }
   return { result: null, debugInfo };
 }
