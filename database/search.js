@@ -68,14 +68,14 @@ const getMessageCountByKeyword = async (chatId, keyword) => {
   chatId = formatChatId(chatId);
   const hashedKeyword = hashKeyword(chatId, keyword);
   const db = await getSearchDatabase(chatId);
-  const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search WHERE hashed_keyword = ?`, [hashedKeyword]);
+  const result = await db.get(`SELECT COUNT(DISTINCT message_id) count FROM search WHERE hashed_keyword = ?`, [hashedKeyword]);
   return result.count;
 };
 
 const getMessageCount = async (chatId) => {
   chatId = formatChatId(chatId);
   const db = await getSearchDatabase(chatId);
-  const result = await db.get(`SELECT DISTINCT COUNT(message_id) count FROM search`);
+  const result = await db.get(`SELECT COUNT(DISTINCT message_id) count FROM search`);
   return result.count;
 };
 
