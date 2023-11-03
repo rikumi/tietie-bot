@@ -1,10 +1,15 @@
 const path = require('path');
 const crypto = require('crypto');
 
+const databaseMap = {};
+
 const getSearchDatabase = async (chatId) => {
   const { Database } = await import('sqlite-async');
   chatId = formatChatId(chatId);
+  if (databaseMap[chatId]) return databaseMap[chatId];
   const db = await Database.open(path.resolve(__dirname, `../search-v2-${chatId}.db`));
+  databaseMap[chatId] = db;
+
   await db.run(`CREATE TABLE IF NOT EXISTS search (
     message_id INT NOT NULL,
     hashed_keyword TEXT NOT NULL,
