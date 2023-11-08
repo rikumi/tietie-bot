@@ -129,6 +129,9 @@ module.exports.handleTelegramMessage = async (ctx) => {
     };
     const interactionRes = await client.requester.fetch_request('interactions', payload);
     console.log('Sent Discord interaction:', interactionRes);
+    const { message_id: messageId } = await ctx.reply('已发送 /list 指令给 Discord 侧，请等待回应。本消息将自动删除。');
+    await new Promise(r => setTimeout(r, 3000));
+    await ctx.telegram.deleteMessage(message.chat.id, messageId);
     return;
   }
 
