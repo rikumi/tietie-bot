@@ -45,7 +45,7 @@ module.exports = async (ctx) => {
     ].filter(k => k).join('\n');
 
     const videoUrl = note.video ? note.video.media.stream.h264[0].masterUrl : undefined;
-    const firstPhotoUrl = note.imageList ? note.imageList[0].infoList[0].url : '';
+    const firstPhotoUrl = note.imageList ? note.imageList[0].infoList.slice(-1)[0].url : '';
     const replyMarkup = makeReplyMarkup(index, notes.length);
     if (!videoUrl) {
       if (message) {
