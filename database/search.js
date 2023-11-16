@@ -1,5 +1,6 @@
 const path = require('path');
 const crypto = require('crypto');
+const { getDatabase: getSharedDatabase } = require('.');
 
 const databaseMap = {};
 
@@ -17,8 +18,20 @@ const getSearchDatabase = async (chatId) => {
   )`);
   await db.run(`CREATE INDEX IF NOT EXISTS search_id_index ON search (message_id)`);
   await db.run(`CREATE INDEX IF NOT EXISTS search_kw_index ON search (hashed_keyword, unixtime)`);
+
+  await db.run(`CREATE TABLE IF NOT EXISTS search_access (
+    user_id_hash TEXT NOT NULL,
+    unixtime INT NOT NULL
+  )`);
   return db;
-}
+};
+
+getSharedDatabase().then(async (db) => {
+  await db.run(`CREATE TABLE IF NOT EXISTS group_fuzzy (
+    chat_id INT NOT NULL,
+    group_name TEXT NOT NULL
+  )`);
+});
 
 const hashKeyword = (chatId, keyword) => {
   chatId = formatChatId(chatId);
@@ -26,7 +39,11 @@ const hashKeyword = (chatId, keyword) => {
 };
 
 const formatChatId = (chatId) => {
-  return parseInt(/\d+/.exec(String(chatId).replace(/^-100/, ''))[0]);
+  try {
+    return parseInt(/\d+/.exec(String(chatId).replace(/^-100/, ''))[0]);
+  } catch (e) {
+    return NaN;
+  }
 };
 
 const putSearchData = async (chatId, messageId, keywords, unixtime) => {
@@ -84,6 +101,59 @@ const getMessageCount = async (chatId) => {
   return result.count;
 };
 
+const updateSearchAccess = async (chatId, userId) => {
+  chatId = formatChatId(chatId);
+  const db = await getSearchDatabase(chatId);
+  const hashedUserId = hashKeyword(chatId, userId);
+  await db.run(`DELETE FROM search_access WHERE user_id_hash = ? OR unixtime < ?`, [hashedUserId, Math.floor(Date.now() / 1000) - 60 * 60 * 24]);
+  await db.run(`INSERT INTO search_access (user_id_hash, unixtime) VALUES (?, ?)`, [hashedUserId, Math.floor(Date.now() / 1000)]);
+};
+
+const checkSearchAccess = async (chatId, userId) => {
+  chatId = formatChatId(chatId);
+  const db = await getSearchDatabase(chatId);
+  const result = await db.get(`SELECT COUNT(*) count FROM search_access WHERE user_id_hash = ? AND unixtime >= ?`, [hashKeyword(chatId, userId), Math.floor(Date.now() / 1000) - 60 * 60 * 24]);
+  if (Date.now() < Date.parse('2023-11-08T00:00:00.000+08:00')) {
+    console.log('checkSearchAccess testing stage dry-run', chatId, userId, result.count > 0);
+    return true;
+  }
+  return result.count > 0;
+};
+
+const updateGroupInfo = async (chatId, groupName) => {
+  chatId = formatChatId(chatId);
+  const sharedDB = await getSharedDatabase();
+  const existing = await sharedDB.get(`SELECT * FROM group_fuzzy WHERE chat_id = ?`, [chatId]);
+  if (existing) {
+    await sharedDB.run(`UPDATE group_fuzzy SET group_name = ? WHERE chat_id = ?`, [groupName, chatId]);
+  } else {
+    await sharedDB.run(`INSERT INTO group_fuzzy (group_name, chat_id) VALUES (?, ?)`, [groupName, chatId]);
+  }
+};
+
+const findAccessibleChatIds = async (keywordOrChatId, userId) => {
+  if (/^-?\d{9,}$/.test(keywordOrChatId)) {
+    const chatId = formatChatId(keywordOrChatId);
+    return (await checkSearchAccess(chatId, userId)) ? [chatId] : [];
+  }
+  const sharedDB = await getSharedDatabase();
+  const result = await sharedDB.all(`SELECT * FROM group_fuzzy WHERE group_name LIKE ?`, [`%${keywordOrChatId}%`]);
+  const accessibleChatIds = [];
+  for (const item of result) {
+    if (await checkSearchAccess(item.chat_id, userId)) {
+      accessibleChatIds.push(item.chat_id);
+    }
+  }
+  return accessibleChatIds;
+};
+
+const getGroupNameForChatId = async (chatId) => {
+  chatId = formatChatId(chatId);
+  const sharedDB = await getSharedDatabase();
+  const result = await sharedDB.get(`SELECT group_name FROM group_fuzzy WHERE chat_id = ?`, [chatId]);
+  return result?.group_name;
+};
+
 module.exports = {
   formatChatId,
   putSearchData,
@@ -92,4 +162,9 @@ module.exports = {
   generateSearchResultsByKeyword,
   getMessageCount,
   getMessageCountByKeyword,
+  updateSearchAccess,
+  checkSearchAccess,
+  updateGroupInfo,
+  findAccessibleChatIds,
+  getGroupNameForChatId,
 };
