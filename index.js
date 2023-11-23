@@ -3,6 +3,7 @@ const config = require('./config.json');
 const fs = require('fs');
 const { getAlias } = require('./database');
 const discord = require('./commands/discord');
+const repeat = require('./commands/repeat');
 const { recordChatMessage, recordEditedMessage } = require('./commands/search');
 
 process.on('uncaughtException', (e) => { console.error(e); });
@@ -14,15 +15,16 @@ const handleMessage = async (ctx) => {
   recordChatMessage(ctx);
 
   const { message } = ctx;
-
   if (await discord.handleTelegramMessage(ctx) !== false) {
+    return;
+  }
+  if (await repeat.handleGeneralMessage(ctx) !== false) {
     return;
   }
 
   if (!message.text || !message.text.startsWith('/')) {
     return;
   }
-
   // 调用 slash commands
   const action = message.text.split(' ')[0].split('@')[0].slice(1);
   let module = `./commands/${action}.js`;
