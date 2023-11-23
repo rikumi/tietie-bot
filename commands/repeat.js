@@ -36,7 +36,7 @@ module.exports.handleGeneralMessage = async (ctx) => {
   if (repeatText.includes('我')) {
     repeatText = repeatText.replace(/我/g, '你');
   }
-  ctx.reply([repeatText, repeatText, repeatText].join(repeatText.length > 8 ? '\n' : ''), {
+  ctx.reply(`${repeatText}${repeatText}${repeatText}`, {
     reply_to_message_id: message.message_id,
   });
   return true;
