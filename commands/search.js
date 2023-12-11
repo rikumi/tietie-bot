@@ -25,7 +25,7 @@ const recordChatMessage = (ctx) => {
       updateGroupInfo(formatChatId(ctx.chat.id), ctx.chat.title);
     }
 
-    if (!text) return;
+    if (!text || /^\/search(\s|\n|@|$)/.test(text)) return;
     const words = splitToKeywords(text || caption || '');
     if (!words.length) return;
     putSearchData(formatChatId(ctx.chat.id), messageId, words, Math.floor(date));
