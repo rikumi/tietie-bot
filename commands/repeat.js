@@ -27,10 +27,10 @@ module.exports.handleGeneralMessage = async (ctx) => {
     return false;
   }
   if (/^谁问你了[？！?!]*$/.test(message.text)) {
-    const repeatText = message.text.replace(/^谁问你了/, '谁要你问了');
-    ctx.reply(`${repeatText}`, {
+    ctx.reply('谁要你问了？', {
       reply_to_message_id: message.message_id,
     });
+    return;
   }
   if (!message.text.endsWith('！') && !message.text.endsWith('!')) {
     return false;
