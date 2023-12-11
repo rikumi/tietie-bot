@@ -142,8 +142,8 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
       reply_to_message_id: ctx.message?.message_id,
       reply_markup: {
         inline_keyboard: [[
-          ...(skipCount ? [{ text: '➡️ 后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
-          ...(debugInfo ? [] : [{ text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
+          ...(skipCount ? [{ text: '➡️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+          ...(debugInfo ? [] : [{ text: '🐛', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
         ]],
       }
     });
@@ -155,25 +155,31 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
     getAccurateResultCount(chatId, keywordsStr),
   ]);
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
+  const isSearchInGroup = ctx.chat.type !== 'private';
   await replyOrEditMessage([
-    `在「${groupName}」中查找 ${keywordsStr}`,
-    `第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条搜索结果：\n🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
-    debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
+    `${isSearchInGroup ? '' : `在「${groupName}」中`}查找 ${keywordsStr}`,
+    `第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
+    isSearchInGroup && !skipCount ? '⚠️ 群内搜索需点击 🔗 查看消息' : '',
+    debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : '',
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
     reply_markup: {
       inline_keyboard: [[
-        { text: '⬅️ 前一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
-        ...(skipCount ? [{ text: '➡️ 后一条', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
+        { text: '⬅️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
+        ...(skipCount ? [{ text: '➡️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
         ...(debugInfo ? [
-          { text: '🚫 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}` }
+          { text: '🚫', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}` }
         ] : [
-          { text: '🐛 debug', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }
+          { text: '🐛', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }
         ]),
-        { text: '🔗 查看', url },
+        { text: '🔗', url },
       ]],
     },
   });
+
+  if (isSearchInGroup) {
+    return;
+  }
 
   if (record.message_id > 100000000 || record.message_id < 0) {
     const { message_id } = await ctx.reply('[该条消息属于讨论组消息，无法跳转和显示]');
@@ -199,19 +205,6 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
 };
 
 module.exports = async (ctx) => {
-  if (ctx.message && ctx.message.chat.type !== 'private') {
-    const chatId = formatChatId(ctx.message.chat.id);
-    const messageCount = await getMessageCount(chatId);
-    ctx.reply([
-      `请在私聊中使用 \`/search ${chatId} <关键词>\` 搜索当前会话。`,
-      `🔐 Bot 仅存储群名称、匿名的消息 id、会话 id、关键词加盐 hash 和时间戳信息，不保留消息内容、群组和发送者资料，搜索结果的调取和显示由 Telegram 提供。`,
-      `📝 当前会话已索引 ${messageCount} 条消息记录${messageCount > 100000 ? '' : '，如需导入全部消息记录请联系管理员'}。`,
-    ].join('\n\n'), {
-      reply_to_message_id: ctx.message.message_id,
-      parse_mode: 'MarkdownV2',
-    });
-    return;
-  }
   if (ctx.callbackQuery) {
     const { data, from } = ctx.callbackQuery;
     const [command, chatId, keywordsStr, skipCount, debug] = data.split(':');
@@ -229,6 +222,38 @@ module.exports = async (ctx) => {
     return;
   }
   const { message, from } = ctx;
+  if (['group', 'channel'].includes(message.chat.type)) {
+    ctx.reply('暂不支持搜索频道或讨论组的会话。', {
+      reply_to_message_id: ctx.message.message_id,
+    });
+    return;
+  }
+  if (message && message.chat.type !== 'private') {
+    const chatId = formatChatId(message.chat.id);
+    const keywords = message.text.trim().split(/\s+/).slice(1);
+    if (!keywords.length) {
+      const messageCount = await getMessageCount(chatId);
+      ctx.reply([
+        `请使用 \`/search <关键词>\` 搜索当前会话。`,
+        `🔐 Bot 仅存储群名称、匿名的消息 id、会话 id、关键词加盐 hash 和时间戳信息，不保留消息内容、群组和发送者资料，搜索结果的调取和显示由 Telegram 提供。`,
+        `📝 当前会话已索引 ${messageCount} 条消息记录${messageCount > 10000 ? '' : '，如需导入全部消息记录请联系管理员'}。`,
+      ].join('\n\n'), {
+        reply_to_message_id: ctx.message.message_id,
+        parse_mode: 'MarkdownV2',
+      });
+      return;
+    }
+    const keywordsStr = keywords.join(' ');
+    if (keywordsStr.includes(':')) {
+      ctx.reply('暂不支持包含 : 符号的关键词。', {
+        reply_to_message_id: ctx.message.message_id,
+      });
+      return;
+    }
+    const { result: record } = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
+    await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
+    return;
+  }
   const [groupNameOrChatId, ...keywords] = message.text.trim().split(/\s+/).slice(1);
   if (!groupNameOrChatId || !keywords.length) {
     ctx.reply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，其中 chatId 可在对应会话中输入 \`/search\` 获取`, {
