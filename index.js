@@ -26,7 +26,10 @@ const handleMessage = async (ctx) => {
     return;
   }
   // 调用 slash commands
-  const action = message.text.split(' ')[0].split('@')[0].slice(1);
+  const [action, botUsername] = message.text.trim().split(' ')[0].slice(1).split('@');
+  if (botUsername && bot.botInfo && botUsername !== bot.botInfo.username) {
+    return;
+  }
   let module = `./commands/${action}.js`;
   if (!fs.existsSync(module)) {
     const alias = await getAlias(message.chat.id, action);
@@ -77,5 +80,7 @@ bot.on('edited_message', (ctx) => {
 
 bot.launch().then(async () => {
   await discord.init(bot);
-  console.log('Service started!');
+  console.log('Service started!', bot.botInfo);
 });
+
+module.exports = { bot };
