@@ -157,8 +157,7 @@ const renderSearchResult = async (ctx, chatId, record, keywordsStr, skipCount, d
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
   const isSearchInGroup = ctx.chat.type !== 'private';
   await replyOrEditMessage([
-    `${isSearchInGroup ? '' : `在「${groupName}」中`}查找 ${keywordsStr}`,
-    `第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
+    `${isSearchInGroup ? '' : `在「${groupName}」中`}查找 ${keywordsStr}\n第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
     isSearchInGroup && !skipCount ? '⚠️ 群内搜索需点击 🔗 查看消息' : '',
     debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : '',
   ].filter(k => k).join('\n\n').trim(), {
