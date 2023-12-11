@@ -12,17 +12,13 @@ process.on('unhandledRejection', (e) => { throw e; });
 const bot = new Telegraf(config.telegramBotToken);
 
 const handleMessage = async (ctx) => {
-  recordChatMessage(ctx);
-
   const { message } = ctx;
-  if (await discord.handleTelegramMessage(ctx) !== false) {
-    return;
-  }
-  if (await repeat.handleGeneralMessage(ctx) !== false) {
-    return;
-  }
-
-  if (!message.text || !message.text.startsWith('/')) {
+  if (!message.text) return;
+  // 各种非 slash commands
+  if (!message.text.startsWith('/') || message.text.trim() === '/list') {
+    recordChatMessage(ctx);
+    if (await discord.handleTelegramMessage(ctx) !== false) return;
+    if (await repeat.handleGeneralMessage(ctx) !== false) return;
     return;
   }
   // 调用 slash commands
