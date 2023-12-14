@@ -12,8 +12,6 @@ const handleSlashCommand = async (ctx) => {
     return false;
   }
   ctx.message.text = `/${targetCommand} ${args.join(' ')}`;
-  const { message_id: noticeMessageId } = await ctx.reply(`[别名 “${alias}” 已被重定向至 “${targetCommand}”]`);
-  setTimeout(() => ctx.telegram.deleteMessage(ctx.message.chat.id, noticeMessageId), 1000);
   return true;
 };
 
