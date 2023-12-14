@@ -2,9 +2,11 @@ const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
 const { getAlias } = require('./database');
+const alias = require('./commands/alias');
 const discord = require('./commands/discord');
 const repeat = require('./commands/repeat');
-const { recordChatMessage, recordEditedMessage } = require('./commands/search');
+const search = require('./commands/search');
+const video = require('./commands/set_video');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -16,12 +18,15 @@ const handleMessage = async (ctx) => {
   if (!message.text) return;
   // 各种非 slash commands
   if (!message.text.startsWith('/') || message.text.trim() === '/list') {
-    recordChatMessage(ctx);
+    search.recordChatMessage(ctx);
     if (await discord.handleTelegramMessage(ctx) !== false) return;
     if (await repeat.handleGeneralMessage(ctx) !== false) return;
     return;
   }
   // 调用 slash commands
+  await alias.handleSlashCommand(ctx);
+  if (await video.handleSlashCommand(ctx) !== false) return;
+
   const [action, botUsername] = message.text.trim().split(' ')[0].slice(1).split('@');
   if (botUsername && bot.botInfo && botUsername !== bot.botInfo.username) {
     return;
@@ -71,7 +76,7 @@ bot.on('callback_query', (ctx) => {
 });
 
 bot.on('edited_message', (ctx) => {
-  recordEditedMessage(ctx);
+  search.recordEditedMessage(ctx);
 });
 
 bot.launch().then(async () => {
