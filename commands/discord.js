@@ -128,7 +128,7 @@ module.exports.handleTelegramMessage = async (ctx) => {
       nonce: String(Math.floor(Date.now() * 666666)),
     };
     try {
-      await client.requester.call_check([]);
+      await client.call_check([]);
     } catch (e) {
       ctx.reply('转发消息失败：' + e.message, {
         reply_to_message_id: message.message_id,
