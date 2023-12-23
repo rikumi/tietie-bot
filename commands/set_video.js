@@ -1,4 +1,17 @@
-const { setVideoReply } = require('../database');
+const { setVideoReply, getVideoReply } = require('../database');
+
+const handleSlashCommand = async (ctx) => {
+  if (!ctx.message || !ctx.message.text || !ctx.message.text.startsWith('/')) {
+    return false;
+  }
+  const [command] = ctx.message.text.slice(1).split(/\s+/);
+  const videoId = await getVideoReply(ctx.message.chat.id, command);
+  if (videoId) {
+    ctx.telegram.sendVideo(ctx.message.chat.id, videoId, { reply_to_message_id: ctx.message.message_id });
+    return true;
+  }
+  return false;
+};
 
 module.exports = async (ctx) => {
   const { message } = ctx;
@@ -12,3 +25,5 @@ module.exports = async (ctx) => {
   await setVideoReply(chatId, command, fileId);
   return 'OK';
 };
+
+module.exports.handleSlashCommand = handleSlashCommand;

@@ -16,6 +16,7 @@ Object.assign(module.exports, {
   ...require('./chatgpt'),
   ...require('./discord'),
   ...require('./drinks'),
+  ...require('./repeat'),
   ...require('./search'),
   ...require('./video_reply'),
 });
