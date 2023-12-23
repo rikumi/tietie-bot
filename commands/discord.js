@@ -127,6 +127,14 @@ module.exports.handleTelegramMessage = async (ctx) => {
       },
       nonce: String(Math.floor(Date.now() * 666666)),
     };
+    try {
+      await client.requester.call_check([]);
+    } catch (e) {
+      ctx.reply('转发消息失败：' + e.message, {
+        reply_to_message_id: message.message_id,
+      });
+      return;
+    }
     const interactionRes = await client.requester.fetch_request('interactions', payload);
     console.log('Sent Discord interaction:', interactionRes);
     const { message_id: messageId } = await ctx.reply('已发送 /list 指令给 Discord 侧，请等待回应。本消息将自动删除。');
@@ -135,13 +143,17 @@ module.exports.handleTelegramMessage = async (ctx) => {
     return;
   }
 
-  client.send(discordChannelId, {
-    content: [
-      username,
-      ': ',
-      message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
-      message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
-      message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
-    ].join(''),
-  });
+  try {
+    client.send(discordChannelId, {
+      content: [
+        username,
+        ': ',
+        message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
+        message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
+        message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
+      ].join(''),
+    });
+  } catch (e) {
+    console.error('转发指令失败', e);
+  }
 };
