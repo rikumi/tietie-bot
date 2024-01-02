@@ -2,7 +2,7 @@ const discord = require('discord-user-bots');
 const config = require('../config.json');
 const crypto = require('crypto');
 const dismoji = require('discord-emoji');
-const { getDiscordLinks, setDiscordLink } = require('../database');
+const { getDiscordLinks, setDiscordLink, getDiscordNickname } = require('../database');
 
 const discordLinkMap = {};
 
@@ -100,9 +100,10 @@ module.exports.handleTelegramMessage = async (ctx) => {
   const link = discordLinkMap[message.chat.id];
   if (!link) return false;
   const { client, discordChannelId } = link;
-  const formatUser = (user) => user.username || ((user.first_name || '') + ' ' + (user.last_name || '')).trim();
-  const username = formatUser(message.from);
-
+  const formatUser = async (user) => {
+    const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+    return (await getDiscordNickname(message.chat.id, message.from.id)) || username;
+  }
   if (/^\/update(\s|$)/.test(message.text)) {
     return require('./update')(ctx);
   }
@@ -137,10 +138,10 @@ module.exports.handleTelegramMessage = async (ctx) => {
 
   client.send(discordChannelId, {
     content: [
-      username,
+      await formatUser(message.from),
       ': ',
-      message.forward_from ? `[Fw:${formatUser(message.forward_from)}] ` : '',
-      message.reply_to_message ? `[Re:${formatUser(message.reply_to_message.from)}] ` : '',
+      message.forward_from ? `[Fw:${await formatUser(message.forward_from)}] ` : '',
+      message.reply_to_message ? `[Re:${await formatUser(message.reply_to_message.from)}] ` : '',
       message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
     ].join(''),
   });
