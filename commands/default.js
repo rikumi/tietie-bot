@@ -11,7 +11,7 @@ module.exports = async (ctx, bot) => {
 
   const replied = message.reply_to_message;
   const repliedBotMsg = replied?.from.username === bot.botInfo.username ? replied : undefined;
-  const lastMentionEntity = repliedBotMsg?.entities.filter((k) => k.type === 'text_mention')[0];
+  const lastMentionEntity = repliedBotMsg?.entities?.filter((k) => k.type === 'text_mention')[0];
   const lastMentionUser = lastMentionEntity?.user;
 
   const sender = message.from;
