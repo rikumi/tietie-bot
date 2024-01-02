@@ -1,8 +1,8 @@
 const { getDiscordLinks, setDiscordNickname } = require('../database');
 
 module.exports = async (ctx) => {
-  const { message, chat } = ctx;
-  const link = (await getDiscordLinks()).find(({ chatId }) => chatId === chat.id);
+  const { message } = ctx;
+  const link = (await getDiscordLinks()).find(({ chatId }) => chatId === String(message.chat.id));
   if (!link) {
     return;
   }
