@@ -25,7 +25,7 @@ if (!crypto.getRandomValues) {
   };
 }
 
-const createLinkBot = (telegram, chatId, discordChannelId) => {
+const createLinkBot = (telegram, chatId, discordChannelId, discordGuildId) => {
   if (discordLinkMap[chatId]) {
     try {
       discordLinkMap[chatId].client.close();
@@ -36,6 +36,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
   discordLinkMap[chatId] = {
     client,
     discordChannelId,
+    discordGuildId,
   };
   client.on = new Proxy({}, {
     get: (_, eventName) => {
@@ -55,7 +56,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
         if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
         client._heartbeatStopTimeout = setTimeout(() => {
           console.log('_heartbeatStopTimeout');
-          createLinkBot(telegram, chatId, discordChannelId);
+          createLinkBot(telegram, chatId, discordChannelId, discordGuildId);
         }, 60000);
       };
       if (eventName === 'message_edit') return (message) => {
@@ -74,7 +75,7 @@ const createLinkBot = (telegram, chatId, discordChannelId) => {
 };
 
 module.exports = async (ctx) => {
-  const channelId = ctx.message.text.split(' ')[1];
+  const [guildId, channelId] = ctx.message.text.split(' ').slice(1);
   if (channelId === 'rejoin') {
     module.exports.init();
     return '已重新加入所有频道';
@@ -84,14 +85,14 @@ module.exports = async (ctx) => {
     return;
   }
   const chatId = String(ctx.message.chat.id);
-  await setDiscordLink(chatId, channelId);
-  createLinkBot(ctx.telegram, chatId, channelId);
+  await setDiscordLink(chatId, channelId, guildId);
+  createLinkBot(ctx.telegram, chatId, channelId, guildId);
 };
 
 module.exports.init = async (bot) => {
   const discordLinks = await getDiscordLinks();
   for (const link of discordLinks) {
-    createLinkBot(bot.telegram, link.chatId, link.discordChannelId);
+    createLinkBot(bot.telegram, link.chatId, link.discordChannelId, link.discordGuildId);
   }
 };
 
@@ -99,7 +100,7 @@ module.exports.handleTelegramMessage = async (ctx) => {
   const { message } = ctx;
   const link = discordLinkMap[message.chat.id];
   if (!link) return false;
-  const { client, discordChannelId } = link;
+  const { client, discordChannelId, discordGuildId } = link;
   const formatUser = async (user) => {
     const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
     return (await getDiscordNickname(message.chat.id, message.from.id)) || username;
@@ -110,14 +111,14 @@ module.exports.handleTelegramMessage = async (ctx) => {
 
   if (/^\/list(\s|$)/.test(message.text)) {
     const commands = await client.requester.fetch_request(
-      `channels/${discordChannelId}/application-commands/search?type=1&query=list&limit=1&include_applications=false`,
+      `guilds/${discordGuildId}/application-command-index`,
       undefined, client.clientData, 'GET'
     );
-    const listCommand = commands.application_commands[0];
+    const listCommand = commands.application_commands.find(c => c.name === 'list');
     const payload = {
       type: 2,
       application_id: listCommand.application_id,
-      guild_id: listCommand.guild_id,
+      guild_id: discordGuildId,
       channel_id: discordChannelId,
       session_id: require('crypto').randomBytes(16).toString('hex'),
       data: {
