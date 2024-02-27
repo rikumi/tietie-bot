@@ -2,7 +2,7 @@
 import discord from 'discord-user-bots';
 import config from '../../config.json';
 import crypto from 'crypto';
-import dismoji from 'discord-emoji';
+import * as dismoji from 'discord-emoji';
 import { getDiscordLinks, setDiscordLink, getDiscordNickname } from '../database/discord';
 import { IBot, ICommonMessage, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
