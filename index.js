@@ -1,7 +1,6 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { getAlias } = require('./database/alias');
 const alias = require('./commands/alias');
 const discord = require('./commands/discord');
 const repeat = require('./commands/repeat');
@@ -33,13 +32,7 @@ const handleMessage = async (ctx) => {
   if (botUsername && bot.botInfo && botUsername !== bot.botInfo.username) {
     return;
   }
-  let module = `./commands/${action}.js`;
-  if (!fs.existsSync(module)) {
-    const alias = await getAlias(message.chat.id, action);
-    if (alias && /^\w+$/.test(alias)) {
-      module = `./commands/${alias}.js`;
-    }
-  }
+  const module = `./commands/${action}.js`;
   if (!/^\w+$/.test(action) || !fs.existsSync(module)) {
     return;
   }
