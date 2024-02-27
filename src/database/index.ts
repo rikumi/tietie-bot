@@ -16,7 +16,7 @@ export interface IDatabase {
 const dbPromise = (async () => {
   // @ts-ignore
   const { Database } = await import('sqlite-async');
-  const db: IDatabase = await Database.open(path.resolve(__dirname, '../database.db'));
+  const db: IDatabase = await Database.open(path.resolve(__dirname, '../../database.db'));
   return db;
 })();
 
