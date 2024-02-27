@@ -1,5 +1,4 @@
-const { getDiscordLinks, setDiscordNickname } = require('../database');
-const { getDiscordNickname } = require('../database/discord');
+const { getDiscordLinks, setDiscordNickname, getDiscordNickname } = require('../database/discord');
 
 module.exports = async (ctx) => {
   const { message } = ctx;

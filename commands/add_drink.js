@@ -1,4 +1,4 @@
-const { addDrink, checkDrinks } = require('../database');
+const { addDrink, checkDrinks } = require('../database/drinks');
 
 module.exports = async (ctx) => {
   const content = Array.from(

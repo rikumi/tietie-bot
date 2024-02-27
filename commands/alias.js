@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { setAlias, getAlias } = require('../database');
+const { setAlias, getAlias } = require('../database/alias');
 
 const handleSlashCommand = async (ctx) => {
   if (!ctx.message || !ctx.message.text || !ctx.message.text.startsWith('/')) {

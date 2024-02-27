@@ -1,12 +1,13 @@
 const { Telegraf } = require('telegraf');
 const config = require('./config.json');
 const fs = require('fs');
-const { getAlias } = require('./database');
+const { getAlias } = require('./database/alias');
 const alias = require('./commands/alias');
 const discord = require('./commands/discord');
 const repeat = require('./commands/repeat');
 const search = require('./commands/search');
 const video = require('./commands/set_video');
+const tietie = require('./commands/tietie');
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -26,6 +27,7 @@ const handleMessage = async (ctx) => {
   // 调用 slash commands
   await alias.handleSlashCommand(ctx);
   if (await video.handleSlashCommand(ctx) !== false) return;
+  if (await tietie.handleSlashCommand(ctx, bot) !== false) return;
 
   const [action, botUsername] = message.text.trim().split(' ')[0].slice(1).split('@');
   if (botUsername && bot.botInfo && botUsername !== bot.botInfo.username) {
@@ -39,7 +41,7 @@ const handleMessage = async (ctx) => {
     }
   }
   if (!/^\w+$/.test(action) || !fs.existsSync(module)) {
-    module = `./commands/default.js`;
+    return;
   }
   try {
     const result = await require(module)(ctx, bot);

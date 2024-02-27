@@ -1,4 +1,4 @@
-const { setVideoReply, getVideoReply } = require('../database');
+const { setVideoReply, getVideoReply } = require('../database/video_reply');
 
 const handleSlashCommand = async (ctx) => {
   if (!ctx.message || !ctx.message.text || !ctx.message.text.startsWith('/')) {

@@ -1,4 +1,4 @@
-const { setChatGPTSystemMessage } = require('../database');
+const { setChatGPTSystemMessage } = require('../database/chatgpt');
 
 module.exports = async (ctx) => {
   const { message } = ctx;

@@ -1,4 +1,4 @@
-const { pickVideo } = require('../database');
+const { pickVideo } = require('../database/video_reply');
 
 module.exports = async (ctx) => {
   const groupId = ctx.message.chat.id;
