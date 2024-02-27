@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "pm2 start --name tietie ./index.js",
+    "start": "pm2 start --name tietie --interpreter tsx src/index.ts",
     "restart": "pm2 restart tietie",
     "stop": "pm2 stop tietie",
-    "migrate": "npm run stop; node database/search_migration.js; npm run start",
-    "dev": "node index.js",
+    "migrate": "npm run stop; tsx database/search_migration.ts; npm run start",
+    "dev": "tsx src/index.ts",
     "format": "prettier --write ."
   },
   "repository": {
@@ -35,5 +35,9 @@
     "sqlite-async": "^1.1.5",
     "sqlite3": "^5.1.2",
     "telegraf": "^4.4.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
   }
 }

@@ -2,5 +2,6 @@
   "telegramBotToken": "",
   "openaiApiKey": "",
   "xhsWebId": "",
-  "xhsWebSession": ""
+  "xhsWebSession": "",
+  "botUsername": ""
 }

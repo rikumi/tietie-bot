@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "noImplicitAny": true,
+    "declaration": true,
+    "declarationDir": "dist",
+    "rootDir": "src",
+    "baseUrl": ".",
+    "resolveJsonModule": true
+  }
+}
