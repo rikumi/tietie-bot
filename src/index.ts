@@ -23,7 +23,7 @@ const handleMessage = async (ctx: ICommonMessageContext) => {
   // 各种非 slash commands
   if (!message.text!.startsWith('/') || message.text!.trim() === '/list') {
     search.recordChatMessage(ctx);
-    if (await discord.handleTelegramMessage(ctx) !== false) return;
+    if (await discord.handleTelegramMessage(ctx, bot) !== false) return;
     if (await repeat.handleGeneralMessage(ctx) !== false) return;
     return;
   }

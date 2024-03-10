@@ -6,7 +6,7 @@ import * as dismoji from 'discord-emoji';
 import { getDiscordLinks, setDiscordLink, getDiscordNickname } from '../database/discord';
 import { IBot, ICommonMessage, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
-import { User } from 'telegraf/typings/core/types/typegram';
+import { Message, User } from 'telegraf/typings/core/types/typegram';
 
 const discordLinkMap = new Map<string, {
   client: discord.Client;
@@ -105,7 +105,7 @@ export const init = async (bot: IBot) => {
   }
 };
 
-export const handleTelegramMessage = async (ctx: ICommonMessageContext) => {
+export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBot) => {
   const { message } = ctx;
   const chatId = String(ctx.message.chat.id);
   const userId = String(message.from.id);
@@ -157,14 +157,31 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext) => {
   }
 
   try {
+    const repliedMessageSummary = (() => {
+      const repliedUser = message.reply_to_message?.from;
+      if (!repliedUser) {
+        return '';
+      }
+      const isReplyToBot = repliedUser?.username === bot.botInfo!.username;
+      if (isReplyToBot) {
+        const repliedText = (message.reply_to_message as Message.TextMessage).text ?? '';
+        if (repliedText.includes(': ')) {
+          return repliedText.split(': ')[0];
+        }
+      }
+      return formatUser(repliedUser);
+    })();
+
+    const textToSend = [
+      await formatUser(message.from),
+      ': ',
+      message.forward_from ? `[Fw: ${await formatUser(message.forward_from)}] ` : '',
+      message.reply_to_message ? `[Re: ${repliedMessageSummary}] ` : '',
+      message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
+    ].join('');
+
     client.send(discordChannelId, {
-      content: [
-        await formatUser(message.from),
-        ': ',
-        message.forward_from ? `[Fw: ${await formatUser(message.forward_from)}] ` : '',
-        message.reply_to_message ? `[Re: ${await formatUser(message.reply_to_message.from!)}] ` : '',
-        message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
-      ].join(''),
+      content: textToSend,
     });
   } catch (e) {
     console.error('转发指令失败', e);
