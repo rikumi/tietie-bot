@@ -19,13 +19,20 @@ chatgpt - <question> 调用 ChatGPT 聊天
 chatgpt_prompt - <prompt> 修改当前会话的 ChatGPT 前置 Prompt
 chou - 模拟十连抽卡
 del - 删除被引用的贴贴 Bot 消息
+discord - <guildId> <channelId> 链接到 Discord 频道（管理员使用）
+discord rejoin - 重新加入已链接的 Discord 频道
 drink - 随机选择一种饮料
 jieba - [sentence] 使用 jieba 进行马尔可夫分词
 make - <target> 做个东西
 mcinfo - <server>[:port] 查询 Minecraft 服务器信息
 me - <description> 代表自己说一句话
+nick - [name] 设置自己转发到 Discord 频道的昵称
 pick - 从给出的多个选项中随机选择一个
 pick_video - 从本群的视频指令中随机选择一个视频发送
+repeat - <on|off> 开启/关闭感叹句复读功能
+search - 群内隐私搜索
 set_video - <command> 将被引用的视频设置为视频指令
+tietie - <on|off> 开启/关闭任意非 ASCII 指令贴贴功能
 tudou - <keyword> 播放土豆猫视频
+update - 更新代码并重启（管理员使用）
 ```

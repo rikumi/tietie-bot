@@ -40,10 +40,11 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
   if (discordLinkMap.has(chatId)) {
     try {
       discordLinkMap.get(chatId)!.client.close();
-      await new Promise(r => setTimeout(r, 3000));
     } catch (e) { }
     discordLinkMap.delete(chatId);
   }
+  // delay 3s before creating new client in case of rate limit
+  await new Promise(r => setTimeout(r, 3000));
   const client = new discord.Client(config.discordUserToken);
   discordLinkMap.set(chatId, {
     client,
@@ -92,11 +93,20 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
 
 export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const [guildId, channelId] = ctx.message.text!.split(' ').slice(1);
+  const chatId = String(ctx.message.chat.id);
+  if (guildId === 'rejoin') {
+    const link = discordLinkMap.get(chatId);
+    if (!link) {
+      return '本群未链接到任何 Discord 频道';
+    }
+    link.client.close();
+    createLinkBot(ctx.telegram, chatId, link.discordChannelId, link.discordGuildId, true);
+  }
+
   if (!channelId || !/^\d+$/.test(channelId)) {
     (ctx as IContext).reply('用法：/discord <服务器 ID> <频道 ID>');
     return;
   }
-  const chatId = String(ctx.message.chat.id);
   await setDiscordLink(chatId, channelId, guildId);
   createLinkBot(ctx.telegram, chatId, channelId, guildId, true);
   const result = (await getDiscordLinks()).find(k => k.chatId === chatId);
