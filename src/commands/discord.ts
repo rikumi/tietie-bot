@@ -55,9 +55,10 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
     if (!echoResult) return;
     const guildInfo = client.info.guilds.find((guild: any) => guild.id === discordGuildId);
     const channelInfo = guildInfo.channels.find((channel: any) => channel.id === discordChannelId);
-    console.log({ guildInfo, channelInfo });
+    const { name: guildName, member_count: memberCount } = guildInfo;
+    const { name: channelName, topic: channelTopic } = channelInfo;
 
-    telegram.sendMessage(chatId, `已加入到 Discord 频道：${JSON.stringify({ guildInfo, channelInfo }, null, 2)}`);
+    telegram.sendMessage(chatId, `已链接到 Discord 频道：${guildName} #${channelName}，共 ${memberCount} 名成员。${channelTopic ? `\n主题：${channelTopic}` : ''}`);
   };
 
   client.on.message_create = (message: any) => {
