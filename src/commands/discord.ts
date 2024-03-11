@@ -101,6 +101,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     }
     link.client.close();
     createLinkBot(ctx.telegram, chatId, link.discordChannelId, link.discordGuildId, true);
+    return;
   }
 
   if (!channelId || !/^\d+$/.test(channelId)) {
