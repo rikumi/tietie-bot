@@ -36,7 +36,7 @@ if (!crypto.getRandomValues) {
   crypto.getRandomValues = getRandomValues as any; // usable
 }
 
-const createLinkBot = (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string) => {
+const createLinkBot = (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, echoResult = false) => {
   if (discordLinkMap.has(chatId)) {
     try {
       discordLinkMap.get(chatId)!.client.close();
@@ -49,42 +49,43 @@ const createLinkBot = (telegram: Telegram, chatId: string, discordChannelId: str
     discordChannelId,
     discordGuildId,
   });
-  client.on = new Proxy({}, {
-    get: (_, eventName) => {
-      if (eventName === 'message_create') return (message: any) => {
-        const channelId = String(message.channel_id);
-        console.log(Date(), eventName, JSON.stringify(message));
-        if (channelId !== discordChannelId) return;
-        if (message.author.username === config.discordUsername) return;
-        const messageContent = convertDiscordMessage(message.content);
-        if (!message.author || message.author.bot) {
-          telegram.sendMessage(chatId, messageContent);
-        } else {
-          telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
-        }
-      };
-      if (eventName === 'heartbeat_received') return () => {
-        console.log(Date(), eventName);
-        if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
-        client._heartbeatStopTimeout = setTimeout(() => {
-          console.log('_heartbeatStopTimeout');
-          createLinkBot(telegram, chatId, discordChannelId, discordGuildId);
-        }, 60000);
-      };
-      if (eventName === 'message_edit') return (message: any) => {
-        const channelId = String(message.channel_id);
-        console.log(Date(), eventName, JSON.stringify(message));
-        if (channelId !== discordChannelId) return;
-        if (!message.interaction || message.interaction.name !== 'list') return;
-        const messageContent = convertDiscordMessage(message.content);
-        telegram.sendMessage(chatId, messageContent);
-      }
-      // Log default events
-      return (...args: any[]) => {
-        console.log(Date(), eventName, JSON.stringify(args));
-      };
-    },
-  });
+
+  client.on.ready = () => {
+    if (!echoResult) return;
+    const guildInfo = client.info.guilds.find((guild: any) => guild.id === discordGuildId);
+    const channelInfo = guildInfo.channels.find((channel: any) => channel.id === discordChannelId);
+    console.log({ guildInfo, channelInfo });
+
+    telegram.sendMessage(chatId, `已加入到 Discord 频道：${JSON.stringify({ guildInfo, channelInfo }, null, 2)}`);
+  };
+
+  client.on.message_create = (message: any) => {
+    const channelId = String(message.channel_id);
+    if (channelId !== discordChannelId) return;
+    if (message.author.username === config.discordUsername) return;
+    const messageContent = convertDiscordMessage(message.content);
+    if (!message.author || message.author.bot) {
+      telegram.sendMessage(chatId, messageContent);
+    } else {
+      telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
+    }
+  };
+
+  client.on.heartbeat_received = () => {
+    if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
+    client._heartbeatStopTimeout = setTimeout(() => {
+      console.log('_heartbeatStopTimeout');
+      createLinkBot(telegram, chatId, discordChannelId, discordGuildId);
+    }, 60000);
+  };
+
+  client.on.message_edit = (message: any) => {
+    const channelId = String(message.channel_id);
+    if (channelId !== discordChannelId) return;
+    if (!message.interaction || message.interaction.name !== 'list') return;
+    const messageContent = convertDiscordMessage(message.content);
+    telegram.sendMessage(chatId, messageContent);
+  };
 };
 
 export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
@@ -96,6 +97,8 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const chatId = String(ctx.message.chat.id);
   await setDiscordLink(chatId, channelId, guildId);
   createLinkBot(ctx.telegram, chatId, channelId, guildId);
+  const result = (await getDiscordLinks()).find(k => k.chatId === chatId);
+  return `已尝试链接到 Discord 服务器 ${result?.discordGuildId} - 频道 ${result?.discordChannelId}`;
 };
 
 export const init = async (bot: IBot) => {
