@@ -36,10 +36,11 @@ if (!crypto.getRandomValues) {
   crypto.getRandomValues = getRandomValues as any; // usable
 }
 
-const createLinkBot = (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, echoResult = false) => {
+const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, echoResult = false) => {
   if (discordLinkMap.has(chatId)) {
     try {
       discordLinkMap.get(chatId)!.client.close();
+      await new Promise(r => setTimeout(r, 3000));
     } catch (e) { }
     discordLinkMap.delete(chatId);
   }
