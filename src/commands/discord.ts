@@ -96,7 +96,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   }
   const chatId = String(ctx.message.chat.id);
   await setDiscordLink(chatId, channelId, guildId);
-  createLinkBot(ctx.telegram, chatId, channelId, guildId);
+  createLinkBot(ctx.telegram, chatId, channelId, guildId, true);
   const result = (await getDiscordLinks()).find(k => k.chatId === chatId);
   return `已尝试链接到 Discord 服务器 ${result?.discordGuildId} - 频道 ${result?.discordChannelId}`;
 };
