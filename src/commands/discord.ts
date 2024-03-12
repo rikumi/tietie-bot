@@ -54,6 +54,8 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
 
   client.on.ready = () => {
     if (!echoResult) return;
+    echoResult = false;
+
     const guildInfo = client.info.guilds.find((guild: any) => guild.id === discordGuildId);
     const channelInfo = guildInfo.channels.find((channel: any) => channel.id === discordChannelId);
     const { name: guildName, member_count: memberCount } = guildInfo;
