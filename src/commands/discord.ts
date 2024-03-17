@@ -36,66 +36,84 @@ if (!crypto.getRandomValues) {
   crypto.getRandomValues = getRandomValues as any; // usable
 }
 
-const createLinkBot = (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string) => {
+const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, echoResult = false) => {
   if (discordLinkMap.has(chatId)) {
     try {
       discordLinkMap.get(chatId)!.client.close();
     } catch (e) { }
     discordLinkMap.delete(chatId);
   }
+  // delay 3s before creating new client in case of rate limit
+  await new Promise(r => setTimeout(r, 3000));
   const client = new discord.Client(config.discordUserToken);
   discordLinkMap.set(chatId, {
     client,
     discordChannelId,
     discordGuildId,
   });
-  client.on = new Proxy({}, {
-    get: (_, eventName) => {
-      if (eventName === 'message_create') return (message: any) => {
-        const channelId = String(message.channel_id);
-        console.log(Date(), eventName, JSON.stringify(message));
-        if (channelId !== discordChannelId) return;
-        if (message.author.username === config.discordUsername) return;
-        const messageContent = convertDiscordMessage(message.content);
-        if (!message.author || message.author.bot) {
-          telegram.sendMessage(chatId, messageContent);
-        } else {
-          telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
-        }
-      };
-      if (eventName === 'heartbeat_received') return () => {
-        console.log(Date(), eventName);
-        if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
-        client._heartbeatStopTimeout = setTimeout(() => {
-          console.log('_heartbeatStopTimeout');
-          createLinkBot(telegram, chatId, discordChannelId, discordGuildId);
-        }, 60000);
-      };
-      if (eventName === 'message_edit') return (message: any) => {
-        const channelId = String(message.channel_id);
-        console.log(Date(), eventName, JSON.stringify(message));
-        if (channelId !== discordChannelId) return;
-        if (!message.interaction || message.interaction.name !== 'list') return;
-        const messageContent = convertDiscordMessage(message.content);
-        telegram.sendMessage(chatId, messageContent);
-      }
-      // Log default events
-      return (...args: any[]) => {
-        console.log(Date(), eventName, JSON.stringify(args));
-      };
-    },
-  });
+
+  client.on.ready = () => {
+    if (!echoResult) return;
+    echoResult = false;
+
+    const guildInfo = client.info.guilds.find((guild: any) => guild.id === discordGuildId);
+    const channelInfo = guildInfo.channels.find((channel: any) => channel.id === discordChannelId);
+    const { name: guildName, member_count: memberCount } = guildInfo;
+    const { name: channelName, topic: channelTopic } = channelInfo;
+
+    telegram.sendMessage(chatId, `已链接到 Discord 频道：${guildName} #${channelName}，共 ${memberCount} 名成员。${channelTopic ? `\n主题：${channelTopic}` : ''}`);
+  };
+
+  client.on.message_create = (message: any) => {
+    const channelId = String(message.channel_id);
+    if (channelId !== discordChannelId) return;
+    if (message.author.username === config.discordUsername) return;
+    const messageContent = convertDiscordMessage(message.content);
+    if (!message.author || message.author.bot) {
+      telegram.sendMessage(chatId, messageContent);
+    } else {
+      telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
+    }
+  };
+
+  client.on.heartbeat_received = () => {
+    if (client._heartbeatStopTimeout) clearTimeout(client._heartbeatStopTimeout);
+    client._heartbeatStopTimeout = setTimeout(() => {
+      console.log('_heartbeatStopTimeout');
+      createLinkBot(telegram, chatId, discordChannelId, discordGuildId);
+    }, 60000);
+  };
+
+  client.on.message_edit = (message: any) => {
+    const channelId = String(message.channel_id);
+    if (channelId !== discordChannelId) return;
+    if (!message.interaction || message.interaction.name !== 'list') return;
+    const messageContent = convertDiscordMessage(message.content);
+    telegram.sendMessage(chatId, messageContent);
+  };
 };
 
 export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const [guildId, channelId] = ctx.message.text!.split(' ').slice(1);
+  const chatId = String(ctx.message.chat.id);
+  if (guildId === 'rejoin') {
+    const link = discordLinkMap.get(chatId);
+    if (!link) {
+      return '本群未链接到任何 Discord 频道';
+    }
+    link.client.close();
+    createLinkBot(ctx.telegram, chatId, link.discordChannelId, link.discordGuildId, true);
+    return;
+  }
+
   if (!channelId || !/^\d+$/.test(channelId)) {
     (ctx as IContext).reply('用法：/discord <服务器 ID> <频道 ID>');
     return;
   }
-  const chatId = String(ctx.message.chat.id);
   await setDiscordLink(chatId, channelId, guildId);
-  createLinkBot(ctx.telegram, chatId, channelId, guildId);
+  createLinkBot(ctx.telegram, chatId, channelId, guildId, true);
+  const result = (await getDiscordLinks()).find(k => k.chatId === chatId);
+  return `已尝试链接到 Discord 服务器 ${result?.discordGuildId} - 频道 ${result?.discordChannelId}`;
 };
 
 export const init = async (bot: IBot) => {

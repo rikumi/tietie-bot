@@ -12,5 +12,5 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const value = await checkDrinks(content, chatId);
   if (value.some((e) => e !== undefined)) return '这个已经有了👊';
   const result = await addDrink(content, chatId);
-  return result ? `添加了 ${ content.join('，') }！` : `添加失败了😭`;
+  return result ? `添加了 ${content.join('，')}！` : `添加失败了😭`;
 };

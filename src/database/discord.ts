@@ -29,7 +29,7 @@ export const setDiscordLink = async (chatId: string, discordChannelId: string, d
   const db = await getDatabase();
   const exists = await db.get(`SELECT * FROM discord_link_v3 WHERE chat_id = ?`, [chatId]);
   if (exists) {
-    await db.run(`UPDATE discord_link_v3 SET discord_channel_id = ? AND discord_guild_id = ? WHERE chat_id = ?`, [discordChannelId, discordGuildId, chatId]);
+    await db.run(`UPDATE discord_link_v3 SET discord_channel_id = ?, discord_guild_id = ? WHERE chat_id = ?`, [discordChannelId, discordGuildId, chatId]);
   } else {
     await db.run(`INSERT INTO discord_link_v3 (chat_id, discord_channel_id, discord_guild_id) VALUES (?, ?, ?)`, [chatId, discordChannelId, discordGuildId]);
   }
