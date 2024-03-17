@@ -157,7 +157,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
   }
 
   try {
-    const repliedMessageSummary = (() => {
+    const repliedMessageSummary = await (async () => {
       const repliedUser = message.reply_to_message?.from;
       if (!repliedUser) {
         return '';
@@ -169,7 +169,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
           return repliedText.split(': ')[0];
         }
       }
-      return formatUser(repliedUser);
+      return await formatUser(repliedUser);
     })();
 
     const textToSend = [
