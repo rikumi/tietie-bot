@@ -9,7 +9,10 @@ export const handleMessage = async (ctx: ICommonMessageContext) => {
   const [command] = ctx.message.text.slice(1).split(/\s+/);
   const videoId = await getVideoReply(chatId, command);
   if (videoId) {
-    ctx.telegram.sendVideo(ctx.message.chat.id, videoId, { reply_to_message_id: ctx.message.message_id });
+    ctx.telegram.sendVideo(ctx.message.chat.id, videoId, {
+      reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
+    });
     return true;
   }
   return false;

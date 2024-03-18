@@ -9,7 +9,10 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const chatId = String(ctx.message.chat.id);
   const question = message.text!.trim().replace(/^.*?(\s+|$)/, '');
   if (!question) return;
-  const replyMessage = await (ctx as IContext).reply('…', { reply_to_message_id: message.message_id });
+  const replyMessage = await (ctx as IContext).reply('…', {
+    reply_to_message_id: message.message_id,
+    disable_notification: true,
+  });
 
   const editMessage = async (text: string): Promise<void> => {
     try {

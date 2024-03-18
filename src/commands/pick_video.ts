@@ -6,6 +6,9 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const videoId = await pickVideo(chatId);
 
   if (videoId) {
-    ctx.telegram.sendVideo(chatId, videoId, { reply_to_message_id: ctx.message.message_id });
+    ctx.telegram.sendVideo(chatId, videoId, {
+      reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
+    });
   }
 };

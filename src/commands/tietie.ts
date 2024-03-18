@@ -49,5 +49,6 @@ export const handleMessage = async (ctx: ICommonMessageContext, bot: IBot) => {
     parse_mode: 'MarkdownV2',
     disable_web_page_preview: true,
     reply_to_message_id: message.message_id,
+    disable_notification: true,
   });
 };

@@ -17,5 +17,6 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   (ctx as IContext).reply(`${formatUser(message.from)} ${escape(content)}！`, {
     ...msgOptions,
     reply_to_message_id: message.message_id,
+    disable_notification: true,
   });
 };

@@ -39,6 +39,7 @@ const handle = (ctx: ICommonMessageContext | ICallbackQueryContext) => {
     ctx.telegram.sendMessage(message.chat.id, text, {
       reply_markup: replyMarkup,
       reply_to_message_id: message.message_id,
+      disable_notification: true,
     });
     return;
   }

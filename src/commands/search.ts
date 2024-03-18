@@ -153,6 +153,7 @@ const renderSearchResult = async (
       debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw: string) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
     ].filter(k => k).join('\n\n').trim(), {
       reply_to_message_id: ctx.message?.message_id,
+      disable_notification: true,
       reply_markup: {
         inline_keyboard: [[
           ...(skipCount ? [{ text: '➡️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
@@ -175,6 +176,7 @@ const renderSearchResult = async (
     debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw: string) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : '',
   ].filter(k => k).join('\n\n').trim(), {
     reply_to_message_id: ctx.message?.message_id,
+    disable_notification: true,
     reply_markup: {
       inline_keyboard: [[
         { text: '⬅️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
@@ -239,6 +241,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   if (['group', 'channel'].includes(message.chat.type)) {
     (ctx as IContext).reply('暂不支持搜索频道或讨论组的会话。', {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
     });
     return;
   }
@@ -253,6 +256,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
         `📝 当前会话已索引 ${messageCount} 条消息记录${messageCount > 10000 ? '' : '，如需导入全部消息记录请联系管理员'}。`,
       ].join('\n\n'), {
         reply_to_message_id: ctx.message.message_id,
+        disable_notification: true,
         parse_mode: 'MarkdownV2',
       });
       return;
@@ -261,6 +265,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     if (keywordsStr.includes(':')) {
       (ctx as IContext).reply('暂不支持包含 : 符号的关键词。', {
         reply_to_message_id: ctx.message.message_id,
+        disable_notification: true,
       });
       return;
     }
@@ -272,6 +277,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   if (!groupNameOrChatId || !keywords.length) {
     (ctx as IContext).reply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，其中 chatId 可在对应会话中输入 \`/search\` 获取`, {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
       parse_mode: 'MarkdownV2',
     });
     return;
@@ -279,6 +285,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   if (formatChatId(groupNameOrChatId) === formatChatId(ctx.message.chat.id)) {
     (ctx as IContext).reply('暂不支持搜索与机器人之间的会话。', {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
     });
     return;
   }
@@ -286,6 +293,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   if (!chatIds.length) {
     (ctx as IContext).reply('没有找到你近一天发言过的与之相关的群，请确认群名或会话 id，或在群内发言后再执行搜索。', {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
     });
     return;
   }
@@ -293,6 +301,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     const groupNames = await Promise.all(chatIds.map(getGroupNameForChatId));
     (ctx as IContext).reply('要搜索哪个群？', {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
       reply_markup: {
         inline_keyboard: chatIds.map((chatId, i) => [
           { text: groupNames[i], callback_data: `search:${chatId}:${keywords.join(' ')}:0` },
@@ -306,6 +315,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   if (keywordsStr.includes(':')) {
     (ctx as IContext).reply('暂不支持包含 : 符号的关键词。', {
       reply_to_message_id: ctx.message.message_id,
+      disable_notification: true,
     });
     return;
   }

@@ -163,6 +163,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
     } catch (e: any) {
       (ctx as IContext).reply('转发消息失败：' + e.message, {
         reply_to_message_id: message.message_id,
+        disable_notification: true,
       });
       return;
     }

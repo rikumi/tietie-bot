@@ -41,6 +41,7 @@ export const handleGeneralMessage = async (ctx: ICommonMessageContext) => {
   }
   (ctx as IContext).reply(`${repeatText}${repeatText}${repeatText}`, {
     reply_to_message_id: message.message_id,
+    disable_notification: true,
   });
   return true;
 }
