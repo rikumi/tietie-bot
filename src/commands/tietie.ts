@@ -1,6 +1,7 @@
 import { IBot, ICommonMessageContext, IContext, IMaybeTextMessage } from 'typings';
 import { setTietieEnabled, isTietieEnabled } from '../database/tietie';
 import { MessageEntity, User } from 'telegraf/typings/core/types/typegram';
+import { isAutodelEnabled } from 'src/database/autodel';
 
 export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const chatId = String(ctx.message.chat.id);
@@ -45,10 +46,14 @@ export const handleMessage = async (ctx: ICommonMessageContext, bot: IBot) => {
   const postfix = rest.join(' ').trim();
   const result = `${senderLink} ${action}${postfix || action.includes('了') ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
 
+  const shouldAutodel = await isAutodelEnabled(String(sender.id));
+  if (shouldAutodel) {
+    bot.telegram.deleteMessage(chatId, message.message_id).catch();
+  }
   (ctx as IContext).reply(result, {
     parse_mode: 'MarkdownV2',
     disable_web_page_preview: true,
-    reply_to_message_id: message.message_id,
+    reply_to_message_id: shouldAutodel ? undefined : message.message_id,
     disable_notification: true,
   });
 };
