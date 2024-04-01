@@ -15,7 +15,7 @@ const discordLinkMap = new Map<string, {
 }>();
 
 const convertDiscordMessage = (text: string) => {
-  const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF]+)/g;
+  const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
   if (rtlTextRegex.test(text)) {
     text = text.replace(rtlTextRegex, '(RTL: $1)')
   }
