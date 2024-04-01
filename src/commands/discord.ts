@@ -15,18 +15,21 @@ const discordLinkMap = new Map<string, {
 }>();
 
 const convertDiscordMessage = (text: string) => {
-  return text
-    .replace(/\\/g, '')
-    .replace(/([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF]+)/g, '\u202C\u202B$1\u202C\u202A')
-    .replace(/:(\w+):/g, (match, emojiName) => {
-      for (const category of Object.keys(dismoji)) {
-        const emoji = (dismoji as any)[category][emojiName];
-        if (typeof emoji === 'string') {
-          return emoji;
-        }
+  const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF]+)/g;
+  if (rtlTextRegex.test(text)) {
+    console.log('Converting RTL Text:', Buffer.from(text, 'utf-8').toString('hex'));
+    text = '\u202A' + text.replace(rtlTextRegex, '\u202C\u202B$1\u202C\u202A') + '\u202C';
+    console.log('Converted to:', Buffer.from(text, 'utf-8').toString('hex'));
+  }
+  return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
+    for (const category of Object.keys(dismoji)) {
+      const emoji = (dismoji as any)[category][emojiName];
+      if (typeof emoji === 'string') {
+        return emoji;
       }
-      return match;
-    });
+    }
+    return match;
+  });
 };
 
 if (!crypto.getRandomValues) {
