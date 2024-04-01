@@ -17,7 +17,7 @@ const discordLinkMap = new Map<string, {
 const convertDiscordMessage = (text: string) => {
   const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
   if (rtlTextRegex.test(text)) {
-    text = text.replace(rtlTextRegex, '(RTL: $1)')
+    text = text.replace(rtlTextRegex, '(\u202B$1\u202C)')
   }
   return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
     for (const category of Object.keys(dismoji)) {
