@@ -4,9 +4,10 @@ import config from '../../config.json';
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { getDiscordLinks, setDiscordLink, getDiscordNickname } from '../database/discord';
-import { IAnyMessageContext, IBot, ICommonMessage, ICommonMessageContext, IContext } from 'typings';
+import { IAnyMessageContext, IBot, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
-import { Message, User } from 'telegraf/typings/core/types/typegram';
+import { User } from 'telegraf/typings/core/types/typegram';
+import { tryDescribeMessage } from 'src/modules/describe';
 
 const discordLinkMap = new Map<string, {
   client: discord.Client;
@@ -134,10 +135,6 @@ export const handleTelegramMessage = async (ctx: IAnyMessageContext, bot: IBot) 
   const link = discordLinkMap.get(chatId);
   if (!link) return false;
   const { client, discordChannelId, discordGuildId } = link;
-  const formatUser = async (user: User) => {
-    const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
-    return (await getDiscordNickname(chatId, userId)) || username;
-  }
   if ('text' in message && /^\/update(\s|$)/.test(message.text!)) {
     return require('./update')(ctx);
   }
@@ -179,40 +176,12 @@ export const handleTelegramMessage = async (ctx: IAnyMessageContext, bot: IBot) 
   }
 
   try {
-    const repliedMessageSummary = await (async () => {
-      const repliedUser = message.reply_to_message?.from;
-      if (!repliedUser) {
-        return '';
-      }
-      const isReplyToBot = repliedUser?.username === bot.botInfo!.username;
-      if (isReplyToBot) {
-        const repliedText = (message.reply_to_message as Message.TextMessage).text ?? '';
-        if (repliedText.includes(': ')) {
-          return repliedText.split(': ')[0];
-        }
-      }
-      return await formatUser(repliedUser);
-    })();
-
-    const tryDescribe = <T extends string>(type: T) => {
-      return type in message ? `[${type.replace(/^[a-z]/, (letter) => letter.toUpperCase()).replace(/_/g, ' ')}]` : '';
-    };
-    const textToSend = [
-      await formatUser(message.from),
-      ': ',
-      message.forward_from ? `[Fw: ${await formatUser(message.forward_from)}] ` : '',
-      message.reply_to_message ? `[Re: ${repliedMessageSummary}] ` : '',
-      message.via_bot ? `[Via: ${await formatUser(message.via_bot)}]` : '',
-      ...[
-        'audio', 'document', 'animation', 'photo', 'sticker', 'video',
-        'video_note', 'voice', 'contact', 'dice', 'game', 'poll', 'location', 'venue',
-      ].map(tryDescribe),
-      'text' in message ? message.text : 'caption' in message ? message.caption : '',
-    ].join('');
-
-    client.send(discordChannelId, {
-      content: textToSend,
-    });
+    const formatUser = async (user: User) => {
+      const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+      return (await getDiscordNickname(chatId, userId)) || username;
+    }
+    const content = await tryDescribeMessage(message, bot, formatUser)
+    client.send(discordChannelId, { content });
   } catch (e) {
     console.error('转发指令失败', e);
   }

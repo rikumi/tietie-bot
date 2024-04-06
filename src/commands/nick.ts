@@ -13,12 +13,12 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const nickname = message.text!.trim().split(/\s+/)[1];
   if (!nickname) {
     const currentNickname = await getDiscordNickname(chatId, userId);
-    return `用户 ${userFriendlyName} 的游戏内显示名称为 ${currentNickname || userFriendlyName}。`;
+    return `用户 ${userFriendlyName} 的互通群显示名称为 ${currentNickname || userFriendlyName}。`;
   }
   if (nickname === 'clear') {
     await setDiscordNickname(chatId, userId, '');
-    return `用户 ${userFriendlyName} 的游戏内显示名称已清除。`;
+    return `用户 ${userFriendlyName} 的互通群显示名称已清除。`;
   }
   await setDiscordNickname(chatId, userId, nickname);
-  return `用户 ${userFriendlyName} 将在游戏内显示为 ${nickname}。`;
+  return `用户 ${userFriendlyName} 将在互通群显示为 ${nickname}。`;
 };
