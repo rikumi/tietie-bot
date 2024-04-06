@@ -34,7 +34,7 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     await tryDescribe('reply_to_message', async (repliedMessage) => `回复给：${await tryExtractUserFromMessage(repliedMessage)}`),
     await tryDescribe('via_bot', async (viaBot) => `发送自：${await formatUser(viaBot)}`),
 
-    tryDescribe('audio', '音频'),
+    tryDescribe('audio', (audio) => `音频：${audio.title ?? audio.file_name ?? '未知文件'}`),
     tryDescribe('document', (file) => `文件：${file.file_name ?? '未知文件'}`),
     tryDescribe('animation', 'GIF'),
     tryDescribe('photo', '图片'),
