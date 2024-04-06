@@ -8,6 +8,7 @@ import { IBot, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
 import { User } from 'telegraf/typings/core/types/typegram';
 import { tryDescribeMessage } from 'src/modules/describe';
+import * as update from './update';
 
 const discordLinkMap = new Map<string, {
   client: discord.Client;
@@ -136,7 +137,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
   if (!link) return false;
   const { client, discordChannelId, discordGuildId } = link;
   if (/^\/update(\s|$)/.test(message.text!)) {
-    return require('./update')(ctx);
+    return update.handleSlashCommand(ctx);
   }
   if (/^\/list(\s|$)/.test(message.text!)) {
     const commands = await client.requester.fetch_request(
