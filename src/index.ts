@@ -10,20 +10,25 @@ import * as search from './commands/search';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
 
-import type { IBot, ICallbackQueryContext, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
+import type { IAnyMessageContext, IBot, ICallbackQueryContext, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
 export const bot: IBot = new Telegraf(config.telegramBotToken);
 
-const handleMessage = async (ctx: ICommonMessageContext) => {
+const handleMessage = async (ctx: IAnyMessageContext) => {
   const { message } = ctx;
-  if (!message || !('text' in message)) return;
+  if (!message) return;
+  if (await discord.handleTelegramMessage(ctx, bot) !== false) return;
+
+  // 下面只处理文字消息
+  if (!message.text) {
+    message.text = message.caption || '';
+  }
   // 各种非 slash commands
-  if (!message.text!.startsWith('/') || message.text!.trim() === '/list') {
+  if (!message.text!.startsWith('/')) {
     search.recordChatMessage(ctx);
-    if (await discord.handleTelegramMessage(ctx, bot) !== false) return;
     if (await repeat.handleGeneralMessage(ctx) !== false) return;
     return;
   }

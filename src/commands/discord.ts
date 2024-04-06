@@ -4,7 +4,7 @@ import config from '../../config.json';
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { getDiscordLinks, setDiscordLink, getDiscordNickname } from '../database/discord';
-import { IBot, ICommonMessage, ICommonMessageContext, IContext } from 'typings';
+import { IAnyMessageContext, IBot, ICommonMessage, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
 import { Message, User } from 'telegraf/typings/core/types/typegram';
 
@@ -127,7 +127,7 @@ export const init = async (bot: IBot) => {
   }
 };
 
-export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBot) => {
+export const handleTelegramMessage = async (ctx: IAnyMessageContext, bot: IBot) => {
   const { message } = ctx;
   const chatId = String(ctx.message.chat.id);
   const userId = String(message.from.id);
@@ -138,11 +138,10 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
     const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
     return (await getDiscordNickname(chatId, userId)) || username;
   }
-  if (/^\/update(\s|$)/.test(message.text!)) {
+  if ('text' in message && /^\/update(\s|$)/.test(message.text!)) {
     return require('./update')(ctx);
   }
-
-  if (/^\/list(\s|$)/.test(message.text!)) {
+  if ('text' in message && /^\/list(\s|$)/.test(message.text!)) {
     const commands = await client.requester.fetch_request(
       `guilds/${discordGuildId}/application-command-index`,
       undefined, client.clientData, 'GET'
@@ -195,12 +194,20 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
       return await formatUser(repliedUser);
     })();
 
+    const tryDescribe = <T extends string>(type: T) => {
+      return type in message ? `[${type.replace(/^[a-z]/, (letter) => letter.toUpperCase()).replace(/_/g, ' ')}]` : '';
+    };
     const textToSend = [
       await formatUser(message.from),
       ': ',
       message.forward_from ? `[Fw: ${await formatUser(message.forward_from)}] ` : '',
       message.reply_to_message ? `[Re: ${repliedMessageSummary}] ` : '',
-      message.text || message.caption || (message.photo ? '[Photo]' : '[Unsupported message]'),
+      message.via_bot ? `[Via: ${await formatUser(message.via_bot)}]` : '',
+      ...[
+        'audio', 'document', 'animation', 'photo', 'sticker', 'video',
+        'video_note', 'voice', 'contact', 'dice', 'game', 'poll', 'location', 'venue',
+      ].map(tryDescribe),
+      'text' in message ? message.text : 'caption' in message ? message.caption : '',
     ].join('');
 
     client.send(discordChannelId, {
