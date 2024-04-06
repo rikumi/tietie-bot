@@ -10,14 +10,14 @@ import * as search from './commands/search';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
 
-import type { IAnyMessageContext, IBot, ICallbackQueryContext, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
+import type { IBot, ICallbackQueryContext, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
 export const bot: IBot = new Telegraf(config.telegramBotToken);
 
-const handleMessage = async (ctx: IAnyMessageContext) => {
+const handleMessage = async (ctx: ICommonMessageContext) => {
   const { message } = ctx;
   if (!message) return;
   if (await discord.handleTelegramMessage(ctx, bot) !== false) return;

@@ -4,7 +4,7 @@ import config from '../../config.json';
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { getDiscordLinks, setDiscordLink, getDiscordNickname } from '../database/discord';
-import { IAnyMessageContext, IBot, ICommonMessageContext, IContext } from 'typings';
+import { IBot, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
 import { User } from 'telegraf/typings/core/types/typegram';
 import { tryDescribeMessage } from 'src/modules/describe';
@@ -128,17 +128,17 @@ export const init = async (bot: IBot) => {
   }
 };
 
-export const handleTelegramMessage = async (ctx: IAnyMessageContext, bot: IBot) => {
+export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBot) => {
   const { message } = ctx;
   const chatId = String(ctx.message.chat.id);
   const userId = String(message.from.id);
   const link = discordLinkMap.get(chatId);
   if (!link) return false;
   const { client, discordChannelId, discordGuildId } = link;
-  if ('text' in message && /^\/update(\s|$)/.test(message.text!)) {
+  if (/^\/update(\s|$)/.test(message.text!)) {
     return require('./update')(ctx);
   }
-  if ('text' in message && /^\/list(\s|$)/.test(message.text!)) {
+  if (/^\/list(\s|$)/.test(message.text!)) {
     const commands = await client.requester.fetch_request(
       `guilds/${discordGuildId}/application-command-index`,
       undefined, client.clientData, 'GET'

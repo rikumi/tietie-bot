@@ -23,7 +23,6 @@ export type ICommonMessage =
   & IMaybeTextMessage & IMaybePhotoMessage & IMaybeVideoMessage;
 
 export type ICommonMessageContext = IContext<Update.MessageUpdate<ICommonMessage>>;
-export type IAnyMessageContext = IContext<Update.MessageUpdate<any>>;
 
 /**
  * Other types
