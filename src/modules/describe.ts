@@ -19,7 +19,7 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     descriptor: string | ((entity: any) => string | Promise<string>)
   ) => {
     if (!(type in message)) return '';
-    if (typeof descriptor === 'string') return `[${ descriptor }] `;
+    if (typeof descriptor === 'string') return `[${descriptor}] `;
     const result: any = descriptor((message as any)[type]);
     if (typeof result !== 'object' || !result || !('then' in result) || typeof result.then !== 'function') {
       return result;
