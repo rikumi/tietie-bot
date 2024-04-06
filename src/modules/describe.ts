@@ -21,10 +21,10 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     if (!(type in message)) return '';
     if (typeof descriptor === 'string') return `[${ descriptor }] `;
     const result: any = descriptor((message as any)[type]);
-    if ('then' in result && typeof result.then === 'function') {
-      return result.then((str: any) => `[${str}] `);
+    if (typeof result !== 'object' || !result || !('then' in result) || typeof result.then !== 'function') {
+      return result;
     }
-    return result;
+    return result.then((str: any) => `[${str}] `);
   };
 
   return [
