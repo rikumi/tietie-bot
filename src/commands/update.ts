@@ -16,6 +16,6 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const message = await (ctx as IContext).reply('代码更新执行中');
   const pullResult = await exec('git pull', { cwd });
   await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, pullResult);
-  cp.spawn('pnpm', ['i'], { cwd }).unref();
+  cp.spawnSync('pnpm', ['i'], { cwd });
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();
 };
