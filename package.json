@@ -26,7 +26,7 @@
     "axios": "^1.4.0",
     "cheerio": "1.0.0-rc.12",
     "dayjs": "^1.11.10",
-    "discord-emoji": "^2.3.0",
+    "discord-emoji": "^2.4.0",
     "discord-user-bots": "^1.6.0",
     "minecraft-protocol": "^1.36.1",
     "nodejieba": "^2.6.0",
