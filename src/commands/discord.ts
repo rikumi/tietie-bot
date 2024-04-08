@@ -75,11 +75,16 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
     if (channelId !== discordChannelId) return;
     if (message.author.username === config.discordUsername) return;
     const messageContent = convertDiscordMessage(message.content);
-    if (!message.author || message.author.bot) {
-      telegram.sendMessage(chatId, messageContent);
-    } else {
-      telegram.sendMessage(chatId, `${message.author.username}: ${messageContent}`);
+    const isServiceMessage = !message.author || message.author.bot;
+    const finalContent = isServiceMessage ? messageContent : `${ message.author.username }: ${ messageContent }`;
+    if (!finalContent.includes(': ')) {
+      telegram.sendMessage(chatId, finalContent);
+      return;
     }
+    const nameUtf16Length = Buffer.from(finalContent.split(': ')[0], 'utf16le').length / 2;
+    telegram.sendMessage(chatId, finalContent, {
+      entities: [{ type: 'bold', offset: 0, length: nameUtf16Length }],
+    });
   };
 
   client.on.heartbeat_received = () => {
