@@ -10,11 +10,12 @@ const formatUser = async (user: User) => {
 export const fileIdMap = new Map<string, string>();
 
 export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot, userFormatter = formatUser) => {
-  const tryExtractUserFromMessage = async (message: Message) => {
-    if (!message.from) return;
-    if (message.from.username === bot.botInfo!.username && (message as Message.TextMessage).text.includes(': ')) {
+  const tryExtractUserFromMessage = async (message: Message, user: User | undefined) => {
+    if (!user) return '';
+    if (user.username === bot.botInfo!.username && (message as Message.TextMessage).text.includes(': ')) {
       return (message as Message.TextMessage).text.split(': ')[0];
     }
+    return await formatUser(user);
   };
 
   const tryDescribe = (
@@ -42,10 +43,10 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     await userFormatter(message.from ?? {} as any),
     ': ',
     await tryDescribe('forward_from', async () => {
-      return `转发自: ${await tryExtractUserFromMessage(message) ?? await formatUser(message.forward_from!)}`;
+      return `转发自: ${await tryExtractUserFromMessage(message, message.forward_from)}`;
     }),
     await tryDescribe('reply_to_message', async (repliedMessage) => {
-      return `回复给: ${await tryExtractUserFromMessage(repliedMessage) ?? await formatUser(message.reply_to_message?.from!)}`;
+      return `回复给: ${await tryExtractUserFromMessage(repliedMessage, message.reply_to_message?.from)}`;
     }),
     await tryDescribe('via_bot', async (viaBot) => `发送自: ${await formatUser(viaBot)}`),
 
