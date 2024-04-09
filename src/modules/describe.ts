@@ -43,7 +43,7 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     await userFormatter(message.from ?? {} as any),
     ': ',
     await tryDescribe('forward_from', async () => {
-      return `转发自: ${await tryExtractUserFromMessage(message, message.forward_from)}`;
+      return `转发自: ${await formatUser(message.forward_from!)}`;
     }),
     await tryDescribe('reply_to_message', async (repliedMessage) => {
       return `回复给: ${await tryExtractUserFromMessage(repliedMessage, message.reply_to_message?.from)}`;
