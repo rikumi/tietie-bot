@@ -11,6 +11,7 @@ import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
 
 import type { IBot, ICallbackQueryContext, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
+import { startServer } from './server';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -86,5 +87,6 @@ bot.on('edited_message', (ctx: IEditedMessageContext) => {
 
 bot.launch().then(async () => {
   await discord.init(bot);
+  startServer();
   console.log('Service started!', bot.botInfo);
 });
