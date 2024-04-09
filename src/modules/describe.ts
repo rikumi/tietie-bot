@@ -49,7 +49,7 @@ export const tryDescribeMessage = async (message: CommonMessageBundle, bot: IBot
     tryDescribe('audio', (audio) => `音频: ${audio.title ?? audio.file_name ?? '未知文件'}`),
     tryDescribe('document', (file) => `文件: ${file.file_name ?? '未知文件'}`),
     tryDescribe('animation', 'GIF'),
-    tryDescribe('photo', () => `图片: ${config.serverRoot}/p/${photoId}`),
+    tryDescribe('photo', () => `图片: ${config.serverRoot}/p/${photoId} `), // 后面需要有空格
     tryDescribe('sticker', (sticker) => `贴纸: ${sticker.emoji} in ${sticker.set_name ?? '无贴纸包'}`),
     tryDescribe('video', '视频'),
     tryDescribe('video_note', '即时视频'),
