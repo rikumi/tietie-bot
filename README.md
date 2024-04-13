@@ -17,8 +17,7 @@ add_drink - <name> 添加一种饮料
 alias - <name> [target] 设置指令的别名
 chou - 模拟十连抽卡
 del - 删除被引用的贴贴 Bot 消息
-discord - <guildId> <channelId> 链接到 Discord 频道（管理员使用）
-discord rejoin - 重新加入已链接的 Discord 频道
+discord - <guildId> <channelId> | rejoin 链接到 Discord 频道（管理员使用）
 drink - 随机选择一种饮料
 jieba - [sentence] 使用 jieba 进行马尔可夫分词
 make - <target> 做个东西
