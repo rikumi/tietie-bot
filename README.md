@@ -15,8 +15,6 @@
 ```
 add_drink - <name> 添加一种饮料
 alias - <name> [target] 设置指令的别名
-chatgpt - <question> 调用 ChatGPT 聊天
-chatgpt_prompt - <prompt> 修改当前会话的 ChatGPT 前置 Prompt
 chou - 模拟十连抽卡
 del - 删除被引用的贴贴 Bot 消息
 discord - <guildId> <channelId> 链接到 Discord 频道（管理员使用）
