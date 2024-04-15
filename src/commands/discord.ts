@@ -186,7 +186,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
       const username = user.username /*?.toLowerCase()*/ || `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return (await getDiscordNickname(chatId, userId)) || username;
     }
-    const content = await tryDescribeMessage(message, bot, formatUser)
+    const content = await tryDescribeMessage(message, bot, formatUser);
     client.send(discordChannelId, { content });
   } catch (e) {
     console.error('转发指令失败', e);
