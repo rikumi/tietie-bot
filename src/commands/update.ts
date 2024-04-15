@@ -19,7 +19,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, pullResult);
   if (branch && /^[\w/]+$/.test(branch)) {
     const switchResult = await exec(`git switch ${branch}`, { cwd });
-    await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, switchResult);
+    await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, `${pullResult}\n\n${switchResult}`);
   }
   cp.spawnSync('pnpm', ['i'], { cwd });
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();
