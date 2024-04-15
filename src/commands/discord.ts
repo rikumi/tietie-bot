@@ -183,7 +183,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
 
   try {
     const formatUser = async (user: User) => {
-      const username = user.username?.toLowerCase() || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+      const username = user.username /*?.toLowerCase()*/ || `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return (await getDiscordNickname(chatId, userId)) || username;
     }
     const content = await tryDescribeMessage(message, bot, formatUser)
