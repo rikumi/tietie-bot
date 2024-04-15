@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import config from '../../config.json';
 
 const formatUser = async (user: User) => {
-  return user.username || `${user.first_name || ''} ${user.last_name || ''}`.trim();
+  return `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
 }
 
 export const fileIdMap = new Map<string, string>();
