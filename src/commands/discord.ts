@@ -8,7 +8,6 @@ import { IBot, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
 import { User } from 'telegraf/typings/core/types/typegram';
 import { tryDescribeMessage } from 'src/modules/describe';
-import * as update from './update';
 
 const discordLinkMap = new Map<string, {
   client: discord.Client;
@@ -141,9 +140,6 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
   const link = discordLinkMap.get(chatId);
   if (!link) return false;
   const { client, discordChannelId, discordGuildId } = link;
-  if (/^\/update(\s|$)/.test(message.text!)) {
-    return update.handleSlashCommand(ctx);
-  }
   if (/^\/list(\s|$)/.test(message.text!)) {
     const commands = await client.requester.fetch_request(
       `guilds/${discordGuildId}/application-command-index`,
@@ -179,6 +175,10 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
     await new Promise(r => setTimeout(r, 3000));
     await ctx.telegram.deleteMessage(message.chat.id, messageId);
     return;
+  }
+
+  if (/^\/\w+/.test(message.text!)) {
+    return false;
   }
 
   try {
