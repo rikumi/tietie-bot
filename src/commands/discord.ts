@@ -177,7 +177,7 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
     return;
   }
 
-  if (/^\/\w+/.test(message.text!)) {
+  if (/^\//.test(message.text!)) {
     return false;
   }
 
