@@ -8,7 +8,6 @@ import { IBot, ICommonMessageContext, IContext } from 'typings';
 import { Telegram } from 'telegraf';
 import { User } from 'telegraf/typings/core/types/typegram';
 import { tryDescribeMessage } from 'src/modules/describe';
-import * as update from './update';
 
 let globalClient: discord.Client | undefined;
 let globalClientReady: Promise<void> | undefined;
@@ -136,9 +135,6 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
   const link = discordLinkMap.get(chatId);
   if (!link) return false;
   const { discordChannelId, discordGuildId } = link;
-  if (/^\/update(\s|$)/.test(message.text!)) {
-    return update.handleSlashCommand(ctx);
-  }
   if (/^\/list(\s|$)/.test(message.text!)) {
     const commands = await globalClient.requester.fetch_request(
       `guilds/${discordGuildId}/application-command-index`,
@@ -176,12 +172,16 @@ export const handleTelegramMessage = async (ctx: ICommonMessageContext, bot: IBo
     return;
   }
 
+  if (/^\//.test(message.text!)) {
+    return false;
+  }
+
   try {
     const formatUser = async (user: User) => {
-      const username = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username;
+      const username = user.username /*?.toLowerCase()*/ || `${user.first_name || ''} ${user.last_name || ''}`.trim();
       return (await getDiscordNickname(chatId, userId)) || username;
     }
-    const content = await tryDescribeMessage(message, bot, formatUser)
+    const content = await tryDescribeMessage(message, bot, formatUser);
     globalClient.send(discordChannelId, { content });
   } catch (e) {
     console.error('转发指令失败', e);
