@@ -86,7 +86,7 @@ const initGlobalBot = async (telegram: Telegram, forceRestart = false) => {
   await globalClientReady;
 };
 
-const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, forceRestart = false) => {
+const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelId: string, discordGuildId: string, forceRestart = false, sendResults = false) => {
   discordLinkMap.set(chatId, {
     discordChannelId,
     discordGuildId,
@@ -97,7 +97,9 @@ const createLinkBot = async (telegram: Telegram, chatId: string, discordChannelI
   const channelInfo = guildInfo.channels.find((channel: any) => channel.id === discordChannelId);
   const { name: guildName, member_count: memberCount } = guildInfo;
   const { name: channelName, topic: channelTopic } = channelInfo;
-  telegram.sendMessage(chatId, `已链接到 Discord 频道：${guildName} #${channelName}，共 ${memberCount} 名成员。${channelTopic ? `\n主题：${channelTopic}` : ''}`);
+  if (sendResults) {
+    telegram.sendMessage(chatId, `已链接到 Discord 频道：${guildName} #${channelName}，共 ${memberCount} 名成员。${channelTopic ? `\n主题：${channelTopic}` : ''}`);
+  }
 };
 
 export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
@@ -108,7 +110,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     if (!link) {
       return '本群未链接到任何 Discord 频道';
     }
-    createLinkBot(ctx.telegram, chatId, link.discordChannelId, link.discordGuildId, true);
+    createLinkBot(ctx.telegram, chatId, link.discordChannelId, link.discordGuildId, true, true);
     return;
   }
   if (!channelId || !/^\d+$/.test(channelId)) {
@@ -116,7 +118,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     return;
   }
   await setDiscordLink(chatId, channelId, guildId);
-  createLinkBot(ctx.telegram, chatId, channelId, guildId);
+  createLinkBot(ctx.telegram, chatId, channelId, guildId, false, true);
   const result = (await getDiscordLinks()).find(k => k.chatId === chatId);
   return `已尝试链接到 Discord 服务器 ${result?.discordGuildId} - 频道 ${result?.discordChannelId}`;
 };
