@@ -59,9 +59,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.bot.on.message_edit = (message: any) => {
       const transformedMessage = this.transformMessage(message);
       if (transformedMessage.userName === config.discordUsername) return;
-      if () {
-        this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
-      }
+      this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
     };
     await this.botReady;
   }
