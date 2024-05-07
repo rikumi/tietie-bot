@@ -19,6 +19,7 @@ export interface GenericMessage<T = any, U = any> {
   messageId: string;
   unixDate: number;
 
+  isServiceMessage?: boolean;
   mediaType?: 'photo' | 'video' | 'file';
   mediaUrl?: string;
   messageIdReplied?: string;
@@ -38,4 +39,5 @@ export interface GenericClient<T = any, U = any, V = {}> {
 
   sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
   editMessage(message: GenericMessage<T, U>): Promise<void>;
+  tryExecuteCommand?(text: string, chatId: string): Promise<void>;
 }

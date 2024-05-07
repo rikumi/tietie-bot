@@ -18,13 +18,14 @@ export class DefaultClientSet extends EventEmitter {
     }
   }
 
-  public async bridgeMessage(fromMessage: GenericMessage, isBotMessage = false): Promise<GenericMessage[]> {
+  public async bridgeMessage(fromMessage: GenericMessage): Promise<GenericMessage[]> {
     const bridges = await getBridgesByChat(fromMessage.clientName, fromMessage.chatId);
+    const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
-      const toMessageText = isBotMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`;
+      const toMessageText = fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`;
       const toMessageIdReplied = fromMessage.messageIdReplied
         ? await getBridgedMessageId(fromMessage.clientName, fromMessage.messageIdReplied, toClientName)
         : undefined;
@@ -38,6 +39,9 @@ export class DefaultClientSet extends EventEmitter {
         messageIdReplied: toMessageIdReplied,
       });
       recordBridgedMessage(fromMessage.clientName, fromMessage.messageId, toClientName, toMessage.messageId);
+      if (hasCommand) {
+        toClient.tryExecuteCommand?.(fromMessage.text, toChatId);
+      }
       return toMessage;
     }));
     return results.filter(Boolean) as GenericMessage[];
@@ -48,7 +52,7 @@ export class DefaultClientSet extends EventEmitter {
     console.log('[DefaultClientSet] sendBotMessage:', message.clientName, message);
     if (!client) return;
     const messageSent = await client.sendMessage(message);
-    const messagesBridged = await this.bridgeMessage(messageSent, true);
+    const messagesBridged = await this.bridgeMessage({ ...messageSent, isServiceMessage: true });
     const messages = [messageSent, ...messagesBridged];
     const editAll = (patch: Partial<MessageToSend>) => Promise.all(messages.map(async (message) => {
       await defaultClientSet.clients.get(message!.clientName)!.editMessage({ ...message, ...patch });

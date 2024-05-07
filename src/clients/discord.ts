@@ -59,8 +59,11 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.bot.on.message_edit = (message: any) => {
       const transformedMessage = this.transformMessage(message);
       if (transformedMessage.userName === config.discordUsername) return;
-      this.emit('edit-message', transformedMessage);
+      if () {
+        this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
+      }
     };
+    await this.botReady;
   }
 
   public async stop(): Promise<void> {
@@ -101,7 +104,41 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       rawUser: message.author!,
       rawMessageReplied: message.referenced_message!,
       unixDate: new Date(message.timestamp).getTime() / 1000,
+      isServiceMessage: !!message.author?.bot,
     }
+  }
+
+  public async tryExecuteCommand(text: string, chatId: string) {
+    const guildId = this.bot.info.guilds.find((guild: any) => {
+      return guild.channels.some((channel: any) => channel.id === chatId);
+    })?.id;
+    console.log('[DiscordUserBotClient] execCommand', guildId, text);
+    if (!guildId) return;
+    const commands = await this.bot.requester.fetch_request(
+      `guilds/${guildId}/application-command-index`,
+      undefined, this.bot.clientData, 'GET'
+    );
+    const [commandName, ...args] = text.substring(1).split(/\s+/);
+    const command = commands.application_commands.find((c: any) => c.name === commandName);
+    if (!command) return;
+    const payload = {
+      type: 2,
+      application_id: command.application_id,
+      guild_id: guildId,
+      channel_id: chatId,
+      session_id: require('crypto').randomBytes(16).toString('hex'),
+      data: {
+        ...command,
+        application_command: command,
+        options: [...args],
+        attachments: [],
+      },
+      nonce: String(Math.floor(Date.now() * 666666)),
+    };
+    await this.bot.call_check([]);
+    const interactionRes = await this.bot.requester.fetch_request('interactions', payload);
+    console.log('[DiscordUserBotClient] Sent interaction:', interactionRes);
+    return;
   }
 }
 
