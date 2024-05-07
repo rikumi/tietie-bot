@@ -29,6 +29,7 @@
     "dayjs": "^1.11.10",
     "discord-emoji": "^2.4.0",
     "discord-user-bots": "^1.6.0",
+    "matrix-bot-sdk": "^0.7.1",
     "minecraft-protocol": "^1.36.1",
     "nodejieba": "^2.6.0",
     "pm2": "^5.2.2",
