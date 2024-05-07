@@ -1,13 +1,12 @@
 import jieba from 'nodejieba';
-import { ICommonMessageContext, IMaybeTextMessage } from 'typings';
+import { GenericMessage } from 'src/clients/base';
 
-export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
-  const { message } = ctx;
-  const repliedMessage: IMaybeTextMessage | undefined = message.reply_to_message;
-  let sentence = message.text!.trim().replace(/^\S*\s*/, '');
+export const handleSlashCommand = async (message: GenericMessage) => {
+  const repliedMessage = message.rawMessageReplied;
+  let sentence = message.text.trim().replace(/^\S*\s*/, '');
   if (!sentence) {
     if (!repliedMessage?.text) {
-      return '用法：`/jieba <句子>` 或者 `/jieba` 回复一条消息';
+      return '用法：`/jieba <句子>` 或者 `/jieba` 回复一条消息（后者仅支持 Telegram）';
     }
     sentence = repliedMessage.text;
   }

@@ -1,9 +1,7 @@
-import { ICallbackQueryContext, ICommonMessageContext, IMessage } from 'typings';
-
 const SYMBOLS = [, '⬛', '🟫', '🟦', '🟪', '🟨'];
 
-const handle = (ctx: ICommonMessageContext | ICallbackQueryContext) => {
-  const message: IMessage = ctx.callbackQuery?.message ?? ctx.message!;
+export const handleTelegramContext = (ctx: any) => {
+  const message = ctx.callbackQuery?.message ?? ctx.message!;
   const counts = ctx.callbackQuery?.data?.split(':')[1].split(',').map(Number) ?? [0, 0, 0, 0, 0];
 
   const numberResults = Array(10).fill(0).map(() => {
@@ -16,8 +14,8 @@ const handle = (ctx: ICommonMessageContext | ICallbackQueryContext) => {
   }).sort((a, b) => b - a);
 
   const symbolResult = numberResults.map(k => SYMBOLS[k]).join('');
-  const newCounts = counts.map((k, i) => k + numberResults.filter(k => k === i + 1).length);
-  const totalCount = newCounts.reduce((a, b) => a + b, 0);
+  const newCounts = counts.map((k: any, i: any) => k + numberResults.filter(k => k === i + 1).length);
+  const totalCount = newCounts.reduce((a: any, b: any) => a + b, 0);
   const totalGolds = newCounts[4];
   const tierIndex = Math.min(5, Math.max(0, Math.round(totalGolds / totalCount / 0.01 + 1))) || 1;
 
@@ -50,9 +48,4 @@ const handle = (ctx: ICommonMessageContext | ICallbackQueryContext) => {
   ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, text, {
     reply_markup: replyMarkup,
   });
-};
-
-export {
-  handle as handleSlashCommand,
-  handle as handleCallbackQuery,
 };

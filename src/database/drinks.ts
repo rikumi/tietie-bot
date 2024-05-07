@@ -2,7 +2,7 @@ import { getDatabase } from '.';
 
 export const init = async () => {
   const db = await getDatabase();
-  db.run(`CREATE TABLE IF NOT EXISTS drinks (
+  await db.run(`CREATE TABLE IF NOT EXISTS drinks (
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     group_id INT NOT NULL

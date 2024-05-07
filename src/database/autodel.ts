@@ -2,7 +2,7 @@ import { getDatabase } from '.';
 
 export const init = async () => {
   const db = await getDatabase();
-  db.run(`CREATE TABLE IF NOT EXISTS autodel (
+  await db.run(`CREATE TABLE IF NOT EXISTS autodel (
     user_id INT NOT NULL,
     enabled INT NOT NULL
   )`);

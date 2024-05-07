@@ -1,28 +1,23 @@
-import { ICommonMessageContext, IContext } from 'typings';
+import { GenericMessage } from 'src/clients/base';
 import { setRepeatEnabled, isRepeatEnabled } from '../database/repeat';
+import defaultClientSet from 'src/clients';
 
-export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
-  const str = ctx.message.text!.split(/\s+/)[1];
-  const chatId = String(ctx.message.chat.id);
+export const handleSlashCommand = async (message: GenericMessage) => {
+  const str = message.text.split(/\s+/)[1];
   if (!['on', 'off'].includes(str)) {
     return '用法: /repeat <on|off>';
   }
   if (str === 'on') {
-    await setRepeatEnabled(chatId, true);
+    await setRepeatEnabled(message.clientName, message.chatId, true);
     return '已为当前会话开启感叹句复读功能。';
   } else {
-    await setRepeatEnabled(chatId, false);
+    await setRepeatEnabled(message.clientName, message.chatId, false);
     return '已为当前会话关闭感叹句复读功能。';
   }
 };
 
-export const handleGeneralMessage = async (ctx: ICommonMessageContext) => {
-  const { message } = ctx;
-  const chatId = String(ctx.message.chat.id);
-  if (!message || !message.text || !message.chat) {
-    return false;
-  }
-  const repeatEnabled = await isRepeatEnabled(chatId);
+export const handleGeneralMessage = async (message: GenericMessage) => {
+  const repeatEnabled = await isRepeatEnabled(message.clientName, message.chatId);
   if (!repeatEnabled) {
     return false;
   }
@@ -39,9 +34,12 @@ export const handleGeneralMessage = async (ctx: ICommonMessageContext) => {
   if (repeatText.includes('我')) {
     repeatText = repeatText.replace(/我/g, '你');
   }
-  (ctx as IContext).reply(`${repeatText}${repeatText}${repeatText}`, {
-    reply_to_message_id: message.message_id,
-    disable_notification: true,
+  defaultClientSet.sendBotMessage({
+    clientName: message.clientName,
+    chatId: message.chatId,
+    text: `${repeatText}${repeatText}${repeatText}`,
+    messageIdReplied: message.messageId,
+    rawMessageExtra: { disable_notification: true },
   });
   return true;
 }

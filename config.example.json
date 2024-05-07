@@ -3,5 +3,10 @@
   "openaiApiKey": "",
   "xhsWebId": "",
   "xhsWebSession": "",
-  "botUsername": ""
+  "discordUserToken": "",
+  "discordUsername": "",
+  "botUsername": "",
+  "matrixUsername": "",
+  "matrixHomeServer": "",
+  "matrixAccessToken": ""
 }

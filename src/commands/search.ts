@@ -1,7 +1,7 @@
 import jieba from 'nodejieba';
 import { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId, getMessageCount, getMessageCountByKeyword, updateSearchAccess, checkSearchAccess, findAccessibleChatIds, updateGroupInfo, getGroupNameForChatId } from '../database/search';
-import { ICallbackQueryContext, ICommonMessage, ICommonMessageContext, IContext, IEditedMessageContext } from 'typings';
 import { ExtraEditMessageText, ExtraReplyMessage } from 'telegraf/typings/telegram-types';
+import { GenericMessage } from 'src/clients/base';
 
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
@@ -15,40 +15,31 @@ export const splitToKeywords = (text: string) => {
   return [...new Set([...words, ...wordsForSearch])];
 };
 
-export const recordChatMessage = (ctx: ICommonMessageContext) => {
+export const handleMessage = (message: GenericMessage) => {
   try {
-    if (ctx.chat.type === 'private') return; // 不记录与 bot 的对话
-    const { message } = ctx;
-    const searchChatId = formatChatId(ctx.chat.id);
-
-    if (!message.from) return;
-    const userId = String(ctx.message.from.id);
+    if (message.rawMessage?.chat?.type === 'private') return; // 不记录与 bot 的对话
+    const searchChatId = formatChatId(message.chatId);
+    const { userId, messageId } = message;
     updateSearchAccess(searchChatId, userId);
 
-    if (!message.text) return;
-    const messageId = String(ctx.message.message_id);
-
-    if (ctx.chat.title) {
-      updateGroupInfo(searchChatId, ctx.chat.title);
+    if (message.rawMessage?.chat?.title) {
+      updateGroupInfo(searchChatId, message.rawMessage.chat.title);
     }
-    const words = splitToKeywords(message.text || message.caption || '');
+    const words = splitToKeywords(message.text);
     if (!words.length) return;
-    putSearchData(searchChatId, messageId, words, Math.floor(message.date));
+    putSearchData(searchChatId, messageId, words, Math.floor(message.unixDate));
   } catch (e) {
     console.error(e);
   }
 }
 
-export const handleEditedMessage = (ctx: IEditedMessageContext) => {
+export const handleEditedMessage = (message: GenericMessage) => {
   try {
-    if (ctx.chat.type === 'private') return; // 不记录与 bot 的对话
-    if (!('text' in ctx.editedMessage || 'caption' in ctx.editedMessage)) return;
-    const message: ICommonMessage = ctx.editedMessage as any;
-    const messageId = String(message.message_id);
-    deleteMessageById(formatChatId(ctx.chat.id), String(messageId));
-    const words = splitToKeywords(message.text || message.caption || '');
+    if (message.rawMessage?.chat?.type === 'private') return; // 不记录与 bot 的对话
+    deleteMessageById(formatChatId(message.chatId), message.messageId);
+    const words = splitToKeywords(message.text);
     if (!words.length) return;
-    putSearchData(formatChatId(ctx.chat.id), String(messageId), words, Math.floor(message.date));
+    putSearchData(formatChatId(message.chatId), message.messageId, words, Math.floor(message.unixDate));
   } catch (e) {
     console.error(e);
   }
@@ -128,7 +119,7 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
 }
 
 const renderSearchResult = async (
-  ctx: ICommonMessageContext | ICallbackQueryContext,
+  ctx: any | any,
   chatId: string,
   record: { message_id: any; unixtime: any } | void | null | undefined,
   keywordsStr: string,
@@ -143,7 +134,7 @@ const renderSearchResult = async (
 
   const replyOrEditMessage: (text: string, extra?: Partial<ExtraEditMessageText & ExtraReplyMessage>) => Promise<any> = ctx.callbackQuery
     ? ctx.telegram.editMessageText.bind(ctx.telegram, ctx.chat!.id, ctx.callbackQuery.message!.message_id, undefined)
-    : ctx.reply.bind(ctx as IContext);
+    : ctx.reply.bind(ctx as any);
 
   const groupName = await getGroupNameForChatId(chatId) ?? '临时会话';
 
@@ -196,7 +187,7 @@ const renderSearchResult = async (
   }
 
   if (record.message_id > 100000000 || record.message_id < 0) {
-    const { message_id } = await (ctx as IContext).reply('[该条消息属于讨论组消息，无法跳转和显示]');
+    const { message_id } = await (ctx as any).reply('[该条消息属于讨论组消息，无法跳转和显示]');
     forwardedMessageMap.set(ctx.chat!.id, message_id);
     return;
   }
@@ -210,7 +201,7 @@ const renderSearchResult = async (
       if (e.description.includes('chat not found')) continue;
       console.error(e);
       if (e.description.includes('message to forward not found')) {
-        const { message_id } = await (ctx as IContext).reply('[消息被删除或对 Bot 不可见，可尝试点击链接查看]');
+        const { message_id } = await (ctx as any).reply('[消息被删除或对 Bot 不可见，可尝试点击链接查看]');
         forwardedMessageMap.set(ctx.chat!.id, message_id);
         break;
       }
@@ -218,7 +209,7 @@ const renderSearchResult = async (
   }
 };
 
-export const handleCallbackQuery = async (ctx: ICallbackQueryContext) => {
+export const handleTelegramCallbackQuery = async (ctx: any) => {
   const { data, from } = ctx.callbackQuery;
   const [command, chatId, keywordsStr, skipCount, debug] = data!.split(':');
   const userId = String(from!.id);
@@ -235,11 +226,11 @@ export const handleCallbackQuery = async (ctx: ICallbackQueryContext) => {
   }
 }
 
-export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
+export const handleTelegramCommand = async (ctx: any) => {
   const { message, from } = ctx;
   const userId = String(from.id);
   if (['group', 'channel'].includes(message.chat.type)) {
-    (ctx as IContext).reply('暂不支持搜索频道或讨论组的会话。', {
+    (ctx as any).reply('暂不支持搜索频道或讨论组的会话。', {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
     });
@@ -250,7 +241,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     const keywords = message.text!.trim().split(/\s+/).slice(1);
     if (!keywords.length) {
       const messageCount = await getMessageCount(chatId);
-      (ctx as IContext).reply([
+      (ctx as any).reply([
         `请使用 \`/search <关键词>\` 搜索当前会话。`,
         `🔐 Bot 仅存储群名称、匿名的消息 id、会话 id、关键词加盐 hash 和时间戳信息，不保留消息内容、群组和发送者资料，搜索结果的调取和显示由 Telegram 提供。`,
         `📝 当前会话已索引 ${messageCount} 条消息记录${messageCount > 10000 ? '' : '，如需导入全部消息记录请联系管理员'}。`,
@@ -263,7 +254,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     }
     const keywordsStr = keywords.join(' ');
     if (keywordsStr.includes(':')) {
-      (ctx as IContext).reply('暂不支持包含 : 符号的关键词。', {
+      (ctx as any).reply('暂不支持包含 : 符号的关键词。', {
         reply_to_message_id: ctx.message.message_id,
         disable_notification: true,
       });
@@ -275,7 +266,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   }
   const [groupNameOrChatId, ...keywords] = message.text!.trim().split(/\s+/).slice(1);
   if (!groupNameOrChatId || !keywords.length) {
-    (ctx as IContext).reply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，其中 chatId 可在对应会话中输入 \`/search\` 获取`, {
+    (ctx as any).reply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，其中 chatId 可在对应会话中输入 \`/search\` 获取`, {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
       parse_mode: 'MarkdownV2',
@@ -283,7 +274,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
     return;
   }
   if (formatChatId(groupNameOrChatId) === formatChatId(ctx.message.chat.id)) {
-    (ctx as IContext).reply('暂不支持搜索与机器人之间的会话。', {
+    (ctx as any).reply('暂不支持搜索与机器人之间的会话。', {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
     });
@@ -291,7 +282,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   }
   const chatIds = await findAccessibleChatIds(groupNameOrChatId, userId);
   if (!chatIds.length) {
-    (ctx as IContext).reply('没有找到你近一天发言过的与之相关的群，请确认群名或会话 id，或在群内发言后再执行搜索。', {
+    (ctx as any).reply('没有找到你近一天发言过的与之相关的群，请确认群名或会话 id，或在群内发言后再执行搜索。', {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
     });
@@ -299,7 +290,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   }
   if (chatIds.length > 1) {
     const groupNames = await Promise.all(chatIds.map(getGroupNameForChatId));
-    (ctx as IContext).reply('要搜索哪个群？', {
+    (ctx as any).reply('要搜索哪个群？', {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
       reply_markup: {
@@ -313,7 +304,7 @@ export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
   const chatId = chatIds[0];
   const keywordsStr = keywords.join(' ');
   if (keywordsStr.includes(':')) {
-    (ctx as IContext).reply('暂不支持包含 : 符号的关键词。', {
+    (ctx as any).reply('暂不支持包含 : 符号的关键词。', {
       reply_to_message_id: ctx.message.message_id,
       disable_notification: true,
     });

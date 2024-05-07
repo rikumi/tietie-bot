@@ -1,4 +1,3 @@
-import { ICallbackQueryContext, ICommonMessage, ICommonMessageContext, IMessage } from 'typings';
 import * as xhs from '../modules/xhs';
 import dayjs from 'dayjs';
 
@@ -30,11 +29,11 @@ const makeReplyMarkup = (currentIndex: number, totalLength: number) => ({
 
 const escape = (text = '') => text.replace(/([\u0000-\u007f])/g, '\\$1');
 
-const handle = async (ctx: ICommonMessageContext | ICallbackQueryContext) => {
+export const handleTelegramContext = async (ctx: any) => {
   const keywords = ctx.message ? ctx.message.text!.trim().split(/\s+/).slice(1) : [];
   const notes = await xhs.getXhsNotes('5d85f6a600000000010037d8');
 
-  const renderNote = async ({ id, index }: any, message?: IMessage) => {
+  const renderNote = async ({ id, index }: any, message?: any) => {
     const link = `https://www.xiaohongshu.com/discovery/item/${id}`;
     const note = await xhs.getXhsNoteDetail(id);
     const caption = [
@@ -100,9 +99,4 @@ const handle = async (ctx: ICommonMessageContext | ICallbackQueryContext) => {
     return '最近的土豆视频中未找到相关内容';
   }
   await renderNote(notes[searchResultIndex || 0] || notes[0]);
-};
-
-export {
-  handle as handleSlashCommand,
-  handle as handleCallbackQuery,
 };

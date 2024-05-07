@@ -1,9 +1,8 @@
 import mc from 'minecraft-protocol';
-import { ICommonMessageContext } from 'typings';
+import { GenericMessage } from 'src/clients/base';
 
-export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
-  const { message } = ctx;
-  const server = message.text!.trim().split(/\s+/)[1];
+export const handleSlashCommand = async (message: GenericMessage) => {
+  const server = message.text.trim().split(/\s+/)[1];
   const hostPort = /^([\w\.-]+)(\:\d+)?$/.exec(server);
   if (!hostPort) return 'Invalid server address';
   const [host, port = '25565'] = hostPort.slice(1);

@@ -1,6 +1,7 @@
 import path from 'path';
 import cp from 'child_process';
-import { ICommonMessageContext, IContext } from 'typings';
+import { GenericMessage } from 'src/clients/base';
+import defaultClientSet from 'src/clients';
 
 const exec = async (command: string, options: cp.ExecOptions) => {
   return await new Promise<string>((resolve, reject) => {
@@ -11,15 +12,20 @@ const exec = async (command: string, options: cp.ExecOptions) => {
   });
 };
 
-export const handleSlashCommand = async (ctx: ICommonMessageContext) => {
-  const branch = ctx.message.text?.split(/\s+/)[1];
+export const handleSlashCommand = async (message: GenericMessage) => {
+  const branch = message.text?.split(/\s+/)[1];
   const cwd = path.resolve(__dirname, '..');
-  const message = await (ctx as IContext).reply('代码更新执行中');
+  const messagesSent = await defaultClientSet.sendBotMessage({
+    clientName: message.clientName,
+    chatId: message.chatId,
+    text: '代码更新执行中',
+    messageIdReplied: message.messageId,
+  })!;
   const pullResult = await exec('git pull', { cwd });
-  await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, pullResult);
+  await messagesSent?.editAll({ text: pullResult });
   if (branch && /^[\w/]+$/.test(branch)) {
     const switchResult = await exec(`git switch ${branch}`, { cwd });
-    await ctx.telegram.editMessageText(message.chat.id, message.message_id, undefined, `${pullResult}\n\n${switchResult}`);
+    await messagesSent?.editAll({ text: `${pullResult}\n\n${switchResult}` });
   }
   cp.spawnSync('pnpm', ['i'], { cwd });
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();

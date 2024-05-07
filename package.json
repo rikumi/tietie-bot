@@ -9,6 +9,7 @@
     "stop": "pm2 stop tietie",
     "migrate": "npm run stop; tsx database/search_migration.ts; npm run start",
     "dev": "tsx src/index.ts",
+    "matrix:login": "tsx src/scripts/matrix_login.ts",
     "format": "prettier --write ."
   },
   "repository": {
