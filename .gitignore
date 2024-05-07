@@ -7,3 +7,4 @@ config.test.json
 package-lock.json
 database/search_imports/*
 !database/search_imports/README.md
+matrix-bot-storage.json
