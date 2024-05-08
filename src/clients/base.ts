@@ -3,8 +3,10 @@ export interface MessageToSend {
   text: string;
   chatId: string;
 
-  mediaType?: 'photo' | 'video' | 'file';
+  mediaType?: 'sticker' | 'photo' | 'video' | 'file';
   mediaUrl?: string;
+  mediaMimeType?: string;
+  mediaSize?: number;
   messageIdReplied?: string;
 
   rawMessageExtra?: any;
@@ -25,8 +27,10 @@ export interface GenericMessage<T = any, U = any> {
   unixDate: number;
 
   isServiceMessage?: boolean;
-  mediaType?: 'photo' | 'video' | 'file';
+  mediaType?: 'sticker' | 'photo' | 'video' | 'file';
   mediaUrl?: string;
+  mediaMimeType?: string;
+  mediaSize?: number;
   messageIdReplied?: string;
 
   rawMessage: T;

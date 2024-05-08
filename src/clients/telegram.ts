@@ -9,7 +9,8 @@ import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
 
 export const fileIdToUrl = (fileId: string, mimeType: string) => {
-  return `https://${config.serverRoot}/tgfile/${mimeType}/${fileId}`;
+  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  return `${serverRoot}/tgfile/${mimeType}/${fileId}`;
 }
 
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
@@ -40,10 +41,11 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage<Message, User>> {
     const method = ({
+      sticker: 'sendSticker',
       photo: 'sendPhoto',
       video: 'sendVideo',
       file: 'sendDocument',
-      default: 'sendMessage'
+      default: 'sendMessage',
     } as const)[message.mediaType ?? 'default'] ?? 'sendMessage';
 
     const messageSent = await this.bot.telegram[method](message.chatId, message.mediaUrl ?? message.text, {
@@ -56,15 +58,18 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     const newText = message.hideEditedFlag ? message.text : `${message.text} (已编辑)`;
-    if (message.mediaType) {
-      await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
-        type: message.mediaType === 'file' ? 'document' : message.mediaType,
-        media: message.mediaUrl!,
-        caption: newText,
-      });
+    if (!message.mediaType) {
+      await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, newText);
       return;
     }
-    await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, newText);
+    if (message.mediaType === 'sticker') {
+      return;
+    }
+    await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
+      type: message.mediaType === 'file' ? 'document' : message.mediaType,
+      media: message.mediaUrl!,
+      caption: newText,
+    });
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
@@ -94,23 +99,37 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
     const video = 'video' in message ? message.video : undefined;
+    const audio = 'audio' in message ? message.audio : undefined;
     const file = 'document' in message ? message.document : undefined;
-    const fileId = (video ?? photo ?? sticker ?? file)?.file_id;
+    const fileId = (video ?? photo ?? audio ?? sticker ?? file)?.file_id;
 
-    if (fileId) {
-      if (video || sticker?.is_video) {
-        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[影片] ') + result.text;
-        result.mediaType = 'video';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, video?.mime_type ?? 'video/webm'));
-      } else if (photo || !sticker?.is_animated) {
-        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[图片] ') + result.text;
-        result.mediaType = 'photo';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'image/jpeg'));
-      } else {
-        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[文件] ') + result.text;
-        result.mediaType = 'file';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'application/octet-stream'));
-      }
+    if (!fileId) {
+      return result;
+    }
+    if (sticker) {
+      result.text = `[${sticker.emoji ?? '🖼️'} 贴纸] `;
+      result.mediaType = 'sticker';
+      result.mediaMimeType = sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'text/json' : 'image/jpeg';
+      result.mediaSize = sticker.file_size;
+      result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, result.mediaMimeType));
+    } else if (video) {
+      result.text = '[影片] ' + result.text;
+      result.mediaType = 'video';
+      result.mediaMimeType = video.mime_type ?? 'video/mp4';
+      result.mediaSize = video.file_size;
+      result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, result.mediaMimeType));
+    } else if (photo) {
+      result.text = '[图片] ' + result.text;
+      result.mediaType = 'photo';
+      result.mediaMimeType = 'image/jpeg';
+      result.mediaSize = photo.file_size;
+      result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'image/jpeg'));
+    } else {
+      result.text = '[文件] ' + result.text;
+      result.mediaType = 'file';
+      result.mediaMimeType = (file ?? audio)?.mime_type ?? 'application/octet-stream';
+      result.mediaSize = (file ?? audio)!.file_size;
+      result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, result.mediaMimeType));
     }
     return result;
   }

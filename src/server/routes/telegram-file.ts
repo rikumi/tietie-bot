@@ -15,10 +15,10 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   // the link has the bot token and should never be exposed to the user
   const url = await telegramClient.bot.telegram.getFileLink(fileId);
 
-  console.log('[SERVER][tgfile] fetching url:', url);
+  console.log('[Server] TelegramFileHandler fetching url:', url.toString());
   const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
 
-  console.log('[SERVER][tgfile] got headers:', fetchRes.headers);
+  console.log('[Server] TelegramFileHandler got headers:', fetchRes.headers);
   res.writeHead(200, 'OK', {
     'content-type': mimeType,
     'content-length': fetchRes.headers['content-length'],

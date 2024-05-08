@@ -8,6 +8,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public bot: MatrixClient;
   public botInfo: IWhoAmI | undefined;
 
+  private cachedMedia = new Map<string, string>();
+
   public constructor() {
     super();
     const storage = new SimpleFsStorageProvider(path.resolve(__dirname, '../../matrix-bot-storage.json'));
@@ -32,22 +34,25 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const messageText = `${message.text}\n${message.mediaUrl ?? ''}`.trim();
-    const sentMessageIdPromise = (() => {
-      if (message.messageIdReplied) {
-        return this.bot.replyText(message.chatId, { event_id: message.messageIdReplied }, messageText);
-      } else {
-        return this.bot.sendText(message.chatId, messageText);
-      }
-    })();
-    const id = await sentMessageIdPromise;
+    const isSupportedSticker = message.mediaType === 'sticker' && message.mediaMimeType === 'image/jpeg';
+    const matrixMediaType = message.mediaType === 'sticker' && !isSupportedSticker ? 'video' : message.mediaType;
+    const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
+    const matrixEventContent = {
+      body: message.text,
+      url: message.mediaType ? await this.uploadMediaAsync(message.mediaUrl!) : undefined,
+      info: { h: 160, w: 160, mimetype: message.mediaMimeType!, size: message.mediaSize! },
+      msgtype: 'm.' + (matrixMediaType ?? 'text'),
+      'm.relates_to': message.messageIdReplied ? { 'm.reply_to': { event_id: message.messageIdReplied } } : undefined,
+    };
+    console.log('[MatrixUserBotClient] sending event:', matrixEventType, matrixEventContent);
+    const messageId = await this.bot.sendEvent(message.chatId, matrixEventType, matrixEventContent);
     return {
       ...message,
       clientName: 'matrix',
-      messageId: id,
+      messageId,
       userId: this.botInfo!.user_id,
       userName: this.botInfo!.user_id,
-      rawMessage: { id, content: message.text },
+      rawMessage: { id: messageId, content: message.text },
       rawUser: this.botInfo,
       unixDate: Date.now() / 1000,
     };
@@ -94,6 +99,37 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       console.error('[MatrixUserBotClient] fetchBotInfo error, retry in 5s', e);
       setTimeout(() => this.fetchBotInfo(), 5000);
     }
+  }
+
+  private async uploadMediaAsync(url: string) {
+    if (this.cachedMedia.has(url)) {
+      const mxcUri = this.cachedMedia.get(url);
+      console.log('[MatrixUserBotClient] using cached media:', this.bot.mxcToHttp(mxcUri));
+      return mxcUri;
+    }
+    // https://spec.matrix.org/v1.10/client-server-api/#post_matrixmediav1create
+    const res = await this.bot.doRequest('POST', '/_matrix/media/v1/create');
+    const mxcUri = res.content_uri;
+    (async () => {
+      console.log('[MatrixUserBotClient] uploadMediaAsync starting to fetch:', url);
+      const resource = await fetch(url);
+      const contentLength = Number(resource.headers.get('Content-Length') ?? resource.headers.get('content-length') ?? '0');
+      const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
+      if (!contentLength || contentLength > 1024 * 1024) {
+        console.log('[MatrixUserBotClient] uploadMediaAsync resource too large:', mxcUri);
+        return; // give you up
+      }
+      const buffer = Buffer.from(await resource.arrayBuffer());
+
+      console.log('[MatrixUserBotClient] uploadMediaAsync resource fetched, starting to upload:', mxcUri);
+      const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
+      await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
+        filename: 'binary',
+      }, buffer, 60000, undefined, contentType);
+      console.log('[MatrixUserBotClient] uploadMediaAsync uploaded:', this.bot.mxcToHttp(mxcUri));
+      this.cachedMedia.set(url, mxcUri);
+    })();
+    return mxcUri;
   }
 }
 

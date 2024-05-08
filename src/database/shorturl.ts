@@ -19,7 +19,8 @@ export const createShortUrl = async (url: string) => {
     if (!exists) break;
   }
   await db.run(`INSERT INTO short_url (id, url) VALUES (?, ?)`, [id, url]);
-  return `https://${config.serverRoot}/s/${id}`;
+  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  return `${serverRoot}/s/${id}`;
 };
 
 export const getOriginalUrl = async (id: string) => {

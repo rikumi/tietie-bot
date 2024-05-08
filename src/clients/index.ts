@@ -36,6 +36,8 @@ export class DefaultClientSet extends EventEmitter {
         chatId: toChatId,
         mediaType: fromMessage.mediaType,
         mediaUrl: fromMessage.mediaUrl,
+        mediaMimeType: fromMessage.mediaMimeType,
+        mediaSize: fromMessage.mediaSize,
         messageIdReplied: toMessageIdReplied,
       });
       recordBridgedMessage(fromMessage.clientName, fromMessage.messageId, toClientName, toMessage.messageId);
