@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import path from 'path';
+import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
 import config from '../../config.json';
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
@@ -42,7 +43,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       url: message.mediaType ? await this.uploadMediaAsync(message.mediaUrl!) : undefined,
       info: { h: 160, w: 160, mimetype: message.mediaMimeType!, size: message.mediaSize! },
       msgtype: 'm.' + (matrixMediaType ?? 'text'),
-      'm.relates_to': message.messageIdReplied ? { 'm.reply_to': { event_id: message.messageIdReplied } } : undefined,
+      'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
     };
     console.log('[MatrixUserBotClient] sending event:', matrixEventType, matrixEventContent);
     const messageId = await this.bot.sendEvent(message.chatId, matrixEventType, matrixEventContent);
@@ -70,14 +71,20 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   private async transformMessage(message: any, roomId: string): Promise<GenericMessage> {
     const attachmentType = message.content.info?.mimetype?.split('/')[0];
-    const edited = message.content['m.new_content'];
+    const editedContent = message.content['m.new_content'];
+    const getBody = (msg: any) => {
+      if (msg.formatted_body) {
+        return $(msg.formatted_body.split(/<\/\s*mx-reply\s*>/i).pop()).text();
+      }
+      return msg.body;
+    };
     return {
       clientName: 'matrix',
-      text: edited ? edited.body : message.content.body.split(/<\/\s*mx-reply\s*>/i).pop().trim(),
+      text: editedContent ? getBody(editedContent) : getBody(message.content),
       userId: message.sender,
       userName: (await this.bot.getUserProfile(message.sender)).displayname,
       chatId: roomId,
-      messageId: edited ? message.content['m.relates_to'].event_id : message.event_id,
+      messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       mediaType: attachmentType ? ({
         image: 'photo',
         video: 'video',

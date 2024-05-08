@@ -1,9 +1,10 @@
-import { getBridgeNickname, getBridgedMessageId, getUnidirectionalBridgesByChat, recordBridgedMessage } from 'src/database/bridge';
+import { getBridgeNickname, getUnidirectionalBridgesByChat } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToSend } from './base';
 import { EventEmitter } from 'events';
 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
+  private recentBridgedMessages = new Map<string, string>();
   public static readonly CLIENT_NAMES = ['telegram', 'discord', 'matrix'] as const;
 
   public async start() {
@@ -27,7 +28,7 @@ export class DefaultClientSet extends EventEmitter {
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
       const toMessageText = fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`;
       const toMessageIdReplied = fromMessage.messageIdReplied
-        ? await getBridgedMessageId(fromMessage.clientName, fromMessage.messageIdReplied, toClientName)
+        ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)
         : undefined;
 
       const toMessage = await toClient.sendMessage({
@@ -40,7 +41,9 @@ export class DefaultClientSet extends EventEmitter {
         mediaSize: fromMessage.mediaSize,
         messageIdReplied: toMessageIdReplied,
       });
-      recordBridgedMessage(fromMessage.clientName, fromMessage.messageId, toClientName, toMessage.messageId);
+      // build bidirectional message id mapping
+      this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId);
+      this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId);
       if (hasCommand) {
         toClient.tryExecuteCommand?.(fromMessage.text, toChatId);
       }
@@ -55,10 +58,12 @@ export class DefaultClientSet extends EventEmitter {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
+      const messageIdToEdit = this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId);
+      if (!messageIdToEdit) return;
       toClient.editMessage({
         clientName: toClientName,
         chatId: toChatId,
-        messageId: await getBridgedMessageId(fromMessage.clientName, fromMessage.messageId, toClientName),
+        messageId: messageIdToEdit,
         text: fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`,
       });
     }));
@@ -108,6 +113,19 @@ export class DefaultClientSet extends EventEmitter {
       return;
     }
     await client.stop();
+  }
+
+  private recordRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localMessageId: string) {
+    const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
+    console.log('[DefaultClinetSet] recordRecentMessageId:', key, localMessageId);
+    this.recentBridgedMessages.set(key, localMessageId);
+  }
+
+  private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): string | undefined {
+    const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
+    const value = this.recentBridgedMessages.get(key);
+    console.log('[DefaultClinetSet] convertRecentMessageId:', key, value);
+    return value;
   }
 }
 

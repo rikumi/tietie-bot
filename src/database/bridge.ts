@@ -12,17 +12,6 @@ export const init = async () => {
     from_client,
     from_chat_id
   )`);
-  await db.run(`CREATE TABLE IF NOT EXISTS recent_bridged_messages (
-    from_client TEXT NOT NULL,
-    from_message_id TEXT NOT NULL,
-    to_client TEXT NOT NULL,
-    to_message_id TEXT NOT NULL
-  )`);
-  await db.run(`CREATE INDEX IF NOT EXISTS recent_bridged_messages_index ON recent_bridged_messages (
-    from_client,
-    from_message_id,
-    to_client
-  )`);
   await db.run(`CREATE TABLE IF NOT EXISTS bridge_nick (
     client_name TEXT NOT NULL,
     chat_id TEXT NOT NULL,
@@ -78,24 +67,6 @@ export const removeUnidirectionalBridge = async (fromClient: string, fromChatId:
 export const removeBidirectionalBridge = async (clientName: string, chatId: string) => {
   const db = await getDatabase();
   await db.run(`DELETE FROM bridge WHERE from_client = ? AND from_chat_id = ? OR to_client = ? AND to_chat_id = ?`, [clientName, chatId, clientName, chatId]);
-};
-
-export const recordBridgedMessage = async (fromClient: string, fromMessageId: string, toClient: string, toMessageId: string) => {
-  const db = await getDatabase();
-  const exists = await db.get(`SELECT * FROM recent_bridged_messages WHERE from_client = ? AND from_message_id = ? AND to_client = ? AND to_message_id = ?`, [fromClient, fromMessageId, toClient, toMessageId]);
-  if (exists) {
-    return;
-  }
-  await db.run(`INSERT INTO recent_bridged_messages (from_client, from_message_id, to_client, to_message_id) VALUES (?, ?, ?, ?)`, [fromClient, fromMessageId, toClient, toMessageId]);
-};
-
-export const getBridgedMessageId = async (fromClient: string, fromMessageId: string, toClient: string) => {
-  const db = await getDatabase();
-  const exists = await db.get(`SELECT * FROM recent_bridged_messages WHERE from_client = ? AND from_message_id = ? AND to_client = ?`, [fromClient, fromMessageId, toClient]);
-  if (!exists) {
-    return;
-  }
-  return exists.to_message_id;
 };
 
 export const setBridgeNickname = async (clientName: string, chatId: string, userId: string, nickname: string) => {

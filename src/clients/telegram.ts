@@ -57,11 +57,14 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       default: 'sendMessage',
     } as const)[message.mediaType ?? 'default'] ?? 'sendMessage';
 
-    const messageSent = await this.bot.telegram[method](message.chatId, message.mediaUrl ?? message.text, {
+    const content = message.mediaUrl ?? message.text;
+    const options = {
       reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
       caption: message.mediaType ? message.text : undefined,
       ...message.rawMessageExtra ?? {},
-    });
+    };
+    console.log('[TelegramBotClient] sending message:', method, { content, ...options });
+    const messageSent = await this.bot.telegram[method](message.chatId, content, options);
     return (await this.transformMessage(messageSent))!;
   }
 
