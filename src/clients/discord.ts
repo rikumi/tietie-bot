@@ -89,7 +89,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       clientName: 'discord',
       text: convertDiscordMessage(message.content ?? '') + (hasMultiAttachments ? ' ' + message.attachments.map((a: any) => a.url).join(' ') : ''),
       userId: message.author?.id,
-      userName: message.author?.username,
+      userName: message.author?.global_name ?? message.author?.name,
       chatId: message.channel_id,
       messageId: message.id,
       mediaType: singleAttachment ? ({
