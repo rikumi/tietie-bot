@@ -36,10 +36,21 @@ export const init = async () => {
   )`);
 };
 
-export const getBridgesByChat = async (fromClient: string, fromChatId: string) => {
+export const getUnidirectionalBridgesByChat = async (fromClient: string, fromChatId: string) => {
   const db = await getDatabase();
   const result = await db.all(`SELECT * FROM bridge WHERE from_client = ? AND from_chat_id = ?`, [fromClient, fromChatId]);
   return result.map(bridge => ({
+    toClient: bridge.to_client,
+    toChatId: bridge.to_chat_id,
+  }));
+};
+
+export const getBidirectionalBridgesByChat = async (clientName: string, chatId: string) => {
+  const db = await getDatabase();
+  const result = await db.all(`SELECT * FROM bridge WHERE from_client = ? AND from_chat_id = ? OR to_client = ? AND to_chat_id = ?`, [clientName, chatId, clientName, chatId]);
+  return result.map(bridge => ({
+    fromClient: bridge.from_client,
+    fromChatId: bridge.from_chat_id,
     toClient: bridge.to_client,
     toChatId: bridge.to_chat_id,
   }));
@@ -61,16 +72,12 @@ export const registerBidirectionalBridge = async (fromClient: string, fromChatId
 
 export const removeUnidirectionalBridge = async (fromClient: string, fromChatId: string) => {
   const db = await getDatabase();
-  const exists = await db.get(`SELECT * FROM bridge WHERE from_client = ? AND from_chat_id = ?`, [fromClient, fromChatId]);
-  if (!exists) {
-    return;
-  }
   await db.run(`DELETE FROM bridge WHERE from_client = ? AND from_chat_id = ?`, [fromClient, fromChatId]);
 };
 
-export const removeBidirectionalBridge = async (fromClient: string, fromChatId: string, toClient: string, toChatId: string) => {
-  await removeUnidirectionalBridge(fromClient, fromChatId);
-  await removeUnidirectionalBridge(toClient, toChatId);
+export const removeBidirectionalBridge = async (clientName: string, chatId: string) => {
+  const db = await getDatabase();
+  await db.run(`DELETE FROM bridge WHERE from_client = ? AND from_chat_id = ? OR to_client = ? AND to_chat_id = ?`, [clientName, chatId, clientName, chatId]);
 };
 
 export const recordBridgedMessage = async (fromClient: string, fromMessageId: string, toClient: string, toMessageId: string) => {

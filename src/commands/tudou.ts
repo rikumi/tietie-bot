@@ -31,6 +31,7 @@ const makeReplyMarkup = (currentIndex: number, totalLength: number) => ({
 const escape = (text = '') => text.replace(/([\u0000-\u007f])/g, '\\$1');
 
 export const handleSlashCommand = async (_: GenericMessage | undefined, ctx: any) => {
+  if (!ctx) return;
   const keywords = ctx.message ? ctx.message.text!.trim().split(/\s+/).slice(1) : [];
   const notes = await xhs.getXhsNotes('5d85f6a600000000010037d8');
 

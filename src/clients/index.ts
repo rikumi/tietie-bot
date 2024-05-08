@@ -1,4 +1,4 @@
-import { getBridgeNickname, getBridgedMessageId, getBridgesByChat, recordBridgedMessage } from 'src/database/bridge';
+import { getBridgeNickname, getBridgedMessageId, getUnidirectionalBridgesByChat, recordBridgedMessage } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToSend } from './base';
 import { EventEmitter } from 'events';
 
@@ -19,7 +19,7 @@ export class DefaultClientSet extends EventEmitter {
   }
 
   public async bridgeMessage(fromMessage: GenericMessage): Promise<GenericMessage[]> {
-    const bridges = await getBridgesByChat(fromMessage.clientName, fromMessage.chatId);
+    const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);

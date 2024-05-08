@@ -3,6 +3,8 @@ import { GenericMessage } from 'src/clients/base';
 const SYMBOLS = [, '⬛', '🟫', '🟦', '🟪', '🟨'];
 
 export const handleSlashCommand = (_: GenericMessage | undefined, ctx: any) => {
+  if (!ctx) return;
+
   const message = ctx.callbackQuery?.message ?? ctx.message!;
   const counts = ctx.callbackQuery?.data?.split(':')[1].split(',').map(Number) ?? [0, 0, 0, 0, 0];
 
