@@ -1,3 +1,4 @@
+import { GenericMessage } from 'src/clients/base';
 import * as xhs from '../modules/xhs';
 import dayjs from 'dayjs';
 
@@ -29,7 +30,7 @@ const makeReplyMarkup = (currentIndex: number, totalLength: number) => ({
 
 const escape = (text = '') => text.replace(/([\u0000-\u007f])/g, '\\$1');
 
-export const handleTelegramContext = async (ctx: any) => {
+export const handleSlashCommand = async (_: GenericMessage | undefined, ctx: any) => {
   const keywords = ctx.message ? ctx.message.text!.trim().split(/\s+/).slice(1) : [];
   const notes = await xhs.getXhsNotes('5d85f6a600000000010037d8');
 
@@ -100,3 +101,5 @@ export const handleTelegramContext = async (ctx: any) => {
   }
   await renderNote(notes[searchResultIndex || 0] || notes[0]);
 };
+
+export const handleCustomAction = (ctx: any) => handleSlashCommand(undefined, ctx);

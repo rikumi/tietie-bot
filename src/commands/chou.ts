@@ -1,6 +1,8 @@
+import { GenericMessage } from 'src/clients/base';
+
 const SYMBOLS = [, '⬛', '🟫', '🟦', '🟪', '🟨'];
 
-export const handleTelegramContext = (ctx: any) => {
+export const handleSlashCommand = (_: GenericMessage | undefined, ctx: any) => {
   const message = ctx.callbackQuery?.message ?? ctx.message!;
   const counts = ctx.callbackQuery?.data?.split(':')[1].split(',').map(Number) ?? [0, 0, 0, 0, 0];
 
@@ -49,3 +51,5 @@ export const handleTelegramContext = (ctx: any) => {
     reply_markup: replyMarkup,
   });
 };
+
+export const handleCustomAction = (ctx: any) => handleSlashCommand(undefined, ctx);

@@ -30,14 +30,15 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   if (await tietie.handleMessage(message) !== false) return;
 
   const action = message.text.trim().split(' ')[0].substring(1);
-  const module = path.resolve(__dirname, `./commands/${action}.ts`);
-  console.log('[CommandHandler] Resolving module:', module);
+  const moduleName = path.resolve(__dirname, `./commands/${action}.ts`);
+  console.log('[CommandHandler] Resolving module:', moduleName);
 
-  if (!/^\w+$/.test(action) || !fs.existsSync(module)) {
+  if (!/^\w+$/.test(action) || !fs.existsSync(moduleName)) {
     return;
   }
   try {
-    const result = await (await import(module)).handleSlashCommand?.(message, rawContext);
+    const module = await import(moduleName);
+    const result = await module.handleSlashCommand?.(message, rawContext);
     if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
