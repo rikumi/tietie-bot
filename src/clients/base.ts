@@ -12,6 +12,7 @@ export interface MessageToSend {
 
 export interface MessageToEdit extends MessageToSend {
   messageId: string;
+  hideEditedFlag?: boolean;
 }
 
 export interface GenericMessage<T = any, U = any> {

@@ -70,7 +70,7 @@ export class DefaultClientSet extends EventEmitter {
     const messagesBridged = await this.bridgeMessage({ ...messageSent, isServiceMessage: true });
     const messages = [messageSent, ...messagesBridged];
     const editAll = (patch: Partial<MessageToSend>) => Promise.all(messages.map(async (message) => {
-      await defaultClientSet.clients.get(message!.clientName)!.editMessage({ ...message, ...patch });
+      await defaultClientSet.clients.get(message!.clientName)!.editMessage({ ...message, ...patch, hideEditedFlag: true });
     }));
     return { messages, editAll };
   }
