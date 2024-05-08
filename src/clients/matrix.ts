@@ -54,7 +54,13 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    console.warn('[MatrixUserBotClient] editMessage is currently not supported!', message);
+    // MSC2676
+    await this.bot.sendEvent(message.chatId, 'm.room.message', {
+      body: `* ${message.text}`,
+      msgtype: 'm.text',
+      'm.new_content': { body: message.text, msgtype: 'm.text' },
+      'm.relates_to': { rel_type: 'm.replace', event_id: message.messageId },
+    });
   }
 
   private async transformMessage(message: any, roomId: string): Promise<GenericMessage> {

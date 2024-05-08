@@ -25,6 +25,9 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   })!;
   const pullResult = await exec('git pull', { cwd });
   await messagesSent?.editAll({ text: pullResult });
+  if (pullResult.trim() === 'Already up to date.') {
+    return;
+  }
   if (branch && /^[\w/]+$/.test(branch)) {
     const switchResult = await exec(`git switch ${branch}`, { cwd });
     await messagesSent?.editAll({ text: `${pullResult}\n\n${switchResult}` });
