@@ -63,7 +63,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       });
       return;
     }
-    await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, message.text);
+    await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, `${message.text} (已编辑)`);
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
