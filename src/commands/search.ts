@@ -226,7 +226,8 @@ export const handleTelegramCallbackQuery = async (ctx: any) => {
   }
 }
 
-export const handleTelegramCommand = async (ctx: any) => {
+export const handleSlashCommand = async (_: GenericMessage, ctx: any) => {
+  if (!ctx) return;
   const { message, from } = ctx;
   const userId = String(from.id);
   if (['group', 'channel'].includes(message.chat.type)) {

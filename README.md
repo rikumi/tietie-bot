@@ -20,7 +20,6 @@ chou - 模拟十连抽卡
 del - 删除被引用的贴贴 Bot 消息
 drink - 随机选择一种饮料
 jieba - [sentence] 使用 jieba 进行马尔可夫分词
-make - <target> 做个东西
 mcinfo - <server>[:port] 查询 Minecraft 服务器信息
 me - <description> 代表自己说一句话
 nick - [name] 设置自己转发到 Discord 频道的昵称
