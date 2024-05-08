@@ -35,7 +35,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const isSupportedSticker = message.mediaType === 'sticker' && message.mediaMimeType === 'image/jpeg';
-    const matrixMediaType = message.mediaType === 'sticker' && !isSupportedSticker ? 'video' : message.mediaType;
+    const matrixMediaType = message.mediaType === 'sticker' && !isSupportedSticker ? 'video' : message.mediaType === 'photo' ? 'image' : message.mediaType;
     const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
     const matrixEventContent = {
       body: message.text,
