@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 // @ts-ignore
 import discord from 'discord-user-bots';
 
-import { GenericClient, GenericMessage, MessageToSend } from './base';
+import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 
 const convertDiscordMessage = (text: string) => {
@@ -78,7 +78,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     return this.transformMessage(messageSent);
   }
 
-  public async editMessage(message: GenericMessage): Promise<void> {
+  public async editMessage(message: MessageToEdit): Promise<void> {
     await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.mediaUrl ?? ''}`.trim());
   }
 

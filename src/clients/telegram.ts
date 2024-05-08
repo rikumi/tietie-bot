@@ -4,7 +4,7 @@ import type { Message, Update, User } from 'telegraf/typings/core/types/typegram
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
 
-import { GenericClient, GenericMessage, MessageToSend } from './base';
+import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
 
@@ -54,7 +54,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     return (await this.transformMessage(messageSent))!;
   }
 
-  public async editMessage(message: GenericMessage): Promise<void> {
+  public async editMessage(message: MessageToEdit): Promise<void> {
     if (message.mediaType) {
       await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
         type: message.mediaType === 'file' ? 'document' : message.mediaType,

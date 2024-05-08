@@ -54,6 +54,7 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
 
 const handleEditedMessage = async (message: GenericMessage) => {
   search.handleEditedMessage(message);
+  clients.bridgeEditedMessage(message);
 };
 
 (async () => {

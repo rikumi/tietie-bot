@@ -2,7 +2,7 @@ import { EventEmitter } from 'events';
 import path from 'path';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
 import config from '../../config.json';
-import { GenericClient, GenericMessage, MessageToSend } from './base';
+import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 
 export class MatrixUserBotClient extends EventEmitter implements GenericClient<any, any, any> {
   public bot: MatrixClient;
@@ -17,7 +17,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     this.bot.on('room.message', async (roomId: string, message: any) => {
       const transformedMessage = await this.transformMessage(message, roomId);
       if (transformedMessage.userId === this.botInfo?.user_id) return;
-      this.emit('message', transformedMessage);
+      this.emit(message.content['m.new_content'] ? 'edit-message' : 'message', transformedMessage);
     });
     AutojoinRoomsMixin.setupOnClient(this.bot);
     this.fetchBotInfo();
@@ -53,19 +53,20 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     };
   }
 
-  public async editMessage(message: GenericMessage): Promise<void> {
+  public async editMessage(message: MessageToEdit): Promise<void> {
     console.warn('[MatrixUserBotClient] editMessage is currently not supported!', message);
   }
 
   private async transformMessage(message: any, roomId: string): Promise<GenericMessage> {
     const attachmentType = message.content.info?.mimetype?.split('/')[0];
+    const edited = message.content['m.new_content'];
     return {
       clientName: 'matrix',
-      text: message.content.body,
+      text: edited ? `${edited.body} (已编辑)` : message.content.body,
       userId: message.sender,
       userName: (await this.bot.getUserProfile(message.sender)).displayname,
       chatId: roomId,
-      messageId: message.event_id,
+      messageId: edited ? message.content['m.relates_to'].event_id : message.event_id,
       mediaType: attachmentType ? ({
         image: 'photo',
         video: 'video',

@@ -10,6 +10,10 @@ export interface MessageToSend {
   rawMessageExtra?: any;
 }
 
+export interface MessageToEdit extends MessageToSend {
+  messageId: string;
+}
+
 export interface GenericMessage<T = any, U = any> {
   clientName: string;
   text: string;
@@ -37,7 +41,7 @@ export interface GenericClient<T = any, U = any, V = {}> {
   on(eventName: 'edit-message', handler: (message: GenericMessage<T, U>) => void): void;
 
   sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
-  editMessage(message: GenericMessage<T, U>): Promise<void>;
+  editMessage(message: MessageToEdit): Promise<void>;
   tryExecuteCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }

@@ -47,6 +47,21 @@ export class DefaultClientSet extends EventEmitter {
     return results.filter(Boolean) as GenericMessage[];
   }
 
+  public async bridgeEditedMessage(fromMessage: GenericMessage): Promise<void> {
+    const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
+    await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
+      const toClient = this.clients.get(toClientName);
+      if (!toClient) return;
+      const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
+      toClient.editMessage({
+        clientName: toClientName,
+        chatId: toChatId,
+        messageId: await getBridgedMessageId(fromMessage.clientName, fromMessage.messageId, toClientName),
+        text: fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`,
+      });
+    }));
+  }
+
   public async sendBotMessage(message: MessageToSend) {
     const client = this.clients.get(message.clientName);
     console.log('[DefaultClientSet] sendBotMessage:', message.clientName, message);
