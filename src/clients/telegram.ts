@@ -59,7 +59,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
         type: message.mediaType === 'file' ? 'document' : message.mediaType,
         media: message.mediaUrl!,
-        caption: message.text,
+        caption: `${message.text} (已编辑)`,
       });
       return;
     }
