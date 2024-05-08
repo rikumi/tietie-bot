@@ -97,7 +97,7 @@ export const setBridgeNickname = async (clientName: string, chatId: string, user
   if (exists) {
     await db.run(`UPDATE bridge_nick SET nickname = ? WHERE client_name = ? AND chat_id = ? AND user_id = ?`, [nickname, clientName, chatId, userId]);
   } else {
-    await db.run(`INSERT INTO bridge_nick (client_name, chat_id, user_id, nickname) VALUES (?, ?, ?)`, [clientName, chatId, userId, nickname]);
+    await db.run(`INSERT INTO bridge_nick (client_name, chat_id, user_id, nickname) VALUES (?, ?, ?, ?)`, [clientName, chatId, userId, nickname]);
   }
 };
 
