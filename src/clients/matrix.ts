@@ -73,7 +73,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const edited = message.content['m.new_content'];
     return {
       clientName: 'matrix',
-      text: edited ? edited.body : message.content.body,
+      text: edited ? edited.body : message.content.body.split(/<\/\s*mx-reply\s*>/i).pop().trim(),
       userId: message.sender,
       userName: (await this.bot.getUserProfile(message.sender)).displayname,
       chatId: roomId,
