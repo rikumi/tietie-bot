@@ -102,10 +102,10 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   private async uploadMediaAsync(url: string) {
-    if (this.cachedMedia.has(url)) {
-      const mxcUri = this.cachedMedia.get(url);
-      console.log('[MatrixUserBotClient] using cached media:', this.bot.mxcToHttp(mxcUri));
-      return mxcUri;
+    const existingUri = this.cachedMedia.get(url);
+    if (existingUri) {
+      console.log('[MatrixUserBotClient] using cached media:', this.bot.mxcToHttp(existingUri));
+      return existingUri;
     }
     // https://spec.matrix.org/v1.10/client-server-api/#post_matrixmediav1create
     const res = await this.bot.doRequest('POST', '/_matrix/media/v1/create');
@@ -124,7 +124,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       console.log('[MatrixUserBotClient] uploadMediaAsync resource fetched, starting to upload:', mxcUri);
       const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
       await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
-        filename: 'binary',
+        filename: contentType.replace(/\//g, '.'), // temporary, yet geek
       }, buffer, 60000, undefined, contentType);
       console.log('[MatrixUserBotClient] uploadMediaAsync uploaded:', this.bot.mxcToHttp(mxcUri));
       this.cachedMedia.set(url, mxcUri);
