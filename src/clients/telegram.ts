@@ -99,15 +99,15 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
     if (fileId) {
       if (video || sticker?.is_video) {
-        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[影片] ') + result.text;
+        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[影片] ') + result.text;
         result.mediaType = 'video';
         result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, video?.mime_type ?? 'video/webm'));
       } else if (photo || !sticker?.is_animated) {
-        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[图片] ') + result.text;
+        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[图片] ') + result.text;
         result.mediaType = 'photo';
         result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'image/jpeg'));
       } else {
-        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[文件] ') + result.text;
+        result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[文件] ') + result.text;
         result.mediaType = 'file';
         result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'application/octet-stream'));
       }
