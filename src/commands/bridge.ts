@@ -2,6 +2,8 @@ import { DefaultClientSet } from 'src/clients';
 import { GenericMessage } from 'src/clients/base';
 import { getBidirectionalBridgesByChat, registerBidirectionalBridge, removeBidirectionalBridge } from 'src/database/bridge';
 
+export const USAGE = `<platform> <chatId> | rm | list 在多个会话之间建立绑定关系`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const [clientName, chatId] = message.text.split(/\s+/).slice(1);
   if (clientName === 'rm') {

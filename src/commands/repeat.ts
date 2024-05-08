@@ -2,6 +2,8 @@ import { GenericMessage } from 'src/clients/base';
 import { setRepeatEnabled, isRepeatEnabled } from '../database/repeat';
 import defaultClientSet from 'src/clients';
 
+export const USAGE = `<on|off> 开启/关闭感叹句复读功能`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const str = message.text.split(/\s+/)[1];
   if (!['on', 'off'].includes(str)) {

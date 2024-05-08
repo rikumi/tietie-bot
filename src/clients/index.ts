@@ -45,7 +45,7 @@ export class DefaultClientSet extends EventEmitter {
       return toMessage;
     }));
     return results.filter(Boolean) as GenericMessage[];
-  };
+  }
 
   public async sendBotMessage(message: MessageToSend) {
     const client = this.clients.get(message.clientName);
@@ -58,7 +58,13 @@ export class DefaultClientSet extends EventEmitter {
       await defaultClientSet.clients.get(message!.clientName)!.editMessage({ ...message, ...patch });
     }));
     return { messages, editAll };
-  };
+  }
+
+  public async setCommandList(commandList: { command: string; description: string }[]) {
+    await Promise.all(Array.from(this.clients.values()).map(async (client) => {
+      return await client.setCommandList?.(commandList);
+    }));
+  }
 
   private async registerAndStartClient(clientName: string) {
     try {
@@ -71,15 +77,11 @@ export class DefaultClientSet extends EventEmitter {
         console.log('[DefaultClientSet] received edit-message:', clientName, message);
         this.emit('edit-message', message);
       });
-      client.on('custom-action', (action) => {
-        console.log('[DefaultClientSet] received custom-action:', clientName, action);
-        this.emit('custom-action', action);
-      });
       this.clients.set(clientName, client);
       await client.start();
-      console.log('Client started:', clientName);
+      console.log('[DefaultClientSet] Client started:', clientName);
     } catch (e) {
-      console.warn('Failed to initialize bot', clientName, e);
+      console.warn('[DefaultClientSet] Failed to initialize bot', clientName, e);
     }
   }
 

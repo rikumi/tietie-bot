@@ -1,6 +1,8 @@
 import mc from 'minecraft-protocol';
 import { GenericMessage } from 'src/clients/base';
 
+export const USAGE = `<server>[:port] 查询 Minecraft 服务器信息`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const server = message.text.trim().split(/\s+/)[1];
   const hostPort = /^([\w\.-]+)(\:\d+)?$/.exec(server);

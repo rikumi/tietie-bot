@@ -1,6 +1,8 @@
 import { GenericMessage } from 'src/clients/base';
 import { getBridgeNickname, setBridgeNickname } from 'src/database/bridge';
 
+export const USAGE = `[name] 设置自己转发到其他会话的昵称`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const nickname = message.text!.trim().split(/\s+/)[1];
   if (!nickname) {

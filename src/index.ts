@@ -15,6 +15,8 @@ import { startServer } from './server';
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
 
+const commandMap = new Map<string, any>();
+
 const handleMessage = async (message: GenericMessage, rawContext: any) => {
   search.handleMessage(message);
   clients.bridgeMessage(message);
@@ -29,15 +31,9 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   if (await video.handleMessage(message) !== false) return;
   if (await tietie.handleMessage(message) !== false) return;
 
-  const action = message.text.trim().split(' ')[0].substring(1);
-  const moduleName = path.resolve(__dirname, `./commands/${action}.ts`);
-  console.log('[CommandHandler] Resolving module:', moduleName);
-
-  if (!/^\w+$/.test(action) || !fs.existsSync(moduleName)) {
-    return;
-  }
+  const module = commandMap.get(message.text.trim().split(' ')[0].substring(1));
+  if (!module) return;
   try {
-    const module = await import(moduleName);
     const result = await module.handleSlashCommand?.(message, rawContext);
     if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
@@ -60,21 +56,24 @@ const handleEditedMessage = async (message: GenericMessage) => {
   search.handleEditedMessage(message);
 };
 
-const handleCustomAction = async (rawContext: any) => {
-  const moduleName = rawContext.callbackQuery!.data!.split(':')[0];
-  const module = `./commands/${moduleName}.ts`;
-  try {
-    const result = await (await import(module)).handleCustomAction?.(rawContext);
-    if (result) rawContext.reply(result);
-  } catch (e) {
-    console.error(e);
-  }
-};
-
 (async () => {
   await clients.start();
   clients.on('message', handleMessage);
   clients.on('edit-message', handleEditedMessage);
-  clients.on('custom-action', handleCustomAction);
+
+  for (const fileName of fs.readdirSync(path.resolve(__dirname, 'commands'))) {
+    if (fileName === __filename) continue;
+    const commandName = fileName.replace(/\.ts$/, '');
+    const filePath = path.resolve(__dirname, 'commands', fileName);
+    commandMap.set(commandName, await import(filePath));
+    console.log('[CommandHandlers] registered command:', commandName, filePath);
+  }
+
+  clients.setCommandList(
+    Array.from(commandMap.entries())
+      .filter(([, module]) => !!module.USAGE)
+      .map(([command, module]) => ({ command, description: module.USAGE }))
+  );
+
   startServer();
 })();

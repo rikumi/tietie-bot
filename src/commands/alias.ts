@@ -3,6 +3,8 @@ import path from 'path';
 import { setAlias, getAlias } from '../database/alias';
 import { GenericMessage } from 'src/clients/base';
 
+export const USAGE = `<name> [target] 设置指令的别名`;
+
 export const handleMessage = async (message: GenericMessage) => {
   if (!message.text.startsWith('/')) {
     return false;

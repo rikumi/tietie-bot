@@ -3,6 +3,8 @@ import cp from 'child_process';
 import { GenericMessage } from 'src/clients/base';
 import defaultClientSet from 'src/clients';
 
+export const USAGE = `更新代码并重启 (管理员使用)`;
+
 const exec = async (command: string, options: cp.ExecOptions) => {
   return await new Promise<string>((resolve, reject) => {
     cp.exec(command, options, (error, stdout) => {

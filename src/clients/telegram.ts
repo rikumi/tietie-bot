@@ -23,11 +23,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if (!transformedMessage) return;
       this.emit('message', transformedMessage, ctx);
     });
-
-    this.bot.on('callback_query', (ctx) => {
-      this.emit('custom-action', ctx);
-    });
-
     this.bot.on('edited_message', async (ctx: Context<Update.EditedMessageUpdate>) => {
       const transformedMessage = await this.transformMessage(ctx.editedMessage!);
       if (!transformedMessage) return;
@@ -69,6 +64,10 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       return;
     }
     await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, message.text);
+  }
+
+  public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
+    await this.bot.telegram.setMyCommands(commandList);
   }
 
   private async transformMessage(message: Message): Promise<GenericMessage<Message, User> | undefined> {

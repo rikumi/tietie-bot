@@ -3,6 +3,8 @@ import { putSearchData, generateSearchResultsByKeyword, deleteMessageById, forma
 import { ExtraEditMessageText, ExtraReplyMessage } from 'telegraf/typings/telegram-types';
 import { GenericMessage } from 'src/clients/base';
 
+export const USAGE = `[chatName] <keyword> 群内隐私搜索`;
+
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
 

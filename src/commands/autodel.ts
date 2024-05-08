@@ -1,6 +1,8 @@
 import { GenericMessage } from 'src/clients/base';
 import { setAutodelEnabled, isAutodelEnabled } from '../database/autodel';
 
+export const USAGE = `<on|off> 设置自动删除自己触发的贴贴指令`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const str = message.text.split(/\s+/)[1];
   if (!['on', 'off'].includes(str)) {

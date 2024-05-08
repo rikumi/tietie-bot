@@ -35,9 +35,9 @@ export interface GenericClient<T = any, U = any, V = {}> {
 
   on(eventName: 'message', handler: (message: GenericMessage<T, U>, rawContext?: any) => void): void;
   on(eventName: 'edit-message', handler: (message: GenericMessage<T, U>) => void): void;
-  on(eventName: 'custom-action', handler: (action: any) => void): void;
 
   sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
   editMessage(message: GenericMessage<T, U>): Promise<void>;
   tryExecuteCommand?(text: string, chatId: string): Promise<void>;
+  setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }

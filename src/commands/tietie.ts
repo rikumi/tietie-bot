@@ -5,6 +5,8 @@ import { GenericMessage } from 'src/clients/base';
 import telegram from 'src/clients/telegram';
 import defaultClientSet from 'src/clients';
 
+export const USAGE = `<on|off> 开启/关闭任意非 ASCII 指令贴贴功能`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const str = message.text.split(/\s+/)[1];
   if (!['on', 'off'].includes(str)) {

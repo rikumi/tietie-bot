@@ -1,6 +1,8 @@
 import { addDrink, checkDrinks } from '../database/drinks';
 import { GenericMessage } from 'src/clients/base';
 
+export const USAGE = `<name> 添加一种饮料`;
+
 export const handleSlashCommand = async (message: GenericMessage) => {
   const content = Array.from(
     new Set(message.text.split(/\s+/).slice(1))
