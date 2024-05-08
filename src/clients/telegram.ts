@@ -72,33 +72,47 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   private async transformMessage(message: Message): Promise<GenericMessage<Message, User> | undefined> {
-    const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
-    const video = 'video' in message ? message.video : undefined;
-    const document = 'document' in message ? message.document : undefined;
-    const fileId = (photo ?? video ?? document)?.file_id;
-    const mimeType = photo ? 'image/jpeg' : (video ?? document)?.mime_type;
-    const shortUrl = fileId ? await createShortUrl(fileIdToUrl(fileId, mimeType!)) : undefined;
     const text = 'text' in message && message.text || 'caption' in message && message.caption || '';
 
+    // filter out messages mentioning other bots
     if (/@(\w+bot)\b/.test(text) && RegExp.$1 !== this.bot.botInfo?.username) {
       return;
     }
-
-    return {
+    const result: GenericMessage<Message, User> = {
       clientName: 'telegram',
       text: text.replace(/@\w+/, ''),
       userId: String(message.from!.id),
       userName: this.transformUser(message.from),
       chatId: String(message.chat.id),
       messageId: String(message.message_id),
-      mediaType: photo ? 'photo' : video ? 'video' : document ? 'file' : undefined,
-      mediaUrl: shortUrl,
       messageIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.message_id ?? '') || undefined,
       rawMessage: message,
       rawUser: message.from!,
       rawMessageReplied: 'reply_to_message' in message && message.reply_to_message || undefined,
       unixDate: message.date,
+    };
+    const sticker = 'sticker' in message ? message.sticker : undefined;
+    const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
+    const video = 'video' in message ? message.video : undefined;
+    const file = 'document' in message ? message.document : undefined;
+    const fileId = (video ?? photo ?? sticker ?? file)?.file_id;
+
+    if (fileId) {
+      if (video || sticker?.is_video) {
+        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[影片] ') + result.text;
+        result.mediaType = 'video';
+        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, video?.mime_type ?? 'video/webm'));
+      } else if (photo || !sticker?.is_animated) {
+        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[图片] ') + result.text;
+        result.mediaType = 'photo';
+        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'image/jpeg'));
+      } else {
+        result.text = (sticker ? `[${sticker.emoji} 贴纸] ` : '[文件] ') + result.text;
+        result.mediaType = 'file';
+        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'application/octet-stream'));
+      }
     }
+    return result;
   }
 
   private transformUser(user?: User): string {

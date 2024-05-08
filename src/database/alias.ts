@@ -7,7 +7,6 @@ export const init = async () => {
     target TEXT NOT NULL,
     group_id INT NOT NULL
   )`);
-  await db.run(`ALTER TABLE alias ADD COLUMN client_name TEXT NOT NULL DEFAULT 'telegram'`).catch();
 }
 
 export const setAlias = async (clientName: string, chatId: string, name: string, target: string) => {

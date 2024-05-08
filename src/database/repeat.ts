@@ -6,7 +6,6 @@ export const init = async () => {
     chat_id INT NOT NULL,
     enabled INT NOT NULL
   )`);
-  await db.run(`ALTER TABLE repeat ADD COLUMN client_name TEXT NOT NULL DEFAULT 'telegram'`).catch();
 };
 
 export const setRepeatEnabled = async (clientName: string, chatId: string, isEnabled: boolean) => {

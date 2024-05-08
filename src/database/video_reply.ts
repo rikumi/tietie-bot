@@ -8,7 +8,6 @@ export const init = async () => {
     command TEXT NOT NULL,
     video_id TEXT NOT NULL
   )`);
-  await db.run(`ALTER TABLE video_reply ADD COLUMN client_name TEXT NOT NULL DEFAULT 'telegram'`).catch();
 };
 
 export const setVideoReply = async (clientName: string, chatId: string, command: string, videoId: string) => {
