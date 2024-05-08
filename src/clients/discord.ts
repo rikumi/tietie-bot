@@ -46,7 +46,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
 
     this.bot.on.message_create = (message: any) => {
       const transformedMessage = this.transformMessage(message);
-      if (message.author.name === config.discordUsername) return;
+      if (message.author?.username === config.discordUsername) return;
       this.emit('message', transformedMessage);
     };
     this.bot.on.heartbeat_received = () => {
@@ -58,7 +58,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     };
     this.bot.on.message_edit = (message: any) => {
       const transformedMessage = this.transformMessage(message);
-      if (message.author.name === config.discordUsername) return;
+      if (message.author?.username === config.discordUsername) return;
       this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
     };
     await this.botReady;
@@ -89,7 +89,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       clientName: 'discord',
       text: convertDiscordMessage(message.content ?? '') + (hasMultiAttachments ? ' ' + message.attachments.map((a: any) => a.url).join(' ') : ''),
       userId: message.author?.id,
-      userName: message.author?.global_name ?? message.author?.name,
+      userName: message.author?.global_name ?? message.author?.username,
       chatId: message.channel_id,
       messageId: message.id,
       mediaType: singleAttachment ? ({
