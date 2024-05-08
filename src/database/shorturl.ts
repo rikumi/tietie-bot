@@ -13,12 +13,15 @@ export const init = async () => {
 export const createShortUrl = async (url: string) => {
   const db = await getDatabase();
   let id: string;
-  while (true) {
-    id = crypto.randomBytes(4).toString('hex').toLowerCase();
+  for (let index = 0; ; index++) {
+    id = crypto.createHash('sha256').update(`${url}|${index}`).digest('hex').substring(0, 8).toLowerCase();
     const exists = await getOriginalUrl(id);
-    if (!exists) break;
+    if (!exists) {
+      await db.run(`INSERT INTO short_url (id, url) VALUES (?, ?)`, [id, url]);
+      break;
+    }
+    if (exists === url) break;
   }
-  await db.run(`INSERT INTO short_url (id, url) VALUES (?, ?)`, [id, url]);
   return `https://${config.serverRoot}/s/${id}`;
 };
 

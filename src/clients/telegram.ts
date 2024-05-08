@@ -1,5 +1,5 @@
 import type Context from 'telegraf/typings/context';
-import type { Message, Update, User } from 'telegraf/typings/core/types/typegram'
+import type { Message, Sticker, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
@@ -7,10 +7,19 @@ import { Telegraf } from 'telegraf';
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
+import { setTelegramFileId } from 'src/database/tgfile';
 
-export const fileIdToUrl = (fileId: string, mimeType: string) => {
+export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
+  if (fileUniqueId) {
+    try {
+      await setTelegramFileId(fileUniqueId, fileId);
+      return `https://${config.serverRoot}/tguniq/${mimeType}/${fileUniqueId}`;
+    } catch (e) {
+      console.warn('[TelegramBotClient] fileIdToUrl error', e);
+    }
+  }
   return `https://${config.serverRoot}/tgfile/${mimeType}/${fileId}`;
-}
+};
 
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
   public bot: Telegraf<Context<Update>> = new Telegraf(config.telegramBotToken);
@@ -96,20 +105,21 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const video = 'video' in message ? message.video : undefined;
     const file = 'document' in message ? message.document : undefined;
     const fileId = (video ?? photo ?? sticker ?? file)?.file_id;
+    const fileUniqueId = (video ?? photo ?? sticker ?? file)?.file_unique_id;
 
-    if (fileId) {
+    if (fileId && fileUniqueId) {
       if (video || sticker?.is_video) {
         result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[影片] ') + result.text;
         result.mediaType = 'video';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, video?.mime_type ?? 'video/webm'));
+        result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId, video?.mime_type ?? 'video/webm'));
       } else if (photo || !sticker?.is_animated) {
         result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[图片] ') + result.text;
         result.mediaType = 'photo';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'image/jpeg'));
+        result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId, 'image/jpeg'));
       } else {
         result.text = (sticker ? `[${sticker.emoji ?? '🖼️'} 贴纸] ` : '[文件] ') + result.text;
         result.mediaType = 'file';
-        result.mediaUrl = await createShortUrl(fileIdToUrl(fileId, 'application/octet-stream'));
+        result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId, 'application/octet-stream'));
       }
     }
     return result;

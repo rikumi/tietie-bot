@@ -14,7 +14,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
       chatId: message.chatId,
       text: '',
       mediaType: 'video',
-      mediaUrl: fileIdToUrl(videoId, 'video/mp4'),
+      mediaUrl: await fileIdToUrl(videoId, null, 'video/mp4'),
       messageIdReplied: message.messageId,
       rawMessageExtra: { disable_notification: true },
     });
