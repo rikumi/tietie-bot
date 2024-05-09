@@ -35,15 +35,17 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const isSticker = message.mediaType === 'sticker';
-    const isSupportedSticker = isSticker && message.mediaMimeType === 'image/jpeg';
-    const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.mediaType === 'photo' ? 'image' : message.mediaType;
+    const isSticker = message.media?.type === 'sticker';
+    const isSupportedSticker = isSticker && message.media?.mimeType === 'image/jpeg';
+    const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media?.type === 'photo' ? 'image' : message.media?.type;
     const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
-    const displaySize = isSticker ? 160 : 320;
+    const preferredStickerSize = (config as any).preferredStickerSize ?? 160;
+    const displayWidth = isSticker ? preferredStickerSize : message.media?.width;
+    const displayHeight = isSticker ? preferredStickerSize : message.media?.height;
     const matrixEventContent = {
       body: message.text,
-      url: message.mediaType ? await this.uploadMediaAsync(message.mediaUrl!) : undefined,
-      info: { h: displaySize, w: displaySize, mimetype: message.mediaMimeType!, size: message.mediaSize! },
+      url: message.media?.type ? await this.uploadMediaAsync(message.media.url!) : undefined,
+      info: { h: displayHeight, w: displayWidth, mimetype: message.media?.mimeType!, size: message.media?.size! },
       msgtype: 'm.' + (matrixMediaType ?? 'text'),
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
     };
@@ -80,6 +82,15 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       }
       return msg.body;
     };
+    const media = attachmentType ? {
+      type: ({
+        image: 'photo',
+        video: 'video',
+      } as any)[attachmentType] || 'file',
+      url: this.bot.mxcToHttp(message.content.url),
+      mimeType: message.content.info?.mimetype,
+      size: message.content.info?.size,
+    } : undefined;
     return {
       clientName: 'matrix',
       text: editedContent ? getBody(editedContent) : getBody(message.content),
@@ -87,11 +98,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userName: (await this.bot.getUserProfile(message.sender)).displayname,
       chatId: roomId,
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
-      mediaType: attachmentType ? ({
-        image: 'photo',
-        video: 'video',
-      } as any)[attachmentType] || 'file' : undefined,
-      mediaUrl: attachmentType ? this.bot.mxcToHttp(message.content.url) : undefined,
+      media,
       messageIdReplied: message.content['m.relates_to']?.['m.in_reply_to']?.event_id,
       rawMessage: message,
       rawUser: message.author!,

@@ -35,10 +35,7 @@ export class DefaultClientSet extends EventEmitter {
         clientName: toClientName,
         text: toMessageText,
         chatId: toChatId,
-        mediaType: fromMessage.mediaType,
-        mediaUrl: fromMessage.mediaUrl,
-        mediaMimeType: fromMessage.mediaMimeType,
-        mediaSize: fromMessage.mediaSize,
+        media: fromMessage.media,
         messageIdReplied: toMessageIdReplied,
       });
       // build bidirectional message id mapping

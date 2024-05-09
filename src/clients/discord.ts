@@ -71,7 +71,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const messageSent = await this.bot.send(message.chatId, {
-      content: `${message.text} ${message.mediaUrl ?? ''}`.trim(),
+      content: `${message.text} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied ?? null,
       ...message.rawMessageExtra ?? {},
     });
@@ -79,12 +79,21 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.mediaUrl ?? ''}`.trim());
+    await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }
 
   private transformMessage(message: any): GenericMessage {
     const singleAttachment = message.attachments?.length === 1 ? message.attachments[0] : undefined;
     const hasMultiAttachments = message.attachments?.length > 1;
+    const media = singleAttachment ? {
+      type: ({
+        image: 'photo',
+        video: 'video',
+      } as any)[singleAttachment.content_type?.split('/')[0]] || 'file',
+      url: singleAttachment.url,
+      mimeType: singleAttachment.content_type,
+      size: singleAttachment.size,
+    } : undefined;
     return {
       clientName: 'discord',
       text: convertDiscordMessage(message.content ?? '') + (hasMultiAttachments ? ' ' + message.attachments.map((a: any) => a.url).join(' ') : ''),
@@ -92,11 +101,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       userName: message.author?.global_name ?? message.author?.username,
       chatId: message.channel_id,
       messageId: message.id,
-      mediaType: singleAttachment ? ({
-        image: 'photo',
-        video: 'video',
-      } as any)[singleAttachment.content_type?.split('/')[0]] || 'file' : undefined,
-      mediaUrl: singleAttachment?.url,
+      media,
       messageIdReplied: message.referenced_message?.id,
       rawMessage: message,
       rawUser: message.author!,

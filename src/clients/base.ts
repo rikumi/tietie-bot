@@ -1,22 +1,3 @@
-export interface MessageToSend {
-  clientName: string;
-  text: string;
-  chatId: string;
-
-  mediaType?: 'sticker' | 'photo' | 'video' | 'file';
-  mediaUrl?: string;
-  mediaMimeType?: string;
-  mediaSize?: number;
-  messageIdReplied?: string;
-
-  rawMessageExtra?: any;
-}
-
-export interface MessageToEdit extends MessageToSend {
-  messageId: string;
-  hideEditedFlag?: boolean;
-}
-
 export interface GenericMessage<T = any, U = any> {
   clientName: string;
   text: string;
@@ -26,16 +7,23 @@ export interface GenericMessage<T = any, U = any> {
   messageId: string;
   unixDate: number;
 
+  media?: GenericMedia;
+
   isServiceMessage?: boolean;
-  mediaType?: 'sticker' | 'photo' | 'video' | 'file';
-  mediaUrl?: string;
-  mediaMimeType?: string;
-  mediaSize?: number;
   messageIdReplied?: string;
 
   rawMessage: T;
   rawUser: U;
   rawMessageReplied?: T;
+}
+
+export interface GenericMedia {
+  type: 'sticker' | 'photo' | 'video' | 'file';
+  url: string;
+  mimeType: string;
+  size: number;
+  width?: number;
+  height?: number;
 }
 
 export interface GenericClient<T = any, U = any, V = {}> {
@@ -49,4 +37,18 @@ export interface GenericClient<T = any, U = any, V = {}> {
   editMessage(message: MessageToEdit): Promise<void>;
   tryExecuteCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
+}
+
+export interface MessageToSend {
+  clientName: string;
+  text: string;
+  chatId: string;
+  media?: GenericMedia;
+  messageIdReplied?: string;
+  rawMessageExtra?: any;
+}
+
+export interface MessageToEdit extends MessageToSend {
+  messageId: string;
+  hideEditedFlag?: boolean;
 }

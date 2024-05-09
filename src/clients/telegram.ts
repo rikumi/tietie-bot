@@ -58,12 +58,12 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       video: 'sendVideo',
       file: 'sendDocument',
       default: 'sendMessage',
-    } as const)[message.mediaType ?? 'default'] ?? 'sendMessage';
+    } as const)[message.media?.type ?? 'default'] ?? 'sendMessage';
 
-    const content = message.mediaUrl ?? message.text;
+    const content = message.media?.url ?? message.text;
     const options = {
       reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
-      caption: message.mediaType ? message.text : undefined,
+      caption: message.media ? message.text : undefined,
       ...message.rawMessageExtra ?? {},
     };
     console.log('[TelegramBotClient] sending message:', method, { content, ...options });
@@ -73,16 +73,16 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     const newText = message.hideEditedFlag ? message.text : `${message.text} (已编辑)`;
-    if (!message.mediaType) {
+    if (!message.media) {
       await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, newText);
       return;
     }
-    if (message.mediaType === 'sticker') {
+    if (message.media.type === 'sticker') {
       return;
     }
     await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
-      type: message.mediaType === 'file' ? 'document' : message.mediaType,
-      media: message.mediaUrl!,
+      type: message.media.type === 'file' ? 'document' : message.media.type,
+      media: message.media.url!,
       caption: newText,
     });
   }
@@ -124,28 +124,43 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     if (sticker) {
       result.text = `[${sticker.emoji ?? '🖼️'} 贴纸] `;
-      result.mediaType = 'sticker';
-      result.mediaMimeType = sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'text/json' : 'image/jpeg';
-      result.mediaSize = sticker.file_size;
-      result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.mediaMimeType));
+      result.media = {
+        type: 'sticker',
+        mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'text/json' : 'image/jpeg',
+        size: sticker.file_size ?? 0,
+        url: '',
+      };
+      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (video) {
       result.text = '[影片] ' + result.text;
-      result.mediaType = 'video';
-      result.mediaMimeType = video.mime_type ?? 'video/mp4';
-      result.mediaSize = video.file_size;
-      result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.mediaMimeType));
+      result.media = {
+        type: 'video',
+        mimeType: video.mime_type ?? 'video/mp4',
+        size: video.file_size ?? 0,
+        url: '',
+        width: video.width,
+        height: video.height,
+      };
+      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (photo) {
       result.text = '[图片] ' + result.text;
-      result.mediaType = 'photo';
-      result.mediaMimeType = 'image/jpeg';
-      result.mediaSize = photo.file_size;
-      result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg'));
+      result.media = {
+        type: 'photo',
+        mimeType: 'image/jpeg',
+        size: photo.file_size ?? 0,
+        url: await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg')),
+        width: photo.width,
+        height: photo.height,
+      };
     } else {
       result.text = '[文件] ' + result.text;
-      result.mediaType = 'file';
-      result.mediaMimeType = (file ?? audio)?.mime_type ?? 'application/octet-stream';
-      result.mediaSize = (file ?? audio)!.file_size;
-      result.mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.mediaMimeType));
+      result.media = {
+        type: 'file',
+        mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
+        size: (file ?? audio)?.file_size ?? 0,
+        url: '',
+      };
+      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType));
     }
     return result;
   }
