@@ -8,7 +8,6 @@ import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './b
 import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
 import { setTelegramFileId } from 'src/database/tgfile';
-import { BRIDGE_LOG } from '.';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
   const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
