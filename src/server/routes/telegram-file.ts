@@ -2,7 +2,6 @@ import { IncomingMessage, ServerResponse } from 'http';
 import telegramClient from '../../clients/telegram';
 import { request } from 'https';
 import { getTelegramFileId } from 'src/database/tgfile';
-import lottie from 'lottie-converter';
 
 export const ROUTE = /^\/(tgfile|tguniq)\/(.+)\/(.*?)$/;
 
@@ -20,37 +19,17 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const url = await telegramClient.bot.telegram.getFileLink(fileId);
 
   console.log('[Server] TelegramFileHandler fetching url:', url.toString());
-  
-  if (mimeType === 'application/tgs+gzip') {
-    try {
-      const fetchRes = await fetch(url);
-      const converted = Buffer.from(await lottie({
-        file: Buffer.from(await fetchRes.arrayBuffer()),
-        format: 'mp4',
-        width: 512,
-        height: 512,
-      }), 'base64');
-      res.writeHead(200, 'OK', {
-        'content-type': 'video/webm',
-        'content-length': converted.length,
-      });
-      res.write(converted);
-      res.end();
-      return;
-    } catch (e) {
-      res.writeHead(500, 'Internal Server Error');
-      res.write(e.message + '\n' + e.stack);
-      res.end();
-      return;
-    }
-  }
 
+  const headers: any = {
+    'content-type': mimeType.replace(/\+gzip$/, ''),
+    'content-length': fetchRes.headers['content-length'],
+  };
+  if (mimeType.endsWith('+gzip')) {
+    headers['content-encoding'] = 'gzip';
+  }
   const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
   console.log('[Server] TelegramFileHandler got headers:', mimeType, fetchRes.headers['content-length']);
-  res.writeHead(200, 'OK', {
-    'content-type': mimeType,
-    'content-length': fetchRes.headers['content-length'],
-  });
+  res.writeHead(200, 'OK', headers);
   fetchRes.pipe(res);
 };
 
