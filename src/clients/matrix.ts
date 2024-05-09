@@ -50,9 +50,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
-      const preferredStickerSize = (config as any).preferredStickerSize ?? 160;
-      const displayWidth = isSticker ? preferredStickerSize : message.media.width;
-      const displayHeight = isSticker ? preferredStickerSize : message.media.height;
+      const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
+      const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
       matrixEventContent.url = await this.getMxcUriAndUpload(message.media.url!);
       matrixEventContent.info = { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! }
       matrixEventContent.msgtype = 'm.' + matrixMediaType;
