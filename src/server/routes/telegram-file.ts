@@ -20,9 +20,9 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const url = await telegramClient.bot.telegram.getFileLink(fileId);
 
   console.log('[Server] TelegramFileHandler fetching url:', url.toString());
-  const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
-
+  
   if (mimeType === 'application/tgs+gzip') {
+    const fetchRes = await fetch(url);
     const converted = Buffer.from(await lottie({
       file: Buffer.from(await fetchRes.arrayBuffer()),
       format: 'mp4',
@@ -37,7 +37,8 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
     res.end();
     return;
   }
-  
+
+  const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
   console.log('[Server] TelegramFileHandler got headers:', mimeType, fetchRes.headers['content-length']);
   res.writeHead(200, 'OK', {
     'content-type': mimeType,
