@@ -20,6 +20,8 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
 
   console.log('[Server] TelegramFileHandler fetching url:', url.toString());
 
+  const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
+  console.log('[Server] TelegramFileHandler got headers:', mimeType, fetchRes.headers['content-length']);
   const headers: any = {
     'content-type': mimeType.replace(/\+gzip$/, ''),
     'content-length': fetchRes.headers['content-length'],
@@ -27,8 +29,6 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   if (mimeType.endsWith('+gzip')) {
     headers['content-encoding'] = 'gzip';
   }
-  const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
-  console.log('[Server] TelegramFileHandler got headers:', mimeType, fetchRes.headers['content-length']);
   res.writeHead(200, 'OK', headers);
   fetchRes.pipe(res);
 };
