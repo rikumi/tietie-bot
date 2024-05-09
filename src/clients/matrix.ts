@@ -45,6 +45,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       body: message.media ? `${message.text} ${message.media.url}` : message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
+      'mx.rkm.tietie-bot.raw_message': message.rawMessage,
     };
     if (message.media && message.media.size < 1024 * 1024) {
       const isSticker = message.media.type === 'sticker';
