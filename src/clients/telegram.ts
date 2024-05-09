@@ -128,6 +128,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'text/json' : 'image/jpeg',
         size: sticker.file_size ?? 0,
         url: '',
+        width: sticker.width,
+        height: sticker.height,
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (video) {
