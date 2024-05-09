@@ -6,6 +6,7 @@ import discord from 'discord-user-bots';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
+import { BRIDGE_LOG } from '.';
 
 const convertDiscordMessage = (text: string) => {
   const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
@@ -57,7 +58,6 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.bot.on.heartbeat_received = () => {
       if (this.bot._heartbeatStopTimeout) clearTimeout(this.bot._heartbeatStopTimeout);
       this.bot._heartbeatStopTimeout = setTimeout(() => {
-        console.log('_heartbeatStopTimeout');
         this.start();
       }, 60000);
     };
@@ -120,7 +120,6 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     const guildId = this.bot.info.guilds.find((guild: any) => {
       return guild.channels.some((channel: any) => channel.id === chatId);
     })?.id;
-    console.log('[DiscordUserBotClient] execCommand', guildId, text);
     if (!guildId) return;
     const commands = await this.bot.requester.fetch_request(
       `guilds/${guildId}/application-command-index`,
@@ -145,7 +144,6 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     };
     await this.bot.call_check([]);
     const interactionRes = await this.bot.requester.fetch_request('interactions', payload);
-    console.log('[DiscordUserBotClient] Sent interaction:', interactionRes);
     return;
   }
 }

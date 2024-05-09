@@ -1,6 +1,7 @@
 import { getBridgeNickname, getUnidirectionalBridgesByChat } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToSend } from './base';
 import { EventEmitter } from 'events';
+import config from '../../config.json';
 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
@@ -68,7 +69,6 @@ export class DefaultClientSet extends EventEmitter {
 
   public async sendBotMessage(message: MessageToSend) {
     const client = this.clients.get(message.clientName);
-    console.log('[DefaultClientSet] sendBotMessage:', message.clientName, message);
     if (!client) return;
     const messageSent = await client.sendMessage(message);
     const messagesBridged = await this.bridgeMessage({ ...messageSent, isServiceMessage: true });
@@ -89,16 +89,13 @@ export class DefaultClientSet extends EventEmitter {
     try {
       const client: GenericClient = (await import('./' + clientName)).default;
       client.on('message', (message, rawContext) => {
-        console.log('[DefaultClientSet] received message:', clientName, message);
         this.emit('message', message, rawContext);
       });
       client.on('edit-message', (message) => {
-        console.log('[DefaultClientSet] received edit-message:', clientName, message);
         this.emit('edit-message', message);
       });
       this.clients.set(clientName, client);
       await client.start();
-      console.log('[DefaultClientSet] Client started:', clientName);
     } catch (e) {
       console.warn('[DefaultClientSet] Failed to initialize bot', clientName, e);
     }
@@ -114,14 +111,12 @@ export class DefaultClientSet extends EventEmitter {
 
   private recordRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localMessageId: string) {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
-    console.log('[DefaultClinetSet] recordRecentMessageId:', key, localMessageId);
     this.recentBridgedMessages.set(key, localMessageId);
   }
 
   private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): string | undefined {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
     const value = this.recentBridgedMessages.get(key);
-    console.log('[DefaultClinetSet] convertRecentMessageId:', key, value);
     return value;
   }
 }

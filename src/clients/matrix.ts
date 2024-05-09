@@ -58,7 +58,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       matrixEventContent.msgtype = 'm.' + matrixMediaType;
     }
     const matrixEventType = matrixEventContent.msgtype === 'm.sticker' ? 'm.sticker' : 'm.room.message';
-    console.log('[MatrixUserBotClient] sending event:', matrixEventType, matrixEventContent);
     const messageId = await this.bot.sendEvent(message.chatId, matrixEventType, matrixEventContent);
     return {
       ...message,
@@ -129,7 +128,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   private async getMxcUriAndUpload(url: string) {
     const existingUri = this.cachedMedia.get(url);
     if (existingUri) {
-      console.log('[MatrixUserBotClient] using cached media:', this.bot.mxcToHttp(existingUri));
       return existingUri;
     }
 
@@ -151,16 +149,13 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   private async uploadToMxcUri(mxcUri: string, url: string) {
-    console.log('[MatrixUserBotClient] uploadMediaAsync starting to fetch:', url);
     const resource = await fetch(url);
     const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
     const buffer = Buffer.from(await resource.arrayBuffer());
-    console.log('[MatrixUserBotClient] uploadMediaAsync resource fetched, starting to upload:', mxcUri);
     const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
     await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
       filename: contentType.replace(/\//g, '.'), // temporary, yet geek
     }, buffer, 60000, undefined, contentType);
-    console.log('[MatrixUserBotClient] uploadMediaAsync uploaded:', this.bot.mxcToHttp(mxcUri));
     this.cachedMedia.set(url, mxcUri);
     this.pendingMediaUpload = undefined;
   }

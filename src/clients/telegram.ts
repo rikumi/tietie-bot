@@ -8,6 +8,7 @@ import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './b
 import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
 import { setTelegramFileId } from 'src/database/tgfile';
+import { BRIDGE_LOG } from '.';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
   const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
@@ -66,7 +67,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       caption: message.media ? message.text : undefined,
       ...message.rawMessageExtra ?? {},
     };
-    console.log('[TelegramBotClient] sending message:', method, { content, ...options });
     const messageSent = await this.bot.telegram[method](message.chatId, content, options);
     return (await this.transformMessage(messageSent))!;
   }
