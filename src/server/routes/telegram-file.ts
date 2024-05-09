@@ -22,20 +22,27 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   console.log('[Server] TelegramFileHandler fetching url:', url.toString());
   
   if (mimeType === 'application/tgs+gzip') {
-    const fetchRes = await fetch(url);
-    const converted = Buffer.from(await lottie({
-      file: Buffer.from(await fetchRes.arrayBuffer()),
-      format: 'mp4',
-      width: 512,
-      height: 512,
-    }), 'base64');
-    res.writeHead(200, 'OK', {
-      'content-type': 'video/webm',
-      'content-length': converted.length,
-    });
-    res.write(converted);
-    res.end();
-    return;
+    try {
+      const fetchRes = await fetch(url);
+      const converted = Buffer.from(await lottie({
+        file: Buffer.from(await fetchRes.arrayBuffer()),
+        format: 'mp4',
+        width: 512,
+        height: 512,
+      }), 'base64');
+      res.writeHead(200, 'OK', {
+        'content-type': 'video/webm',
+        'content-length': converted.length,
+      });
+      res.write(converted);
+      res.end();
+      return;
+    } catch (e) {
+      res.writeHead(500, 'Internal Server Error');
+      res.write(e.message + '\n' + e.stack);
+      res.end();
+      return;
+    }
   }
 
   const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
