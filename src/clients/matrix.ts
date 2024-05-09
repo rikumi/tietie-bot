@@ -42,7 +42,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const matrixEventContent: any = {
-      body: `${message.text} ${message.media?.url}`,
+      body: message.media ? `${message.text} ${message.media.url}` : message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
     };
