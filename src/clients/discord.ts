@@ -49,6 +49,11 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       if (message.author?.username === config.discordUsername) return;
       this.emit('message', transformedMessage);
     };
+    this.bot.on.message_edit = (message: any) => {
+      const transformedMessage = this.transformMessage(message);
+      if (message.author?.username === config.discordUsername) return;
+      this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
+    };
     this.bot.on.heartbeat_received = () => {
       if (this.bot._heartbeatStopTimeout) clearTimeout(this.bot._heartbeatStopTimeout);
       this.bot._heartbeatStopTimeout = setTimeout(() => {
@@ -56,10 +61,10 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
         this.start();
       }, 60000);
     };
-    this.bot.on.message_edit = (message: any) => {
+    this.bot.on.reply = (message: any) => {
       const transformedMessage = this.transformMessage(message);
       if (message.author?.username === config.discordUsername) return;
-      this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
+      this.emit('message', transformedMessage);
     };
     await this.botReady;
   }
