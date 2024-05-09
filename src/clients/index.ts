@@ -38,6 +38,7 @@ export class DefaultClientSet extends EventEmitter {
         chatId: toChatId,
         media: fromMessage.media,
         messageIdReplied: toMessageIdReplied,
+        rawMessage: fromMessage.rawMessage,
       });
       // build bidirectional message id mapping
       this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId);
