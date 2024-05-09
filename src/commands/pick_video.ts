@@ -13,8 +13,12 @@ export const handleSlashCommand = async (message: GenericMessage) => {
       clientName: message.clientName,
       chatId: message.chatId,
       text: '',
-      mediaType: 'video',
-      mediaUrl: await fileIdToUrl(videoId, null, 'video/mp4'),
+      media: {
+        type: 'video',
+        url: await fileIdToUrl(videoId, null, 'video/mp4'),
+        mimeType: 'video/mp4',
+        size: 0,
+      },
       messageIdReplied: message.messageId,
       rawMessageExtra: { disable_notification: true },
     });

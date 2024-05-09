@@ -35,20 +35,23 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const isSticker = message.media?.type === 'sticker';
-    const isSupportedSticker = isSticker && message.media?.mimeType === 'image/jpeg';
-    const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media?.type === 'photo' ? 'image' : message.media?.type;
-    const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
-    const preferredStickerSize = (config as any).preferredStickerSize ?? 160;
-    const displayWidth = isSticker ? preferredStickerSize : message.media?.width;
-    const displayHeight = isSticker ? preferredStickerSize : message.media?.height;
-    const matrixEventContent = {
+    const matrixEventContent: any = {
       body: message.text,
-      url: message.media?.type ? await this.uploadMediaAsync(message.media.url!) : undefined,
-      info: { h: displayHeight, w: displayWidth, mimetype: message.media?.mimeType!, size: message.media?.size! },
-      msgtype: 'm.' + (matrixMediaType ?? 'text'),
+      msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
     };
+    if (message.media) {
+      const isSticker = message.media.type === 'sticker';
+      const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
+      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
+      const preferredStickerSize = (config as any).preferredStickerSize ?? 160;
+      const displayWidth = isSticker ? preferredStickerSize : message.media.width;
+      const displayHeight = isSticker ? preferredStickerSize : message.media.height;
+      matrixEventContent.url = await this.uploadMediaAsync(message.media.url!);
+      matrixEventContent.info = { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! }
+      matrixEventContent.msgtype = 'm.' + matrixMediaType;
+    }
+    const matrixEventType = matrixEventContent.msgtype === 'm.sticker' ? 'm.sticker' : 'm.room.message';
     console.log('[MatrixUserBotClient] sending event:', matrixEventType, matrixEventContent);
     const messageId = await this.bot.sendEvent(message.chatId, matrixEventType, matrixEventContent);
     return {

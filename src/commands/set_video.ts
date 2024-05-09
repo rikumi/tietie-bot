@@ -1,6 +1,7 @@
 import { GenericMessage } from 'src/clients/base';
 import { setVideoReply, getVideoReply } from '../database/video_reply';
 import defaultClientSet from 'src/clients';
+import { fileIdToUrl } from 'src/clients/telegram';
 
 export const USAGE = `<command> 将被引用的视频设置为视频指令`;
 
@@ -14,8 +15,12 @@ export const handleMessage = async (message: GenericMessage) => {
     defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
-      mediaType: 'video',
-      mediaUrl: videoId,
+      media: {
+        type: 'video',
+        url: await fileIdToUrl(videoId, null, 'video/mp4'),
+        mimeType: 'video/mp4',
+        size: 0,
+      },
       text: '',
       messageIdReplied: message.messageId,
       rawMessageExtra: { disable_notification: true },
