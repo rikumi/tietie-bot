@@ -38,6 +38,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if (!transformedMessage) return;
       this.emit('edit-message', transformedMessage, ctx);
     });
+    this.bot.on('callback_query', (ctx) => {
+      this.emit('telegram-callback-query', ctx);
+    });
   }
 
   public async start(): Promise<void> {

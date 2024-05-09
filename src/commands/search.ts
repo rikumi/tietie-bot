@@ -19,6 +19,7 @@ export const splitToKeywords = (text: string) => {
 
 export const handleMessage = (message: GenericMessage) => {
   try {
+    if (message.clientName !== 'telegram') return;
     if (message.rawMessage?.chat?.type === 'private') return; // 不记录与 bot 的对话
     const searchChatId = formatChatId(message.chatId);
     const { userId, messageId } = message;
@@ -37,6 +38,7 @@ export const handleMessage = (message: GenericMessage) => {
 
 export const handleEditedMessage = (message: GenericMessage) => {
   try {
+    if (message.clientName !== 'telegram') return;
     if (message.rawMessage?.chat?.type === 'private') return; // 不记录与 bot 的对话
     deleteMessageById(formatChatId(message.chatId), message.messageId);
     const words = splitToKeywords(message.text);

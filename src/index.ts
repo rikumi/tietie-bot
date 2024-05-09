@@ -11,6 +11,7 @@ import clients from './clients';
 import { GenericMessage } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
+import telegramClient from './clients/telegram';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -61,6 +62,7 @@ const handleEditedMessage = async (message: GenericMessage) => {
   await clients.start();
   clients.on('message', handleMessage);
   clients.on('edit-message', handleEditedMessage);
+  telegramClient.on('telegram-callback-query', search.handleTelegramCallbackQuery);
 
   for (const fileName of fs.readdirSync(path.resolve(__dirname, 'commands'))) {
     if (fileName === __filename) continue;
