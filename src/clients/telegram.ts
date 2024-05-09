@@ -125,7 +125,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       result.text = `[${sticker.emoji ?? '🖼️'} 贴纸] `;
       result.media = {
         type: 'sticker',
-        mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'application/gzip' : 'image/jpeg',
+        mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'application/tgs+gzip' : 'image/jpeg',
         size: sticker.file_size ?? 0,
         url: '',
         width: sticker.width,
