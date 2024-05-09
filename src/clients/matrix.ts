@@ -1,4 +1,5 @@
 import { EventEmitter } from 'events';
+import fs from 'fs';
 import path from 'path';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
@@ -10,6 +11,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public botInfo: IWhoAmI | undefined;
 
   private cachedMedia = new Map<string, string>();
+  private pendingMediaUpload: Promise<void> | undefined;
 
   public constructor() {
     super();
@@ -34,20 +36,24 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     this.bot.stop();
   }
 
+  public async flushMedia(mxcUri: string) {
+    await this.uploadToMxcUri(mxcUri, 'https://mag.wcoomd.org/uploads/2018/05/blank.pdf'); // TODO: change this to a blank image
+  }
+
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const matrixEventContent: any = {
       body: message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
     };
-    if (message.media) {
+    if (message.media && message.media.size < 1024 * 1024) {
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
       const preferredStickerSize = (config as any).preferredStickerSize ?? 160;
       const displayWidth = isSticker ? preferredStickerSize : message.media.width;
       const displayHeight = isSticker ? preferredStickerSize : message.media.height;
-      matrixEventContent.url = await this.uploadMediaAsync(message.media.url!);
+      matrixEventContent.url = await this.getMxcUriAndUpload(message.media.url!);
       matrixEventContent.info = { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! }
       matrixEventContent.msgtype = 'm.' + matrixMediaType;
     }
@@ -120,35 +126,43 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     }
   }
 
-  private async uploadMediaAsync(url: string) {
+  private async getMxcUriAndUpload(url: string) {
     const existingUri = this.cachedMedia.get(url);
     if (existingUri) {
       console.log('[MatrixUserBotClient] using cached media:', this.bot.mxcToHttp(existingUri));
       return existingUri;
     }
-    // https://spec.matrix.org/v1.10/client-server-api/#post_matrixmediav1create
-    const res = await this.bot.doRequest('POST', '/_matrix/media/v1/create');
-    const mxcUri = res.content_uri;
-    (async () => {
-      console.log('[MatrixUserBotClient] uploadMediaAsync starting to fetch:', url);
-      const resource = await fetch(url);
-      const contentLength = Number(resource.headers.get('Content-Length') ?? resource.headers.get('content-length') ?? '0');
-      const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
-      if (!contentLength || contentLength > 1024 * 1024) {
-        console.log('[MatrixUserBotClient] uploadMediaAsync resource too large:', mxcUri);
-        return; // give you up
-      }
-      const buffer = Buffer.from(await resource.arrayBuffer());
 
-      console.log('[MatrixUserBotClient] uploadMediaAsync resource fetched, starting to upload:', mxcUri);
-      const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
-      await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
-        filename: contentType.replace(/\//g, '.'), // temporary, yet geek
-      }, buffer, 60000, undefined, contentType);
-      console.log('[MatrixUserBotClient] uploadMediaAsync uploaded:', this.bot.mxcToHttp(mxcUri));
-      this.cachedMedia.set(url, mxcUri);
+    // await pending uploads by current process
+    while (this.pendingMediaUpload) {
+      await this.pendingMediaUpload;
+    }
+
+    // fetching uri should be included in the pendingMediaUpload promise...
+    const mxcUriPromise = this.bot.doRequest('POST', '/_matrix/media/v1/create').then(res => res.content_uri);
+
+    this.pendingMediaUpload = (async () => {
+      const mxcUri = await mxcUriPromise;
+      await this.uploadToMxcUri(mxcUri, url);
     })();
-    return mxcUri;
+
+    // ...and also be awaited alone
+    return await mxcUriPromise;
+  }
+
+  private async uploadToMxcUri(mxcUri: string, url: string) {
+    console.log('[MatrixUserBotClient] uploadMediaAsync starting to fetch:', url);
+    const resource = await fetch(url);
+    const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
+    const buffer = Buffer.from(await resource.arrayBuffer());
+    console.log('[MatrixUserBotClient] uploadMediaAsync resource fetched, starting to upload:', mxcUri);
+    const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
+    await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
+      filename: contentType.replace(/\//g, '.'), // temporary, yet geek
+    }, buffer, 60000, undefined, contentType);
+    console.log('[MatrixUserBotClient] uploadMediaAsync uploaded:', this.bot.mxcToHttp(mxcUri));
+    this.cachedMedia.set(url, mxcUri);
+    this.pendingMediaUpload = undefined;
   }
 }
 
