@@ -171,35 +171,11 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   /**
    * Oh my god Durov see what you've done
    */
-  private transformForwardOrigin(message: Message) {
-    if ('forward_origin' in message && message.forward_origin) {
-      const forwardOrigin = message.forward_origin;
-      if (forwardOrigin.type === 'user') {
-        return this.transformUser(forwardOrigin.sender_user);
-      }
-      if (forwardOrigin.type === 'hidden_user') {
-        return forwardOrigin.sender_user_name;
-      }
-      if (forwardOrigin.type === 'chat') {
-        if (forwardOrigin.sender_chat.type === 'private') {
-          return this.transformUser(forwardOrigin.sender_chat as any);
-        }
-        return forwardOrigin.sender_chat.title;
-      }
-      if (forwardOrigin.type === 'channel') {
-        if (forwardOrigin.chat.type === 'private') {
-          return this.transformUser(forwardOrigin.chat as any);
-        }
-        return forwardOrigin.chat.title;
-      }
-    }
-    if ('forward_from' in message) {
-      return this.transformUser(message.forward_from as any);
-    }
-    if ('forward_sender_name' in message) {
-      return message.forward_sender_name;
-    }
-    return '未知会话';
+  private transformForwardOrigin(message: any) {
+    const o = message.forward_origin;
+    const originName = o?.sender_user_name || o?.sender_chat?.title || o?.chat?.title || message.forward_sender_name;
+    const originChat = o?.sender_user || o?.chat || o?.sender_chat || message.forward_from;
+    return originName || this.transformUser(originChat) || '未知会话';
   }
 }
 
