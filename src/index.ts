@@ -12,6 +12,7 @@ import { GenericMessage } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
 import telegramClient from './clients/telegram';
+import config from '../config.json';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -22,6 +23,11 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   search.handleMessage(message);
   clients.bridgeMessage(message);
 
+  // filter out messages mentioning other bots
+  if (/@(\w+bot)\b/.test(message.text)
+    && [config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
+    return;
+  }
   // 各种非 slash commands
   if (!message.text.startsWith('/')) {
     if (await repeat.handleGeneralMessage(message) !== false) return;

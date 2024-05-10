@@ -92,11 +92,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   private async transformMessage(message: Message): Promise<GenericMessage<Message, User> | undefined> {
     const text = 'text' in message && message.text || 'caption' in message && message.caption || '';
-
-    // filter out messages mentioning other bots
-    if (/@(\w+bot)\b/.test(text) && RegExp.$1 !== this.bot.botInfo?.username) {
-      return;
-    }
     const result: GenericMessage<Message, User> = {
       clientName: 'telegram',
       text: text.replace(/@\w+/, ''),
