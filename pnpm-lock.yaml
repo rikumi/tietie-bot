@@ -45,8 +45,8 @@ dependencies:
     specifier: ^5.1.2
     version: 5.1.2
   telegraf:
-    specifier: ^4.16.3
-    version: 4.16.3
+    specifier: 4.4.0
+    version: 4.4.0
 
 devDependencies:
   tsx:
@@ -436,10 +436,6 @@ packages:
     dependencies:
       domhandler: 5.0.3
       selderee: 0.11.0
-    dev: false
-
-  /@telegraf/types@7.1.0:
-    resolution: {integrity: sha512-kGevOIbpMcIlCDeorKGpwZmdH7kHbqlk/Yj6dEpJMKEQw5lk0KVQY0OLXaCswy8GqlIVLd5625OB+rAntP9xVw==}
     dev: false
 
   /@tootallnate/once@1.1.2:
@@ -2254,6 +2250,10 @@ packages:
       brace-expansion: 1.1.11
     dev: false
 
+  /minimist@1.2.8:
+    resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+    dev: false
+
   /minipass-collect@1.0.2:
     resolution: {integrity: sha512-6T6lH0H8OG9kITm/Jm6tdooIbogG9e0tLgpY6mphXSm/A9u8Nq1ryBG+Qspiub9LjWlBPsPS3tWQ/Botq4FdxA==}
     engines: {node: '>= 8'}
@@ -2335,6 +2335,10 @@ packages:
     hasBin: true
     dev: false
 
+  /module-alias@2.2.3:
+    resolution: {integrity: sha512-23g5BFj4zdQL/b6tor7Ji+QY4pEfNH784BMslY9Qb0UnJWRAt+lQGLYmRaM0KDBwIG23ffEBELhZDP2rhi9f/Q==}
+    dev: false
+
   /module-details-from-path@1.0.3:
     resolution: {integrity: sha1-EUyUlnPiqKNenTV4hSeqN7Z52is=}
     dev: false
@@ -2350,11 +2354,6 @@ packages:
       on-headers: 1.0.2
     transitivePeerDependencies:
       - supports-color
-    dev: false
-
-  /mri@1.2.0:
-    resolution: {integrity: sha512-tzzskb3bG8LvYGFF/mDTpq3jpI6Q9wc3LEmBaghu+DdCssd1FakN7Bc0hVNmEyGq1bq3RgfkCb3cmQLpNPOroA==}
-    engines: {node: '>=4'}
     dev: false
 
   /ms@2.0.0:
@@ -3385,19 +3384,20 @@ packages:
       yallist: 4.0.0
     dev: false
 
-  /telegraf@4.16.3:
-    resolution: {integrity: sha512-yjEu2NwkHlXu0OARWoNhJlIjX09dRktiMQFsM678BAH/PEPVwctzL67+tvXqLCRQQvm3SDtki2saGO9hLlz68w==}
+  /telegraf@4.4.0:
+    resolution: {integrity: sha512-DjVVEz37/5Hp0n8eLhAVjErwoyrWsqLyFAoRj8sU5XiD2CVAbBOx9J6a7cLn/B46pPgDqgbrdjiOeK0fQMiLOA==}
     engines: {node: ^12.20.0 || >=14.13.1}
     hasBin: true
     dependencies:
-      '@telegraf/types': 7.1.0
       abort-controller: 3.0.0
       debug: 4.3.4
-      mri: 1.2.0
+      minimist: 1.2.8
+      module-alias: 2.2.3
       node-fetch: 2.7.0
       p-timeout: 4.1.0
       safe-compare: 1.1.4
       sandwich-stream: 2.0.2
+      typegram: 3.12.0
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -3475,6 +3475,10 @@ packages:
     dependencies:
       media-typer: 0.3.0
       mime-types: 2.1.35
+    dev: false
+
+  /typegram@3.12.0:
+    resolution: {integrity: sha512-/VrU0sJv8BdOsBIpYT4w35C7dPg5YyKP6fLiYN9qYXRZ86TVIiw0ZypkzElTAfDVsJtJSluGAufUrcX7VRSIYQ==}
     dev: false
 
   /typescript@5.3.3:

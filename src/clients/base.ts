@@ -45,6 +45,7 @@ export interface MessageToSend {
   chatId: string;
   media?: GenericMedia;
   messageIdReplied?: string;
+  rawMessage?: any;
   rawMessageExtra?: any;
 }
 
