@@ -1,5 +1,4 @@
 import { EventEmitter } from 'events';
-import fs from 'fs';
 import path from 'path';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
@@ -26,6 +25,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     });
     AutojoinRoomsMixin.setupOnClient(this.bot);
     this.fetchBotInfo();
+
+    process.on('SIGINT', async () => {
+      await this.pendingMediaUpload;
+      process.exit(0);
+    });
   }
 
   public async start(): Promise<void> {
@@ -34,10 +38,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   public async stop(): Promise<void> {
     this.bot.stop();
-  }
-
-  public async flushMedia(mxcUri: string) {
-    await this.uploadToMxcUri(mxcUri, 'https://mag.wcoomd.org/uploads/2018/05/blank.pdf'); // TODO: change this to a blank image
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
@@ -152,12 +152,21 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const resource = await fetch(url);
     const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
     const buffer = Buffer.from(await resource.arrayBuffer());
+    console.warn('[MatrixUserBotClient] Uploading to Matrix:', mxcUri);
     const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
     await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
       filename: contentType.replace(/\//g, '.'), // temporary, yet geek
     }, buffer, 60000, undefined, contentType);
     this.cachedMedia.set(url, mxcUri);
     this.pendingMediaUpload = undefined;
+  }
+
+  public async flushMedia(mxcUri: string) {
+    if (!mxcUri) return;
+    const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
+    await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
+      filename: 'invalid',
+    }, Buffer.from('Resource failed to upload'), 60000, undefined, 'text/plain');
   }
 }
 
