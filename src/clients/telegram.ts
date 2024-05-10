@@ -44,7 +44,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async start(): Promise<void> {
-    await this.bot.launch();
+    this.bot.launch();
   }
 
   public async stop(): Promise<void> {
