@@ -23,6 +23,9 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   search.handleMessage(message);
   clients.bridgeMessage(message);
 
+  // clone the message to not interfere with message object being bridged
+  message = { ...message };
+
   // filter out messages mentioning other bots
   if (/@(\w+bot)\b/.test(message.text)) {
     if (![config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
