@@ -1,5 +1,5 @@
 import type Context from 'telegraf/typings/context';
-import type { Message, Sticker, Update, User } from 'telegraf/typings/core/types/typegram'
+import type { Message, MessageOriginChannel, MessageOriginChat, MessageOriginHiddenUser, MessageOriginUser, Sticker, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
@@ -106,7 +106,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       unixDate: message.date,
     };
     if ('forward_origin' in message || 'forward_from' in message) {
-      result.text = `[转发] ` + result.text;
+      result.text = `[转发自 ${this.transformForwardOrigin(message)}] ` + result.text;
     }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
@@ -166,6 +166,40 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   private transformUser(user?: User): string {
     return user?.username ?? ((user?.first_name ?? '') + ' ' + (user?.last_name ?? '')).trim();
+  }
+
+  /**
+   * Oh my god Durov see what you've done
+   */
+  private transformForwardOrigin(message: Message) {
+    if ('forward_origin' in message && message.forward_origin) {
+      const forwardOrigin = message.forward_origin;
+      if (forwardOrigin.type === 'user') {
+        return this.transformUser(forwardOrigin.sender_user);
+      }
+      if (forwardOrigin.type === 'hidden_user') {
+        return forwardOrigin.sender_user_name;
+      }
+      if (forwardOrigin.type === 'chat') {
+        if (forwardOrigin.sender_chat.type === 'private') {
+          return this.transformUser(forwardOrigin.sender_chat as any);
+        }
+        return forwardOrigin.sender_chat.title;
+      }
+      if (forwardOrigin.type === 'channel') {
+        if (forwardOrigin.chat.type === 'private') {
+          return this.transformUser(forwardOrigin.chat as any);
+        }
+        return forwardOrigin.chat.title;
+      }
+    }
+    if ('forward_from' in message) {
+      return this.transformUser(message.forward_from as any);
+    }
+    if ('forward_sender_name' in message) {
+      return message.forward_sender_name;
+    }
+    return '未知会话';
   }
 }
 
