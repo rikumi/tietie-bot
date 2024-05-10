@@ -163,6 +163,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType));
     }
+    if ('forward_origin' in message) {
+      result.text = '[转发] ' + result.text;
+    }
     return result;
   }
 
