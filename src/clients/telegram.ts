@@ -94,7 +94,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const text = 'text' in message && message.text || 'caption' in message && message.caption || '';
     const result: GenericMessage<Message, User> = {
       clientName: 'telegram',
-      text: text.replace(/@\w+/, ''),
+      text,
       userId: String(message.from!.id),
       userName: this.transformUser(message.from),
       chatId: String(message.chat.id),
@@ -105,6 +105,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       rawMessageReplied: 'reply_to_message' in message && message.reply_to_message || undefined,
       unixDate: message.date,
     };
+    if ('forward_origin' in message || 'forward_from' in message) {
+      result.text = `[转发] ` + result.text;
+    }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
     const video = 'video' in message ? message.video : undefined;
@@ -157,9 +160,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         url: '',
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType));
-    }
-    if ('forward_origin' in message || 'forward_from' in message) {
-      result.text = `[转发] ` + result.text;
     }
     return result;
   }

@@ -24,9 +24,11 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   clients.bridgeMessage(message);
 
   // filter out messages mentioning other bots
-  if (/@(\w+bot)\b/.test(message.text)
-    && [config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
-    return;
+  if (/@(\w+bot)\b/.test(message.text)) {
+    if (![config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
+      return;
+    }
+    message.text = message.text.replace(/@\w+bot\b/g, '');
   }
   // 各种非 slash commands
   if (!message.text.startsWith('/')) {
