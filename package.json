@@ -36,7 +36,7 @@
     "prettier": "^2.7.1",
     "sqlite-async": "^1.1.5",
     "sqlite3": "^5.1.2",
-    "telegraf": "^4.4.0"
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "tsx": "^4.7.1",
