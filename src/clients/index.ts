@@ -27,7 +27,8 @@ export class DefaultClientSet extends EventEmitter {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
-      const toMessageText = fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`;
+      const fromMessageText = `${fromMessage.prefixText ?? ''}${fromMessage.text}`;
+      const toMessageText = fromMessage.isServiceMessage ? fromMessageText : `${userNick}: ${fromMessageText}`;
       const toMessageIdReplied = fromMessage.messageIdReplied
         ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)
         : undefined;
