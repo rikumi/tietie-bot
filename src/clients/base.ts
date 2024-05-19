@@ -6,6 +6,7 @@ export interface GenericMessage<T = any, U = any> {
   chatId: string;
   messageId: string;
   unixDate: number;
+  prefixText?: string;
 
   media?: GenericMedia;
 
