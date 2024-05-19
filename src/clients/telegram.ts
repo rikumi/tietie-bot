@@ -95,6 +95,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const result: GenericMessage<Message, User> = {
       clientName: 'telegram',
       text,
+      prefixText: '',
       userId: String(message.from!.id),
       userName: this.transformUser(message.from),
       chatId: String(message.chat.id),
@@ -106,7 +107,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       unixDate: message.date,
     };
     if ('forward_origin' in message || 'forward_from' in message) {
-      result.text = `[转发自 ${this.transformForwardOrigin(message)}] ` + result.text;
+      result.prefixText = `[转发自 ${this.transformForwardOrigin(message)}] ` + result.text;
     }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
@@ -120,7 +121,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       return result;
     }
     if (sticker) {
-      result.text = `[${sticker.emoji ?? '🖼️'} 贴纸] `;
+      result.prefixText = `[${sticker.emoji ?? '🖼️'} 贴纸] `;
       result.media = {
         type: 'sticker',
         mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'application/tgs+gzip' : 'image/jpeg',
@@ -131,7 +132,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (video) {
-      result.text = '[影片] ' + result.text;
+      result.prefixText = '[影片] ' + result.text;
       result.media = {
         type: 'video',
         mimeType: video.mime_type ?? 'video/mp4',
@@ -142,7 +143,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (photo) {
-      result.text = '[图片] ' + result.text;
+      result.prefixText = '[图片] ' + result.text;
       result.media = {
         type: 'photo',
         mimeType: 'image/jpeg',
@@ -152,7 +153,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         height: photo.height,
       };
     } else {
-      result.text = '[文件] ' + result.text;
+      result.prefixText = '[文件] ' + result.text;
       result.media = {
         type: 'file',
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
