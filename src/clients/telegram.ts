@@ -107,7 +107,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       unixDate: message.date,
     };
     if ('forward_origin' in message || 'forward_from' in message) {
-      result.prefixText = `[转发自 ${this.transformForwardOrigin(message)}] ` + result.text;
+      result.prefixText = `[转发自 ${this.transformForwardOrigin(message)}] `;
     }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
@@ -132,7 +132,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (video) {
-      result.prefixText = '[影片] ' + result.text;
+      result.prefixText = '[影片] ';
       result.media = {
         type: 'video',
         mimeType: video.mime_type ?? 'video/mp4',
@@ -143,7 +143,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (photo) {
-      result.prefixText = '[图片] ' + result.text;
+      result.prefixText = '[图片] ';
       result.media = {
         type: 'photo',
         mimeType: 'image/jpeg',
@@ -153,7 +153,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         height: photo.height,
       };
     } else {
-      result.prefixText = '[文件] ' + result.text;
+      result.prefixText = '[文件] ';
       result.media = {
         type: 'file',
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
