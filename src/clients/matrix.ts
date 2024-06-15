@@ -139,10 +139,10 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     // fetching uri should be included in the pendingMediaUpload promise...
     const mxcUriPromise = this.bot.doRequest('POST', '/_matrix/media/v1/create').then(res => res.content_uri);
 
-    this.pendingMediaUpload = (async () => {
+    this.pendingMediaUpload = Promise.race([(async () => {
       const mxcUri = await mxcUriPromise;
       await this.uploadToMxcUri(mxcUri, url);
-    })();
+    })(), new Promise(r => setTimeout(r, 60000))]);
 
     // ...and also be awaited alone
     return await mxcUriPromise;
