@@ -42,7 +42,7 @@ const hashKeyword = (chatId: string, keyword: string) => {
 
 export const formatChatId = (chatId: string | number) => {
   try {
-    return String(parseInt(/\d+/.exec(String(chatId).replace(/^-100/, ''))![0]));
+    return String(chatId).replace(/^-100/, '').replace(/[^\w]+/g, '_');
   } catch (e) {
     return '0';
   }
@@ -115,10 +115,6 @@ export const checkSearchAccess = async (chatId: string, userId: string) => {
   chatId = formatChatId(chatId);
   const db = await getSearchDatabase(chatId);
   const result = await db.get(`SELECT COUNT(*) count FROM search_access WHERE user_id_hash = ? AND unixtime >= ?`, [hashKeyword(chatId, userId), Math.floor(Date.now() / 1000) - 60 * 60 * 24]);
-  if (Date.now() < Date.parse('2023-11-08T00:00:00.000+08:00')) {
-    console.log('checkSearchAccess testing stage dry-run', chatId, userId, result.count > 0);
-    return true;
-  }
   return result.count > 0;
 };
 
@@ -134,10 +130,11 @@ export const updateGroupInfo = async (chatId: string, groupName: string) => {
 };
 
 export const findAccessibleChatIds = async (keywordOrChatId: string, userId: string) => {
-  if (/^-?\d{9,}$/.test(keywordOrChatId)) {
-    const chatId = formatChatId(keywordOrChatId);
-    return (await checkSearchAccess(chatId, userId)) ? [chatId] : [];
+  // exact match
+  if (await checkSearchAccess(keywordOrChatId, userId)) {
+    return [keywordOrChatId];
   }
+  // fuzzy search
   const sharedDB = await getSharedDatabase();
   const result = await sharedDB.all(`SELECT * FROM group_fuzzy WHERE group_name LIKE ?`, [`%${keywordOrChatId}%`]);
   const accessibleChatIds = [];

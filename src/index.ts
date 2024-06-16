@@ -11,7 +11,6 @@ import clients from './clients';
 import { GenericMessage } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
-import telegramClient from './clients/telegram';
 import config from '../config.json';
 
 process.on('uncaughtException', (e) => { console.error(e); });
@@ -19,7 +18,7 @@ process.on('unhandledRejection', (e) => { throw e; });
 
 const commandMap = new Map<string, any>();
 
-const handleMessage = async (message: GenericMessage, rawContext: any) => {
+const handleMessage = async (message: GenericMessage) => {
   search.handleMessage(message);
   clients.bridgeMessage(message);
 
@@ -46,7 +45,7 @@ const handleMessage = async (message: GenericMessage, rawContext: any) => {
   const module = commandMap.get(message.text.trim().split(' ')[0].substring(1));
   if (!module) return;
   try {
-    const result = await module.handleSlashCommand?.(message, rawContext);
+    const result = await module.handleSlashCommand?.(message);
     if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
@@ -69,11 +68,17 @@ const handleEditedMessage = async (message: GenericMessage) => {
   clients.bridgeEditedMessage(message);
 };
 
+const handleInteraction = async (message: GenericMessage, command: string, userId: string) => {
+  const module = commandMap.get(command.split(':')[0]);
+  if (!module) return;
+  await module.handleInteraction?.(message, command, userId);
+};
+
 (async () => {
   await clients.start();
   clients.on('message', handleMessage);
   clients.on('edit-message', handleEditedMessage);
-  telegramClient.on('telegram-callback-query', search.handleTelegramCallbackQuery);
+  clients.on('interaction', handleInteraction);
 
   for (const fileName of fs.readdirSync(path.resolve(__dirname, 'commands'))) {
     if (fileName === __filename) continue;

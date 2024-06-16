@@ -31,15 +31,18 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if (!ctx.message || ctx.message.date * 1000 < Date.now() - 10000) return;
       const transformedMessage = await this.transformMessage(ctx.message);
       if (!transformedMessage) return;
-      this.emit('message', transformedMessage, ctx);
+      this.emit('message', transformedMessage);
     });
     this.bot.on('edited_message', async (ctx: Context<Update.EditedMessageUpdate>) => {
       const transformedMessage = await this.transformMessage(ctx.editedMessage!);
       if (!transformedMessage) return;
-      this.emit('edit-message', transformedMessage, ctx);
+      this.emit('edit-message', transformedMessage);
     });
-    this.bot.on('callback_query', (ctx) => {
-      this.emit('telegram-callback-query', ctx);
+    this.bot.on('callback_query', async (ctx) => {
+      const callbackQuery = ctx.callbackQuery as any;
+      const transformedMessage = await this.transformMessage(callbackQuery.message);
+      if (!transformedMessage) return;
+      this.emit('interaction', transformedMessage, callbackQuery.data, callbackQuery.from.id);
     });
   }
 
@@ -64,6 +67,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const options = {
       reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
       caption: message.media ? message.text : undefined,
+      reply_markup: message.interactions ? {
+        inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
+      } : undefined,
       ...message.rawMessageExtra ?? {},
     };
     const messageSent = await this.bot.telegram[method](message.chatId, content, options);
@@ -71,9 +77,12 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    const newText = message.hideEditedFlag ? message.text : `${message.text} (已编辑)`;
     if (!message.media) {
-      await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, newText);
+      await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, message.text, {
+        reply_markup: message.interactions ? {
+          inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
+        } : undefined,
+      });
       return;
     }
     if (message.media.type === 'sticker') {
@@ -82,7 +91,11 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     await this.bot.telegram.editMessageMedia(message.chatId, Number(message.messageId), undefined, {
       type: message.media.type === 'file' ? 'document' : message.media.type,
       media: message.media.url!,
-      caption: newText,
+      caption: message.text,
+    }, {
+      reply_markup: message.interactions ? {
+        inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
+      } : undefined,
     });
   }
 
@@ -90,7 +103,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     await this.bot.telegram.setMyCommands(commandList);
   }
 
-  private async transformMessage(message: Message): Promise<GenericMessage<Message, User> | undefined> {
+  public async transformMessage(message: Message): Promise<GenericMessage<Message, User> | undefined> {
     const text = 'text' in message && message.text || 'caption' in message && message.caption || '';
     const result: GenericMessage<Message, User> = {
       clientName: 'telegram',
@@ -100,6 +113,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       chatId: String(message.chat.id),
       messageId: String(message.message_id),
       messageIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.message_id ?? '') || undefined,
+      userIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.from?.id ?? '') || undefined,
       rawMessage: message,
       rawUser: message.from!,
       rawMessageReplied: 'reply_to_message' in message && message.reply_to_message || undefined,

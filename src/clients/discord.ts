@@ -110,6 +110,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       messageId: message.id,
       media,
       messageIdReplied: message.referenced_message?.id,
+      userIdReplied: message.referenced_message?.author?.id,
       rawMessage: message,
       rawUser: message.author!,
       rawMessageReplied: message.referenced_message!,
@@ -118,7 +119,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     }
   }
 
-  public async tryExecuteCommand(text: string, chatId: string) {
+  public async callOtherBotCommand(text: string, chatId: string) {
     const guildId = this.bot.info.guilds.find((guild: any) => {
       return guild.channels.some((channel: any) => channel.id === chatId);
     })?.id;

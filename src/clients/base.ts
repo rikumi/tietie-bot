@@ -12,6 +12,7 @@ export interface GenericMessage<T = any, U = any> {
 
   isServiceMessage?: boolean;
   messageIdReplied?: string;
+  userIdReplied?: string;
 
   rawMessage: T;
   rawUser: U;
@@ -31,12 +32,14 @@ export interface GenericClient<T = any, U = any, V = {}> {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  on(eventName: 'message', handler: (message: GenericMessage<T, U>, rawContext?: any) => void): void;
+  on(eventName: 'message', handler: (message: GenericMessage<T, U>) => void): void;
   on(eventName: 'edit-message', handler: (message: GenericMessage<T, U>) => void): void;
+  on(eventName: 'interaction', handler: (message: GenericMessage<T, U>, command: string, userId: string) => void): void;
 
   sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
   editMessage(message: MessageToEdit): Promise<void>;
-  tryExecuteCommand?(text: string, chatId: string): Promise<void>;
+
+  callOtherBotCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }
 
@@ -48,10 +51,17 @@ export interface MessageToSend {
   messageIdReplied?: string;
   rawMessage?: any;
   rawMessageExtra?: any;
+  interactions?: {
+    command: string;
+    icon: string;
+    description: string;
+  }[];
 }
 
 export interface MessageToEdit extends MessageToSend {
   messageId: string;
   mediaMessageId?: string;
-  hideEditedFlag?: boolean;
+  isServiceMessage?: boolean;
+  userId?: string;
+  userName?: string;
 }

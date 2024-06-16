@@ -1,14 +1,13 @@
 import jieba from 'nodejieba';
 import { putSearchData, generateSearchResultsByKeyword, deleteMessageById, formatChatId, getMessageCount, getMessageCountByKeyword, updateSearchAccess, checkSearchAccess, findAccessibleChatIds, updateGroupInfo, getGroupNameForChatId } from '../database/search';
-import { ExtraEditMessageText, ExtraReplyMessage } from 'telegraf/typings/telegram-types';
-import { GenericMessage } from 'src/clients/base';
+import { GenericMessage, MessageToEdit, MessageToSend } from 'src/clients/base';
+import defaultClientSet from 'src/clients';
 
 export const USAGE = `[chatName] <keyword> 群内隐私搜索`;
 
 // 搜索结果需要同时命中的关键词比例
 const HIT_RATIO = 0.75;
 
-const forwardedMessageMap = new Map<number, number>();
 const resultCountCache = new Map<string, number>();
 
 export const splitToKeywords = (text: string) => {
@@ -56,7 +55,7 @@ const getAccurateResultCount = async (chatId: string, keywordsStr: string) => {
   }
   const gen = searchForKeywordsInChat(chatId, keywordsStr);
   let count = 0;
-  while ((await gen.next()).value.result != null) {
+  while ((await gen.next()).value != null) {
     count += 1;
   }
   resultCountCache.set(cacheKey, count);
@@ -80,12 +79,6 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
     keywordTotalFoundTimes[finalKeywords[index]] = await getMessageCountByKeyword(chatId, finalKeywords[index]);
   }));
 
-  const debugInfo = {
-    finalKeywords,
-    keywordFoundTimes,
-    keywordTotalFoundTimes,
-  };
-
   let lastHitMessageId = null;
 
   while (generatorCurrentItems.some(k => k)) {
@@ -101,12 +94,8 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
     }
     if (mostHitMessageId && mostHitMessageId !== lastHitMessageId && messageCountMap[mostHitMessageId] >= generators.length * HIT_RATIO) {
       // 超过一定比例的关键词命中了同一条消息，且不是上次查找到的消息
-      const message = generatorCurrentItems.find(k => k?.message_id === mostHitMessageId);
-      yield { result: message, debugInfo };
+      yield generatorCurrentItems.find(k => k?.message_id === mostHitMessageId);
       lastHitMessageId = mostHitMessageId;
-      for (const [index, item] of Object.entries(generatorCurrentItems)) {
-        if (item?.message_id === mostHitMessageId) debugInfo.keywordFoundTimes[finalKeywords[Number(index)]] += 1;
-      }
     }
 
     // 每次取所有关键词中最晚的一条，向前查一次数据
@@ -119,42 +108,48 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
     const nextItem = (await generators[latestIndex].next()).value;
     generatorCurrentItems[latestIndex] = nextItem;
   }
-  return { result: null, debugInfo };
+  return null;
 }
 
 const renderSearchResult = async (
-  ctx: any | any,
-  chatId: string,
+  message: GenericMessage,
+  interaction: string | undefined,
   record: { message_id: any; unixtime: any } | void | null | undefined,
   keywordsStr: string,
   skipCount: number,
-  debugInfo?: any
 ) => {
-  if (ctx.callbackQuery) {
-    const forwardedMessageId = forwardedMessageMap.get(ctx.chat!.id);
-    if (forwardedMessageId) await ctx.telegram.deleteMessage(ctx.chat!.id, forwardedMessageId);
+  const replyOrEditMessage = async (text: string, extra: Partial<MessageToSend | MessageToEdit> = {}): Promise<any> => {
+    if (interaction) {
+      return await defaultClientSet.editBotMessage({
+        clientName: message.clientName,
+        chatId: message.chatId,
+        messageId: message.messageId,
+        text,
+        ...extra,
+      });
+    }
+    await defaultClientSet.sendBotMessage({
+      clientName: message.clientName,
+      chatId: message.chatId,
+      text,
+      ...extra
+    });
   }
-  forwardedMessageMap.delete(ctx.chat!.id);
 
-  const replyOrEditMessage: (text: string, extra?: Partial<ExtraEditMessageText & ExtraReplyMessage>) => Promise<any> = ctx.callbackQuery
-    ? ctx.telegram.editMessageText.bind(ctx.telegram, ctx.chat!.id, ctx.callbackQuery.message!.message_id, undefined)
-    : ctx.reply.bind(ctx as any);
-
+  const { chatId } = message;
   const groupName = await getGroupNameForChatId(chatId) ?? '临时会话';
 
   if (!record) {
     await replyOrEditMessage([
       skipCount ? `在「${groupName}」中没有找到其它有关 ${keywordsStr} 的消息` : `在「${groupName}」中没有找到有关 ${keywordsStr} 的消息`,
-      debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw: string) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : ``,
     ].filter(k => k).join('\n\n').trim(), {
-      reply_to_message_id: ctx.message?.message_id,
-      disable_notification: true,
-      reply_markup: {
-        inline_keyboard: [[
-          ...(skipCount ? [{ text: '➡️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
-          ...(debugInfo ? [] : [{ text: '🐛', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }]),
-        ]],
-      }
+      interactions: [
+        ...(skipCount ? [{
+          icon: '➡️',
+          description: '后一条',
+          command: `search:${chatId}:${keywordsStr}:${skipCount - 1}`,
+        }] : []),
+      ]
     });
     return;
   }
@@ -164,157 +159,82 @@ const renderSearchResult = async (
     getAccurateResultCount(chatId, keywordsStr),
   ]);
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
-  const isSearchInGroup = ctx.chat!.type !== 'private';
   await replyOrEditMessage([
-    `${isSearchInGroup ? '' : `在「${groupName}」中`}查找 ${keywordsStr}\n第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
-    isSearchInGroup && !skipCount ? '⚠️ 群内搜索需点击 🔗 查看消息' : '',
-    debugInfo ? `🐛 有效关键词：\n${debugInfo.finalKeywords.map((kw: string) => `${kw}：第 ${debugInfo.keywordFoundTimes[kw]}/${debugInfo.keywordTotalFoundTimes[kw]} 次命中`).join('\n')}` : '',
+    `在「${groupName}」中查找 ${keywordsStr}\n第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
+    url,
   ].filter(k => k).join('\n\n').trim(), {
-    reply_to_message_id: ctx.message?.message_id,
-    disable_notification: true,
-    reply_markup: {
-      inline_keyboard: [[
-        { text: '⬅️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount + 1}${debugInfo ? ':debug' : ''}` },
-        ...(skipCount ? [{ text: '➡️', callback_data: `search:${chatId}:${keywordsStr}:${skipCount - 1}${debugInfo ? ':debug' : ''}` }] : []),
-        ...(debugInfo ? [
-          { text: '🚫', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}` }
-        ] : [
-          { text: '🐛', callback_data: `search:${chatId}:${keywordsStr}:${skipCount}:debug` }
-        ]),
-        { text: '🔗', url },
-      ]],
-    },
+    interactions: [
+      {
+        command: `search:${chatId}:${keywordsStr}:${skipCount + 1}`,
+        icon: '⬅️',
+        description: '前一条',
+      },
+      ...(skipCount ? [{
+        command: `search:${chatId}:${keywordsStr}:${skipCount - 1}`,
+        icon: '➡️',
+        description: '后一条',
+      }] : []),
+    ],
   });
-
-  if (isSearchInGroup) {
-    return;
-  }
-
-  if (record.message_id > 100000000 || record.message_id < 0) {
-    const { message_id } = await (ctx as any).reply('[该条消息属于讨论组消息，无法跳转和显示]');
-    forwardedMessageMap.set(ctx.chat!.id, message_id);
-    return;
-  }
-
-  for (const realChatId of [chatId, parseInt('-100' + chatId)]) {
-    try {
-      const { message_id } = await ctx.telegram.forwardMessage(ctx.chat!.id, realChatId, record.message_id);
-      forwardedMessageMap.set(ctx.chat!.id, message_id);
-      break;
-    } catch (e: any) {
-      if (e.description.includes('chat not found')) continue;
-      console.error(e);
-      if (e.description.includes('message to forward not found')) {
-        const { message_id } = await (ctx as any).reply('[消息被删除或对 Bot 不可见，可尝试点击链接查看]');
-        forwardedMessageMap.set(ctx.chat!.id, message_id);
-        break;
-      }
-    }
-  }
 };
 
-export const handleTelegramCallbackQuery = async (ctx: any) => {
-  const { data, from } = ctx.callbackQuery;
-  const [command, chatId, keywordsStr, skipCount, debug] = data!.split(':');
-  const userId = String(from!.id);
+export const handleInteraction = async (message: GenericMessage, interaction: string, interactionUserId: string) => {
+  const [command, chatId, keywordsStr, skipCount] = interaction.split(':');
   if (command === 'search') {
-    const hasAccess = await checkSearchAccess(chatId, userId);
+    const hasAccess = await checkSearchAccess(chatId, interactionUserId);
     if (!hasAccess) {
-      ctx.telegram.editMessageText(ctx.chat!.id, ctx.callbackQuery.message!.message_id, undefined, '你近一天没有在该群内发言，为保护隐私，请在群内发言后再执行搜索。');
+      defaultClientSet.editBotMessage({
+        clientName: message.clientName,
+        chatId: message.chatId,
+        messageId: message.messageId,
+        text: '没有找到该会话或近一天没有在该会话内发言，为保护隐私，请在会话内发言后再执行搜索。',
+      });
       return;
     }
     const generator = searchForKeywordsInChat(chatId, keywordsStr);
     for (let i = 0; i < Number(skipCount); i++) await generator.next();
-    const { result: record, debugInfo } = (await generator.next()).value;
-    await renderSearchResult(ctx, chatId, record, keywordsStr, Number(skipCount), debug ? debugInfo : undefined);
+    const record = (await generator.next()).value;
+    await renderSearchResult(message, interaction, record, keywordsStr, Number(skipCount));
   }
-}
+};
 
-export const handleSlashCommand = async (_: GenericMessage, ctx: any) => {
-  if (!ctx) return;
-  const { message, from } = ctx;
-  const userId = String(from.id);
-  if (['group', 'channel'].includes(message.chat.type)) {
-    (ctx as any).reply('暂不支持搜索频道或讨论组的会话。', {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-    });
-    return;
-  }
-  if (message && message.chat.type !== 'private') {
-    const chatId = formatChatId(message.chat.id);
-    const keywords = message.text!.trim().split(/\s+/).slice(1);
-    if (!keywords.length) {
-      const messageCount = await getMessageCount(chatId);
-      (ctx as any).reply([
-        `请使用 \`/search <关键词>\` 搜索当前会话。`,
-        `🔐 Bot 仅存储群名称、匿名的消息 id、会话 id、关键词加盐 hash 和时间戳信息，不保留消息内容、群组和发送者资料，搜索结果的调取和显示由 Telegram 提供。`,
-        `📝 当前会话已索引 ${messageCount} 条消息记录${messageCount > 10000 ? '' : '，如需导入全部消息记录请联系管理员'}。`,
-      ].join('\n\n'), {
-        reply_to_message_id: ctx.message.message_id,
-        disable_notification: true,
-        parse_mode: 'MarkdownV2',
-      });
-      return;
-    }
-    const keywordsStr = keywords.join(' ');
-    if (keywordsStr.includes(':')) {
-      (ctx as any).reply('暂不支持包含 : 符号的关键词。', {
-        reply_to_message_id: ctx.message.message_id,
-        disable_notification: true,
-      });
-      return;
-    }
-    const { result: record } = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
-    await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
-    return;
-  }
+export const handleSlashCommand = async (message: GenericMessage) => {
+  const userId = String(message.userId);
   const [groupNameOrChatId, ...keywords] = message.text!.trim().split(/\s+/).slice(1);
-  if (!groupNameOrChatId || !keywords.length) {
-    (ctx as any).reply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，其中 chatId 可在对应会话中输入 \`/search\` 获取`, {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-      parse_mode: 'MarkdownV2',
+  const simpleReply = (text: string) => {
+    defaultClientSet.sendBotMessage({
+      clientName: message.clientName,
+      chatId: message.chatId,
+      messageIdReplied: message.messageId,
+      text,
+      rawMessageExtra: {
+        parseMode: 'MarkdownV2',
+        disable_notification: true,
+      }
     });
-    return;
+  };
+  if (message.clientName !== 'telegram') {
+    return simpleReply('由于会话关联的实现问题，目前仅支持在 Telegram 平台发起搜索。');
   }
-  if (formatChatId(groupNameOrChatId) === formatChatId(ctx.message.chat.id)) {
-    (ctx as any).reply('暂不支持搜索与机器人之间的会话。', {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-    });
+  if (!groupNameOrChatId || !keywords.length) {
+    simpleReply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，当前的 chatId 为 ${formatChatId(message.chatId)}`);
     return;
   }
   const chatIds = await findAccessibleChatIds(groupNameOrChatId, userId);
   if (!chatIds.length) {
-    (ctx as any).reply('没有找到你近一天发言过的与之相关的群，请确认群名或会话 id，或在群内发言后再执行搜索。', {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-    });
+    simpleReply('没有找到该会话或近一天没有在该会话内发言，为保护隐私，请在会话内发言后再执行搜索。');
     return;
   }
   if (chatIds.length > 1) {
-    const groupNames = await Promise.all(chatIds.map(getGroupNameForChatId));
-    (ctx as any).reply('要搜索哪个群？', {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-      reply_markup: {
-        inline_keyboard: chatIds.map((chatId, i) => [
-          { text: groupNames[i], callback_data: `search:${chatId}:${keywords.join(' ')}:0` },
-        ]),
-      },
-    });
+    simpleReply('有多个群名符合条件，请给出更精确的群名。');
     return;
   }
   const chatId = chatIds[0];
   const keywordsStr = keywords.join(' ');
   if (keywordsStr.includes(':')) {
-    (ctx as any).reply('暂不支持包含 : 符号的关键词。', {
-      reply_to_message_id: ctx.message.message_id,
-      disable_notification: true,
-    });
+    simpleReply('暂不支持包含 : 符号的关键词。');
     return;
   }
-  const { result: record } = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
-  await renderSearchResult(ctx, chatId, record, keywordsStr, 0);
+  const record = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
+  await renderSearchResult(message, undefined, record, keywordsStr, 0);
 };

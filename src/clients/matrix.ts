@@ -41,6 +41,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
+    // if (message.interactions) {
+    //   message.text += '\n\n回复此条消息进行操作（暂未实现）：\n' + message.interactions.map(({ command, icon, description }) => `${icon} /${command}: ${description}`).join('\n');
+    // }
     const matrixEventContent: any = {
       body: message.text,
       msgtype: 'm.text',
@@ -134,6 +137,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       media,
       messageIdReplied: message.content['m.relates_to']?.['m.in_reply_to']?.event_id,
+      userIdReplied: message.content['m.relates_to']?.['m.in_reply_to']?.sender,
       rawMessage: message,
       rawUser: message.author!,
       rawMessageReplied: message.content['m.relates_to']?.['m.in_reply_to'],
