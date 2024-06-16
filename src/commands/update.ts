@@ -17,20 +17,20 @@ const exec = async (command: string, options: cp.ExecOptions) => {
 export const handleSlashCommand = async (message: GenericMessage) => {
   const branch = message.text?.split(/\s+/)[1];
   const cwd = path.resolve(__dirname, '..');
-  const messagesSent = await defaultClientSet.sendBotMessage({
+  const [messageSent] = (await defaultClientSet.sendBotMessage({
     clientName: message.clientName,
     chatId: message.chatId,
     text: '代码更新执行中',
     messageIdReplied: message.messageId,
-  })!;
+  }))!;
   const pullResult = await exec('git pull', { cwd });
-  await messagesSent?.editAll({ text: pullResult });
+  await defaultClientSet.editBotMessage({ ...messageSent, text: pullResult });
   if (pullResult.trim() === 'Already up to date.') {
     return;
   }
   if (branch && /^[\w/]+$/.test(branch)) {
     const switchResult = await exec(`git switch ${branch}`, { cwd });
-    await messagesSent?.editAll({ text: `${pullResult}\n\n${switchResult}` });
+    await defaultClientSet.editBotMessage({ ...messageSent, text: `${pullResult}\n\n${switchResult}` });
   }
   cp.spawnSync('pnpm', ['i'], { cwd });
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();

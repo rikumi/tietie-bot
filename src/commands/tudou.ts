@@ -4,6 +4,8 @@ import dayjs from 'dayjs';
 import defaultClientSet from 'src/clients';
 import { createShortUrl } from 'src/database/shorturl';
 
+export const USAGE = `[count] | random 播放土豆猫视频`;
+
 const rawMessageExtra = {
   disable_web_page_preview: true,
   disable_notification: true,
