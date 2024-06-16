@@ -4,9 +4,10 @@ export const init = async () => {
   const db = await getDatabase();
   await db.run(`CREATE TABLE IF NOT EXISTS video_reply (
     id INTEGER PRIMARY KEY,
-    group_id INT NOT NULL,
+    group_id TEXT NOT NULL,
     command TEXT NOT NULL,
-    video_id TEXT NOT NULL
+    video_id TEXT NOT NULL,
+    client_name TEXT NOT NULL
   )`);
 };
 

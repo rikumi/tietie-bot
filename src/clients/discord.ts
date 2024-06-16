@@ -41,6 +41,9 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (this.bot) {
       this.stop();
     }
+    if (!config.discordUserToken) {
+      return;
+    }
     this.bot = new discord.Client(config.discordUserToken);
     this.botReady = new Promise(r => this.bot.on.ready = r);
 

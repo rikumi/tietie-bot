@@ -4,9 +4,10 @@
   "xhsWebId": "",
   "xhsWebSession": "",
   "discordUserToken": "",
-  "discordUsername": "",
-  "botUsername": "",
-  "matrixUsername": "",
-  "matrixHomeServer": "",
-  "matrixAccessToken": ""
+  "discordUsername": "rikumi_tietie_bot",
+  "botUsername": "rikumi_tietie_bot",
+  "matrixUsername": "rikumi_tietie_bot",
+  "matrixHomeServer": "matrix.org",
+  "matrixAccessToken": "",
+  "serverRoot": "example.com"
 }

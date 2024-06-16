@@ -5,8 +5,8 @@ export interface GenericMessage<T = any, U = any> {
   userName: string;
   chatId: string;
   messageId: string;
+  mediaMessageId?: string;
   unixDate: number;
-  prefixText?: string;
 
   media?: GenericMedia;
 
@@ -52,5 +52,6 @@ export interface MessageToSend {
 
 export interface MessageToEdit extends MessageToSend {
   messageId: string;
+  mediaMessageId?: string;
   hideEditedFlag?: boolean;
 }

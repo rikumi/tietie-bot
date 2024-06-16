@@ -42,27 +42,34 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const matrixEventContent: any = {
-      body: message.media ? `${message.text} ${message.media.url}` : message.text,
+      body: message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
       'mx.rkm.tietie-bot.raw_message': message.rawMessage,
     };
+    let mediaMessageId: string | undefined;
     if (message.media && message.media.size < 1024 * 1024) {
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
       const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
       const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
-      matrixEventContent.url = await this.getMxcUriAndUpload(message.media.url!);
-      matrixEventContent.info = { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! }
-      matrixEventContent.msgtype = 'm.' + matrixMediaType;
+      const mediaEvent: any = {
+        body: '',
+        msgtype: 'm.' + matrixMediaType,
+        'mx.rkm.tietie-bot.raw_message': message.rawMessage,
+        url: await this.getMxcUriAndUpload(message.media.url!),
+        info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
+      }
+      const matrixEventType = matrixEventContent.msgtype === 'm.sticker' ? 'm.sticker' : 'm.room.message';
+      mediaMessageId = await this.bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
     }
-    const matrixEventType = matrixEventContent.msgtype === 'm.sticker' ? 'm.sticker' : 'm.room.message';
-    const messageId = await this.bot.sendEvent(message.chatId, matrixEventType, matrixEventContent);
+    const messageId = await this.bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
     return {
       ...message,
       clientName: 'matrix',
       messageId,
+      mediaMessageId,
       userId: this.botInfo!.user_id,
       userName: this.botInfo!.user_id,
       rawMessage: { id: messageId, content: message.text },
@@ -72,6 +79,25 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
+    if (message.media && message.mediaMessageId) {
+      const isSticker = message.media.type === 'sticker';
+      const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
+      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
+      const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
+      const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
+      await this.bot.sendEvent(message.chatId, 'm.room.message', {
+        body: '[已编辑媒体]',
+        msgtype: 'm.' + matrixMediaType,
+        'mx.rkm.tietie-bot.raw_message': message.rawMessage,
+        'm.new_content': {
+          body: '[已编辑媒体]',
+          msgtype: 'm.' + matrixMediaType,
+          url: await this.getMxcUriAndUpload(message.media.url!),
+          info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
+        },
+        'm.relates_to': { rel_type: 'm.replace', event_id: message.mediaMessageId },
+      });
+    }
     // MSC2676
     await this.bot.sendEvent(message.chatId, 'm.room.message', {
       body: `* ${message.text}`,
@@ -142,7 +168,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     this.pendingMediaUpload = Promise.race([(async () => {
       const mxcUri = await mxcUriPromise;
       await this.uploadToMxcUri(mxcUri, url);
-    })(), new Promise(r => setTimeout(r, 60000))]);
+    })(), new Promise<void>(r => setTimeout(r, 60000))]);
 
     // ...and also be awaited alone
     return await mxcUriPromise;

@@ -1,11 +1,10 @@
 import { getBridgeNickname, getUnidirectionalBridgesByChat } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToSend } from './base';
 import { EventEmitter } from 'events';
-import config from '../../config.json';
 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
-  private recentBridgedMessages = new Map<string, string>();
+  private recentBridgedMessages = new Map<string, [string, string | undefined]>();
   public static readonly CLIENT_NAMES = ['telegram', 'discord', 'matrix'] as const;
 
   public async start() {
@@ -27,10 +26,10 @@ export class DefaultClientSet extends EventEmitter {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
-      const fromMessageText = `${fromMessage.prefixText ?? ''}${fromMessage.text}`;
+      const fromMessageText = fromMessage.text;
       const toMessageText = fromMessage.isServiceMessage ? fromMessageText : `${userNick}: ${fromMessageText}`;
       const toMessageIdReplied = fromMessage.messageIdReplied
-        ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)
+        ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)?.[0]
         : undefined;
 
       const toMessage = await toClient.sendMessage({
@@ -42,8 +41,11 @@ export class DefaultClientSet extends EventEmitter {
         rawMessage: fromMessage.rawMessage,
       });
       // build bidirectional message id mapping
-      this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId);
-      this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId);
+      this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
+      this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+      if (toMessage.mediaMessageId) {
+        this.recordRecentMessageId(toClientName, toChatId, toMessage.mediaMessageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+      }
       if (hasCommand) {
         toClient.tryExecuteCommand?.(fromMessage.text, toChatId);
       }
@@ -58,13 +60,16 @@ export class DefaultClientSet extends EventEmitter {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
-      const messageIdToEdit = this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId);
-      if (!messageIdToEdit) return;
+      const messageIdsToEdit = this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId);
+      if (!messageIdsToEdit) return;
+      const [messageIdToEdit, mediaMessageIdToEdit] = messageIdsToEdit;
       toClient.editMessage({
         clientName: toClientName,
         chatId: toChatId,
         messageId: messageIdToEdit,
+        mediaMessageId: mediaMessageIdToEdit,
         text: fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`,
+        media: fromMessage.media,
       });
     }));
   }
@@ -111,15 +116,16 @@ export class DefaultClientSet extends EventEmitter {
     await client.stop();
   }
 
-  private recordRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localMessageId: string) {
+  private recordRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localMessageId: string, localMediaMessageId?: string) {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
-    this.recentBridgedMessages.set(key, localMessageId);
+    this.recentBridgedMessages.set(key, [localMessageId, localMediaMessageId]);
   }
 
-  private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): string | undefined {
+  private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): [string, string | undefined] | undefined {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
-    const value = this.recentBridgedMessages.get(key);
-    return value;
+    const bridgedMessageIds = this.recentBridgedMessages.get(key);
+    if (!bridgedMessageIds) return;
+    return bridgedMessageIds;
   }
 }
 

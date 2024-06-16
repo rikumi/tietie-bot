@@ -5,7 +5,8 @@ export const init = async () => {
   await db.run(`CREATE TABLE IF NOT EXISTS alias (
     name TEXT NOT NULL,
     target TEXT NOT NULL,
-    group_id INT NOT NULL
+    group_id INT NOT NULL,
+    client_name TEXT NOT NULL
   )`);
 }
 

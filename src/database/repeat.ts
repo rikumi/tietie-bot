@@ -3,8 +3,9 @@ import { getDatabase } from '.';
 export const init = async () => {
   const db = await getDatabase();
   await db.run(`CREATE TABLE IF NOT EXISTS repeat (
-    chat_id INT NOT NULL,
-    enabled INT NOT NULL
+    chat_id TEXT NOT NULL,
+    enabled INT NOT NULL,
+    client_name TEXT NOT NULL
   )`);
 };
 
