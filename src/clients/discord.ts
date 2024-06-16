@@ -146,7 +146,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       nonce: String(Math.floor(Date.now() * 666666)),
     };
     await this.bot.call_check([]);
-    const interactionRes = await this.bot.requester.fetch_request('interactions', payload);
+    await this.bot.requester.fetch_request('interactions', payload);
     return;
   }
 }

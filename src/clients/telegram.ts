@@ -38,12 +38,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if (!transformedMessage) return;
       this.emit('edit-message', transformedMessage);
     });
-    this.bot.on('callback_query', async (ctx) => {
-      const callbackQuery = ctx.callbackQuery as any;
-      const transformedMessage = await this.transformMessage(callbackQuery.message);
-      if (!transformedMessage) return;
-      this.emit('interaction', transformedMessage, callbackQuery.data, callbackQuery.from.id);
-    });
   }
 
   public async start(): Promise<void> {
@@ -67,9 +61,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const options = {
       reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
       caption: message.media ? message.text : undefined,
-      reply_markup: message.interactions ? {
-        inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
-      } : undefined,
       ...message.rawMessageExtra ?? {},
     };
     const messageSent = await this.bot.telegram[method](message.chatId, content, options);
@@ -78,11 +69,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     if (!message.media) {
-      await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, message.text, {
-        reply_markup: message.interactions ? {
-          inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
-        } : undefined,
-      });
+      await this.bot.telegram.editMessageText(message.chatId, Number(message.messageId), undefined, message.text);
       return;
     }
     if (message.media.type === 'sticker') {
@@ -92,10 +79,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       type: message.media.type === 'file' ? 'document' : message.media.type,
       media: message.media.url!,
       caption: message.text,
-    }, {
-      reply_markup: message.interactions ? {
-        inline_keyboard: [message.interactions.map(({ command, icon }) => ({ text: icon, callback_data: command }))],
-      } : undefined,
     });
   }
 

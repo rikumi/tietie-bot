@@ -34,7 +34,6 @@ export interface GenericClient<T = any, U = any, V = {}> {
 
   on(eventName: 'message', handler: (message: GenericMessage<T, U>) => void): void;
   on(eventName: 'edit-message', handler: (message: GenericMessage<T, U>) => void): void;
-  on(eventName: 'interaction', handler: (message: GenericMessage<T, U>, command: string, userId: string) => void): void;
 
   sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
   editMessage(message: MessageToEdit): Promise<void>;
@@ -51,11 +50,6 @@ export interface MessageToSend {
   messageIdReplied?: string;
   rawMessage?: any;
   rawMessageExtra?: any;
-  interactions?: {
-    command: string;
-    icon: string;
-    description: string;
-  }[];
 }
 
 export interface MessageToEdit extends MessageToSend {

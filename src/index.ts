@@ -78,7 +78,6 @@ const handleInteraction = async (message: GenericMessage, command: string, userI
   await clients.start();
   clients.on('message', handleMessage);
   clients.on('edit-message', handleEditedMessage);
-  clients.on('interaction', handleInteraction);
 
   for (const fileName of fs.readdirSync(path.resolve(__dirname, 'commands'))) {
     if (fileName === __filename) continue;

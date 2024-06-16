@@ -113,21 +113,11 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
 
 const renderSearchResult = async (
   message: GenericMessage,
-  interaction: string | undefined,
   record: { message_id: any; unixtime: any } | void | null | undefined,
   keywordsStr: string,
   skipCount: number,
 ) => {
-  const replyOrEditMessage = async (text: string, extra: Partial<MessageToSend | MessageToEdit> = {}): Promise<any> => {
-    if (interaction) {
-      return await defaultClientSet.editBotMessage({
-        clientName: message.clientName,
-        chatId: message.chatId,
-        messageId: message.messageId,
-        text,
-        ...extra,
-      });
-    }
+  const reply = async (text: string, extra: Partial<MessageToSend | MessageToEdit> = {}): Promise<any> => {
     await defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
@@ -140,17 +130,9 @@ const renderSearchResult = async (
   const groupName = await getGroupNameForChatId(chatId) ?? '临时会话';
 
   if (!record) {
-    await replyOrEditMessage([
+    await reply([
       skipCount ? `在「${groupName}」中没有找到其它有关 ${keywordsStr} 的消息` : `在「${groupName}」中没有找到有关 ${keywordsStr} 的消息`,
-    ].filter(k => k).join('\n\n').trim(), {
-      interactions: [
-        ...(skipCount ? [{
-          icon: '➡️',
-          description: '后一条',
-          command: `search:${chatId}:${keywordsStr}:${skipCount - 1}`,
-        }] : []),
-      ]
-    });
+    ].filter(k => k).join('\n\n').trim());
     return;
   }
 
@@ -159,43 +141,12 @@ const renderSearchResult = async (
     getAccurateResultCount(chatId, keywordsStr),
   ]);
   const url = `https://t.me/c/${formatChatId(chatId)}/${record.message_id}`;
-  await replyOrEditMessage([
+  await reply([
     `在「${groupName}」中查找 ${keywordsStr}\n第 ${skipCount + 1}${totalCount ? '/' + totalCount : ''} 条：🕙 ${new Date(record.unixtime * 1000).toLocaleString('zh-CN')}`,
     url,
-  ].filter(k => k).join('\n\n').trim(), {
-    interactions: [
-      {
-        command: `search:${chatId}:${keywordsStr}:${skipCount + 1}`,
-        icon: '⬅️',
-        description: '前一条',
-      },
-      ...(skipCount ? [{
-        command: `search:${chatId}:${keywordsStr}:${skipCount - 1}`,
-        icon: '➡️',
-        description: '后一条',
-      }] : []),
-    ],
-  });
-};
-
-export const handleInteraction = async (message: GenericMessage, interaction: string, interactionUserId: string) => {
-  const [command, chatId, keywordsStr, skipCount] = interaction.split(':');
-  if (command === 'search') {
-    const hasAccess = await checkSearchAccess(chatId, interactionUserId);
-    if (!hasAccess) {
-      defaultClientSet.editBotMessage({
-        clientName: message.clientName,
-        chatId: message.chatId,
-        messageId: message.messageId,
-        text: '没有找到该会话或近一天没有在该会话内发言，为保护隐私，请在会话内发言后再执行搜索。',
-      });
-      return;
-    }
-    const generator = searchForKeywordsInChat(chatId, keywordsStr);
-    for (let i = 0; i < Number(skipCount); i++) await generator.next();
-    const record = (await generator.next()).value;
-    await renderSearchResult(message, interaction, record, keywordsStr, Number(skipCount));
-  }
+    ' ',
+    `⬅️ 使用 /search ${chatId} ${keywordsStr} ${skipCount + 1} 继续向前搜索`,
+  ].filter(k => k).join('\n\n').trim());
 };
 
 export const handleSlashCommand = async (message: GenericMessage) => {
