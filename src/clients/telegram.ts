@@ -143,15 +143,20 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (photo) {
-      result.prefixText = '[图片] ';
-      result.media = {
-        type: 'photo',
-        mimeType: 'image/jpeg',
-        size: photo.file_size ?? 0,
-        url: await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg')),
-        width: photo.width,
-        height: photo.height,
-      };
+      const mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg'));
+      if ('has_media_spoiler' in message && message.has_media_spoiler) {
+        result.prefixText = `[含内容警告的图片: ${mediaUrl}] `;
+      } else {
+        result.prefixText = '[图片] ';
+        result.media = {
+          type: 'photo',
+          mimeType: 'image/jpeg',
+          size: photo.file_size ?? 0,
+          url: mediaUrl,
+          width: photo.width,
+          height: photo.height,
+        };
+      }
     } else {
       result.prefixText = '[文件] ';
       result.media = {
