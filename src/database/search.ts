@@ -131,8 +131,9 @@ export const updateGroupInfo = async (chatId: string, groupName: string) => {
 
 export const findAccessibleChatIds = async (keywordOrChatId: string, userId: string) => {
   // exact match
-  if (await checkSearchAccess(keywordOrChatId, userId)) {
-    return [keywordOrChatId];
+  if (/^-?\d{9,}$/.test(keywordOrChatId)) {
+    const chatId = formatChatId(keywordOrChatId);
+    return (await checkSearchAccess(chatId, userId)) ? [chatId] : [];
   }
   // fuzzy search
   const sharedDB = await getSharedDatabase();
