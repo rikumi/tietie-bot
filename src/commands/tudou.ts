@@ -21,7 +21,8 @@ const handle = async (message: GenericMessage) => {
       await createShortUrl(link),
       `🐱 ${dayjs(note.time).format('M/D H:mm')}`,
       `💗 ${note.interactInfo.likedCount} | ⭐️ ${note.interactInfo.collectedCount} | 💬 ${note.interactInfo.commentCount}`,
-      index < notesLength - 1 ? `➡️ 使用 /tudou ${index + 1} 查看下一条` : '⏩ 已到末尾',
+      ' ',
+      index < notesLength - 1 ? `➡️ 使用 /tudou ${index + 1} 查看下一条` : `⏩ 已看完最近 ${notesLength} 条更新`,
       '🎲 使用 /tudou random 随机查看',
     ].filter(k => k).join('\n');
 
@@ -44,12 +45,6 @@ const handle = async (message: GenericMessage) => {
       await defaultClientSet.sendBotMessage({
         clientName: message.clientName,
         chatId: message.chatId,
-        media: {
-          type: 'photo',
-          url: 'https://upload.wikimedia.org/wikipedia/en/4/48/Blank.JPG',
-          mimeType: 'image/jpeg',
-          size: 0,
-        },
         text: `[发送媒体文件失败]\n\n${caption}`,
         rawMessageExtra,
       });

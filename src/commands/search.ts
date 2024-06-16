@@ -187,5 +187,5 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     return;
   }
   const record = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
-  await renderSearchResult(message, undefined, record, keywordsStr, 0);
+  await renderSearchResult(message, record, keywordsStr, 0);
 };
