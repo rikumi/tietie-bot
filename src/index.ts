@@ -38,12 +38,12 @@ const handleMessage = async (message: GenericMessage) => {
     return;
   }
   // 调用 slash commands
-  await alias.handleMessage(message);
-  if (await video.handleMessage(message) !== false) return;
-  if (await tietie.handleMessage(message) !== false) return;
-
   const module = commandMap.get(message.text.trim().split(' ')[0].substring(1));
-  if (!module) return;
+  if (!module) {
+    if (await video.handleMessage(message) !== false) return;
+    if (await tietie.handleMessage(message) !== false) return;
+    return await alias.handleMessage(message);
+  };
   try {
     const result = await module.handleSlashCommand?.(message);
     if (result) defaultClientSet.sendBotMessage({
