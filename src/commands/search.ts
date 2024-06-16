@@ -113,6 +113,7 @@ async function* searchForKeywordsInChat(chatId: string, keywordsStr: string) {
 
 const renderSearchResult = async (
   message: GenericMessage,
+  chatId: string,
   record: { message_id: any; unixtime: any } | void | null | undefined,
   keywordsStr: string,
   skipCount: number,
@@ -126,7 +127,6 @@ const renderSearchResult = async (
     });
   }
 
-  const { chatId } = message;
   const groupName = await getGroupNameForChatId(chatId) ?? '临时会话';
 
   if (!record) {
@@ -146,13 +146,14 @@ const renderSearchResult = async (
     url,
     ' ',
     `⬅️ 使用 /search ${chatId} ${keywordsStr} ${skipCount + 1} 继续向前搜索`,
-  ].filter(k => k).join('\n\n').trim());
+  ].filter(k => k).join('\n').trim());
 };
 
 export const handleSlashCommand = async (message: GenericMessage) => {
   const userId = String(message.userId);
   const [groupNameOrChatId, ...keywords] = message.text!.trim().split(/\s+/).slice(1);
-  const simpleReply = (text: string) => {
+  const skipCount = /^\d+$/.test(keywords.slice(-1)[0]) ? parseInt(keywords.pop()!) : 0;
+  const simplyReply = (text: string) => {
     defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
@@ -165,27 +166,28 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     });
   };
   if (message.clientName !== 'telegram') {
-    return simpleReply('由于会话关联的实现问题，目前仅支持在 Telegram 平台发起搜索。');
+    return simplyReply('由于会话关联的实现问题，目前仅支持在 Telegram 平台发起搜索。');
   }
   if (!groupNameOrChatId || !keywords.length) {
-    simpleReply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，当前的 chatId 为 ${formatChatId(message.chatId)}`);
-    return;
+    return simplyReply(`请使用 \`/search <chatId 或模糊群名> <关键词>\` 搜索某个会话，当前的 chatId 为 ${formatChatId(message.chatId)}`);
   }
   const chatIds = await findAccessibleChatIds(groupNameOrChatId, userId);
   if (!chatIds.length) {
-    simpleReply('没有找到该会话或近一天没有在该会话内发言，为保护隐私，请在会话内发言后再执行搜索。');
-    return;
+    return simplyReply('没有找到该会话或近一天没有在该会话内发言，为保护隐私，请在会话内发言后再执行搜索。');
   }
   if (chatIds.length > 1) {
-    simpleReply('有多个群名符合条件，请给出更精确的群名。');
-    return;
+    return simplyReply('有多个群名符合条件，请给出更精确的群名。');
   }
   const chatId = chatIds[0];
+  if (!/^\d+$/.test(chatId)) {
+    return simplyReply('由于无法生成消息链接，暂不支持搜索私聊或非超级群。');
+  }
   const keywordsStr = keywords.join(' ');
   if (keywordsStr.includes(':')) {
-    simpleReply('暂不支持包含 : 符号的关键词。');
-    return;
+    return simplyReply('暂不支持包含 : 符号的关键词。');
   }
-  const record = (await searchForKeywordsInChat(chatId, keywordsStr).next()).value;
-  await renderSearchResult(message, record, keywordsStr, 0);
+  const generator = searchForKeywordsInChat(chatId, keywordsStr);
+  for (let i = 0; i < Number(skipCount); i++) await generator.next();
+  const record = (await generator.next()).value;
+  await renderSearchResult(message, chatId, record, keywordsStr, skipCount);
 };
