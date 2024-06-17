@@ -61,7 +61,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         url: await this.getMxcUriAndUpload(message.media.url!),
         info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
       }
-      const matrixEventType = matrixEventContent.msgtype === 'm.sticker' ? 'm.sticker' : 'm.room.message';
+      const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
       mediaMessageId = await this.bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
     }
     const messageId = await this.bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
