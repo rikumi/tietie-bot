@@ -64,6 +64,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       offset: entity.offset,
       length: entity.length,
       url: entity.url,
+      language: entity.codeLanguage,
     }));
     const options = {
       reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,

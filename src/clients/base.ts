@@ -36,6 +36,7 @@ export interface GenericMessageEntity {
   offset: number;
   length: number;
   url?: string;
+  codeLanguage?: string;
 }
 
 export interface GenericClient<T = any, U = any, V = {}> {
