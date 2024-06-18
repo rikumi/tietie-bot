@@ -4,7 +4,7 @@ import { GenericMessage } from 'src/clients/base';
 export const USAGE = `[sentence] 使用 jieba 进行马尔可夫分词`;
 
 export const handleSlashCommand = async (message: GenericMessage) => {
-  const repliedMessage = message.rawMessageReplied;
+  const repliedMessage = message.messageReplied;
   let sentence = message.text.trim().replace(/^\S*\s*/, '');
   if (!sentence) {
     if (!repliedMessage?.text) {

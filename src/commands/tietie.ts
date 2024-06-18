@@ -1,9 +1,8 @@
 import { setTietieEnabled, isTietieEnabled } from '../database/tietie';
-import { MessageEntity, User } from 'telegraf/typings/core/types/typegram';
 import { isAutodelEnabled } from 'src/database/autodel';
-import { GenericMessage } from 'src/clients/base';
+import { GenericMessage, GenericMessageEntity } from 'src/clients/base';
+import defaultClientSet, { prependMessageText } from 'src/clients';
 import telegram from 'src/clients/telegram';
-import defaultClientSet from 'src/clients';
 
 export const USAGE = `<on|off> 开启/关闭任意非 ASCII 指令贴贴功能`;
 
@@ -21,6 +20,8 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   }
 };
 
+const utf16Length = (str: string) => Buffer.from(str, 'utf16le').length / 2;
+
 export const handleMessage = async (message: GenericMessage) => {
   const command = message.text!.trim().split(/\s+/)[0].replace(/^\//, '');
 
@@ -28,39 +29,43 @@ export const handleMessage = async (message: GenericMessage) => {
   if (!/[^\u0000-\u00ff]/.test(command) || !await isTietieEnabled(message.clientName, message.chatId)) {
     return false;
   }
-  const escape = (text: string) => text.replace(/([\u0000-\u007f])/g, '\\$1');
-  const formatUser = (user: User, customName?: string) => {
-    return `[${escape(customName || `${user.first_name} ${user.last_name || ''}`.trim())}](tg://user?id=${user.id})`;
-  };
 
-  // 这段暂时只支持 telegram 消息
-  const replied = message.rawMessageReplied;
-  const repliedBotMsg: any = replied?.from?.username === telegram.bot.botInfo!.username ? replied : undefined;
-  const lastMentionEntity: MessageEntity.TextMentionMessageEntity | undefined = repliedBotMsg?.entities?.filter((k: any) => k.type === 'text_mention')[0] as any;
-  const lastMentionUser = lastMentionEntity?.user;
+  const replied = message.messageReplied;
+  const repliedFirstEntity = replied?.entities?.[0];
+  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.type === 'link' ? repliedFirstEntity : undefined;
 
-  const sender = message.rawMessage.from;
-  const receiver = lastMentionUser ?? replied?.from ?? sender;
+  const senderLink = message.userLink;
+  const receiverLink = repliedMentionEntity ? repliedMentionEntity.url! : message.userLinkReplied ?? message.userLink!;
 
-  const senderLink = sender ? formatUser(sender) : message.userName;
-  const receiverLink = receiver ? formatUser(receiver, receiver.id === sender.id ? '自己' : undefined) : '自己';
-  const [action, ...rest] = message.text!.slice(1).split(/\s+/).map(escape);
-  const postfix = rest.join(' ').trim();
-  const result = `${senderLink} ${action}${postfix || action.includes('了') ? '' : '了'} ${receiverLink} ${postfix}`.trim() + '！';
+  const senderName = message.userName;
+  const receiverName = receiverLink === senderLink
+    ? '自己'
+    : repliedMentionEntity
+      ? replied?.text.slice(0, repliedMentionEntity.length)!
+      : message.userNameReplied ?? '自己';
+
+  const [action, ...rest] = message.text.slice(1).split(/\s+/);
+  const suffix = rest.join(' ').trim();
+  const result = { text: '', entities: [] as GenericMessageEntity[] };
+
+  prependMessageText(result, `${receiverName} ${suffix}！`);
+  result.entities.unshift({ type: 'link', offset: 0, length: utf16Length(receiverName), url: receiverLink });
+
+  prependMessageText(result, `${senderName} ${action}${suffix || action.includes('了') ? '' : '了'} `);
+  result.entities.unshift({ type: 'link', offset: 0, length: utf16Length(senderName), url: senderLink });
 
   const shouldAutodel = await isAutodelEnabled(message.userId);
-  if (shouldAutodel) {
+  if (shouldAutodel && message.clientName === 'telegram') {
     telegram.bot.telegram.deleteMessage(message.chatId, Number(message.messageId)).catch();
   }
+
   defaultClientSet.sendBotMessage({
     clientName: message.clientName,
     chatId: message.chatId,
-    text: result,
     messageIdReplied: shouldAutodel ? undefined : message.messageId,
+    ...result,
     rawMessageExtra: {
-      parse_mode: 'MarkdownV2',
       disable_web_page_preview: true,
-      disable_notification: true,
     },
   });
 };

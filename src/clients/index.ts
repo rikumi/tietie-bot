@@ -1,6 +1,15 @@
 import { getBridgeNickname, getUnidirectionalBridgesByChat } from 'src/database/bridge';
-import type { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
+import type { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import { EventEmitter } from 'events';
+
+export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entities'>, prefix: string) => {
+  const prefixLength = Buffer.from(prefix, 'utf16le').length / 2;
+  message.text = prefix + message.text;
+  if (!message.entities) return;
+  for (const entity of message.entities) {
+    entity.offset += prefixLength;
+  }
+};
 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
@@ -13,26 +22,29 @@ export class DefaultClientSet extends EventEmitter {
     }
   }
 
-  public async bridgeMessage(fromMessage: GenericMessage): Promise<GenericMessage[]> {
+  public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
       const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
-      const fromMessageText = fromMessage.text;
-      const toMessageText = fromMessage.isServiceMessage ? fromMessageText : `${userNick}: ${fromMessageText}`;
       const toMessageIdReplied = fromMessage.messageIdReplied
         ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)?.[0]
         : undefined;
 
+      if (!fromMessage.isServiceMessage) {
+        prependMessageText(fromMessage, `${userNick}: `);
+      }
       const toMessage = await toClient.sendMessage({
         clientName: toClientName,
-        text: toMessageText,
+        text: fromMessage.text,
         chatId: toChatId,
         media: fromMessage.media,
         messageIdReplied: toMessageIdReplied,
         rawMessage: fromMessage.rawMessage,
+        entities: fromMessage.entities,
+        rawMessageExtra: fromMessage.rawMessageExtra,
       });
       // build bidirectional message id mapping
       this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
@@ -57,13 +69,17 @@ export class DefaultClientSet extends EventEmitter {
       const messageIdsToEdit = this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId);
       if (!messageIdsToEdit) return;
       const [messageIdToEdit, mediaMessageIdToEdit] = messageIdsToEdit;
+      if (!fromMessage.isServiceMessage) {
+        prependMessageText(fromMessage, `${userNick}: `);
+      }
       toClient.editMessage({
         clientName: toClientName,
         chatId: toChatId,
         messageId: messageIdToEdit,
         mediaMessageId: mediaMessageIdToEdit,
-        text: fromMessage.isServiceMessage ? fromMessage.text : `${userNick}: ${fromMessage.text}`,
+        text: fromMessage.text,
         media: fromMessage.media,
+        entities: fromMessage.entities,
       });
     }));
   }
@@ -72,7 +88,11 @@ export class DefaultClientSet extends EventEmitter {
     const client = this.clients.get(message.clientName);
     if (!client) return;
     const messageSent = await client.sendMessage(message);
-    const messagesBridged = await this.bridgeMessage({ ...messageSent, isServiceMessage: true });
+    const messagesBridged = await this.bridgeMessage({
+      ...messageSent,
+      isServiceMessage: true,
+      rawMessageExtra: message.rawMessageExtra,
+    });
     return [messageSent, ...messagesBridged];
   }
 

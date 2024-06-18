@@ -41,7 +41,6 @@ export const handleGeneralMessage = async (message: GenericMessage) => {
     chatId: message.chatId,
     text: `${repeatText}${repeatText}${repeatText}`,
     messageIdReplied: message.messageId,
-    rawMessageExtra: { disable_notification: true },
   });
   return true;
 }

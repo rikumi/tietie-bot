@@ -20,7 +20,6 @@ export const handleSlashCommand = async (message: GenericMessage) => {
         size: 0,
       },
       messageIdReplied: message.messageId,
-      rawMessageExtra: { disable_notification: true },
     });
   }
 };

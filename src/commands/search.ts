@@ -161,7 +161,6 @@ export const handleSlashCommand = async (message: GenericMessage) => {
       text,
       rawMessageExtra: {
         parseMode: 'MarkdownV2',
-        disable_notification: true,
       }
     });
   };

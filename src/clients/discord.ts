@@ -110,10 +110,9 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       messageId: message.id,
       media,
       messageIdReplied: message.referenced_message?.id,
+      messageReplied: message.referenced_message && this.transformMessage(message.referenced_message),
       userIdReplied: message.referenced_message?.author?.id,
       rawMessage: message,
-      rawUser: message.author!,
-      rawMessageReplied: message.referenced_message!,
       unixDate: new Date(message.timestamp).getTime() / 1000,
       isServiceMessage: !!message.author?.bot,
     }

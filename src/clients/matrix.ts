@@ -3,7 +3,14 @@ import path from 'path';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
 import config from '../../config.json';
-import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+
+const escapeHTML = (str: string) => str
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
 
 export class MatrixUserBotClient extends EventEmitter implements GenericClient<any, any, any> {
   public bot: MatrixClient;
@@ -43,9 +50,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const matrixEventContent: any = {
       body: message.text,
+      format: message.entities ? 'org.matrix.custom.html' : undefined,
+      formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
-      'mx.rkm.tietie-bot.raw_message': message.rawMessage,
+      'mx.rkm.tietie-bot.message': message,
     };
     let mediaMessageId: string | undefined;
     if (message.media && message.media.size < 1024 * 1024) {
@@ -57,7 +66,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const mediaEvent: any = {
         body: '',
         msgtype: 'm.' + matrixMediaType,
-        'mx.rkm.tietie-bot.raw_message': message.rawMessage,
+        'mx.rkm.tietie-bot.message': message,
         url: await this.getMxcUriAndUpload(message.media.url!),
         info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
       }
@@ -73,7 +82,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userId: this.botInfo!.user_id,
       userName: this.botInfo!.user_id,
       rawMessage: { id: messageId, content: message.text },
-      rawUser: this.botInfo,
       unixDate: Date.now() / 1000,
     };
   }
@@ -88,7 +96,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       await this.bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
         msgtype: 'm.' + matrixMediaType,
-        'mx.rkm.tietie-bot.raw_message': message.rawMessage,
+        'mx.rkm.tietie-bot.message': message,
         'm.new_content': {
           body: '[已编辑媒体]',
           msgtype: 'm.' + matrixMediaType,
@@ -101,6 +109,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     // MSC2676
     await this.bot.sendEvent(message.chatId, 'm.room.message', {
       body: `* ${message.text}`,
+      format: message.entities ? 'org.matrix.custom.html' : undefined,
+      formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
       msgtype: 'm.text',
       'm.new_content': { body: message.text, msgtype: 'm.text' },
       'm.relates_to': { rel_type: 'm.replace', event_id: message.messageId },
@@ -125,19 +135,24 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       mimeType: message.content.info?.mimetype,
       size: message.content.info?.size,
     } : undefined;
+
+    const repliedMessageId = message.content['m.relates_to']?.['m.in_reply_to']?.event_id;
+    const repliedMessage = repliedMessageId && await this.bot.getEvent(roomId, repliedMessageId).catch(console.error);
+    const senderUser = await this.bot.getUserProfile(message.sender).catch(console.error);
+    const repliedUser = repliedMessage && await this.bot.getUserProfile(repliedMessage.sender).catch(console.error);
     return {
       clientName: 'matrix',
       text: editedContent ? getBody(editedContent) : getBody(message.content),
       userId: message.sender,
-      userName: (await this.bot.getUserProfile(message.sender)).displayname,
+      userName: senderUser?.displayname,
+      userLink: `https://matrix.to/#/${message.sender}`,
       chatId: roomId,
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       media,
-      messageIdReplied: message.content['m.relates_to']?.['m.in_reply_to']?.event_id,
-      userIdReplied: message.content['m.relates_to']?.['m.in_reply_to']?.sender,
+      messageIdReplied: repliedMessageId,
+      userIdReplied: repliedMessage?.sender,
+      userNameReplied: repliedMessageId && repliedUser?.displayname,
       rawMessage: message,
-      rawUser: message.author!,
-      rawMessageReplied: message.content['m.relates_to']?.['m.in_reply_to'],
       unixDate: message.origin_server_ts / 1000,
     }
   }
@@ -194,6 +209,25 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
       filename: 'invalid',
     }, Buffer.from('Resource failed to upload'), 60000, undefined, 'text/plain');
+  }
+
+  private renderEntitiesToHTML(entities: GenericMessageEntity[], text: string): string {
+    const tagsReversed = entities.map((e) => [e.offset, e.offset + e.length].map((position) => {
+      const tagName = ({ bold: 'strong', italic: 'em', strikethrough: 'del', underline: 'u', mention: 'a', link: 'a' } as any)[e.type] || e.type;
+      const tag = position === e.offset ? `<${tagName}${e.url ? ` href="${e.url.replace(/"/g, '&quot;')}"` : ''}>` : `</${tagName}>`;
+      return { tag, position };
+    })).flat().sort((a, b) => b.position - a.position);
+
+    const buffer = Buffer.from(text, 'utf16le');
+    const stack: string[] = [];
+    let lastPosition = buffer.length / 2;
+    for (const { tag, position } of tagsReversed) {
+      stack.push(escapeHTML(buffer.subarray(position * 2, lastPosition * 2).toString('utf16le')));
+      stack.push(tag);
+      lastPosition = position;
+    }
+    stack.push(escapeHTML(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
+    return stack.reverse().join('');
   }
 }
 

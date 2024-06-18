@@ -17,13 +17,12 @@ export const handleMessage = async (message: GenericMessage) => {
       chatId: message.chatId,
       media: {
         type: 'video',
-        url: await fileIdToUrl(videoId, null, 'video/mp4'),
+        url: /^https?:/.test(videoId) ? videoId : await fileIdToUrl(videoId, null, 'video/mp4'),
         mimeType: 'video/mp4',
         size: 0,
       },
       text: '',
       messageIdReplied: message.messageId,
-      rawMessageExtra: { disable_notification: true },
     });
     return true;
   }
@@ -32,11 +31,11 @@ export const handleMessage = async (message: GenericMessage) => {
 
 export const handleSlashCommand = async (message: GenericMessage) => {
   const command = message.text.trim().split(/\s+/)[1];
-  const replied = message.rawMessageReplied;
-  if (!command || !replied || !replied.video) {
+  const replied = message.messageReplied;
+  if (!command || replied?.media?.type !== 'video') {
     return '用法：引用视频消息并回复 /set_video <响应指令名>';
   }
-  const fileId = replied.video.file_id;
-  await setVideoReply(message.clientName, message.chatId, command, fileId);
+  const url = replied.media.url;
+  await setVideoReply(message.clientName, message.chatId, command, url);
   return 'OK';
 };

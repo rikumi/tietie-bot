@@ -1,22 +1,25 @@
-export interface GenericMessage<T = any, U = any> {
+export interface GenericMessage {
   clientName: string;
   text: string;
   userId: string;
   userName: string;
+  userLink?: string;
   chatId: string;
   messageId: string;
   mediaMessageId?: string;
   unixDate: number;
 
   media?: GenericMedia;
+  entities?: GenericMessageEntity[];
+  messageReplied?: GenericMessage;
 
   isServiceMessage?: boolean;
   messageIdReplied?: string;
   userIdReplied?: string;
+  userNameReplied?: string;
+  userLinkReplied?: string;
 
-  rawMessage: T;
-  rawUser: U;
-  rawMessageReplied?: T;
+  rawMessage: any;
 }
 
 export interface GenericMedia {
@@ -28,14 +31,21 @@ export interface GenericMedia {
   height?: number;
 }
 
+export interface GenericMessageEntity {
+  type: 'bold' | 'italic' | 'strikethrough' | 'underline' | 'code' | 'pre' | 'mention' | 'blockquote' | 'link';
+  offset: number;
+  length: number;
+  url?: string;
+}
+
 export interface GenericClient<T = any, U = any, V = {}> {
   start(): Promise<void>;
   stop(): Promise<void>;
 
-  on(eventName: 'message', handler: (message: GenericMessage<T, U>) => void): void;
-  on(eventName: 'edit-message', handler: (message: GenericMessage<T, U>) => void): void;
+  on(eventName: 'message', handler: (message: GenericMessage) => void): void;
+  on(eventName: 'edit-message', handler: (message: GenericMessage) => void): void;
 
-  sendMessage(message: MessageToSend): Promise<GenericMessage<T, U>>;
+  sendMessage(message: MessageToSend): Promise<GenericMessage>;
   editMessage(message: MessageToEdit): Promise<void>;
 
   callOtherBotCommand?(text: string, chatId: string): Promise<void>;
@@ -50,6 +60,7 @@ export interface MessageToSend {
   messageIdReplied?: string;
   rawMessage?: any;
   rawMessageExtra?: any;
+  entities?: GenericMessageEntity[];
 }
 
 export interface MessageToEdit extends MessageToSend {
@@ -58,4 +69,5 @@ export interface MessageToEdit extends MessageToSend {
   isServiceMessage?: boolean;
   userId?: string;
   userName?: string;
+  entities?: GenericMessageEntity[];
 }

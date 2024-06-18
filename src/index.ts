@@ -20,10 +20,7 @@ const commandMap = new Map<string, any>();
 
 const handleMessage = async (message: GenericMessage) => {
   search.handleMessage(message);
-  clients.bridgeMessage(message);
-
-  // clone the message to not interfere with message object being bridged
-  message = { ...message };
+  clients.bridgeMessage({ ...message });
 
   // filter out messages mentioning other bots
   if (/@(\w+bot)\b/.test(message.text)) {
