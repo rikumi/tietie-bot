@@ -32,7 +32,7 @@ export const handleMessage = async (message: GenericMessage) => {
 
   const replied = message.messageReplied;
   const repliedFirstEntity = replied?.entities?.[0];
-  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.type === 'link' ? repliedFirstEntity : undefined;
+  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.url ? repliedFirstEntity : undefined;
 
   const senderLink = message.userLink;
   const receiverLink = repliedMentionEntity ? repliedMentionEntity.url! : message.userLinkReplied ?? message.userLink!;
