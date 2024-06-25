@@ -23,6 +23,9 @@ export class DefaultClientSet extends EventEmitter {
   }
 
   public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
+    if (!fromMessage.isServiceMessage) {
+      prependMessageText(fromMessage, `${userNick}: `);
+    }
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
@@ -33,9 +36,6 @@ export class DefaultClientSet extends EventEmitter {
         ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)?.[0]
         : undefined;
 
-      if (!fromMessage.isServiceMessage) {
-        prependMessageText(fromMessage, `${userNick}: `);
-      }
       const toMessage = await toClient.sendMessage({
         clientName: toClientName,
         text: fromMessage.text,
