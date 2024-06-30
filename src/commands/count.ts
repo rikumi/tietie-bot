@@ -10,6 +10,6 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   let remaining = evaluate(content);
   return [stackCount, 27, 27, 2, Infinity]
     .map((k, i) => ([remaining, i] = [Math.floor(remaining / k), remaining % k])[1])
-    .map((value, level) => value ? value + ['组', '盒', '桶装盒', '大箱盒'][level] : '')
+    .map((value, level) => value ? value + '个组盒桶箱'[level] : '')
     .reverse().filter(Boolean).join('零');
 };
