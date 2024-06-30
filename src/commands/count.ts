@@ -43,7 +43,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   ];
   // 一个物品就没组的概念了
   if (stackCount === 1) {
-    countLevel.splice(2, 1);
+    countLevel.splice(3, 1);
   }
   /** 计算易读的数字表达
    *
