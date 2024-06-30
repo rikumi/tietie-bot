@@ -4,7 +4,7 @@ import { evaluate } from 'mathjs';
 export const USAGE = `[#stackCount] <number|expression> 计算在 MC 中的易读数字表达`;
 
 export const handleSlashCommand = async (message: GenericMessage) => {
-  const content = message.text!.trim().replace(/^.*?\s+/, '').replace(/#(\d+)/, '');
+  const content = message.text!.trim().replace(/^.*?\s+/, '').replace(/#(\d+)/, '').replace(/[^\d+-*/()]/g, '');
   const stackCount = parseInt(RegExp.$1) || 64;
   if (!content) return;
   let remaining = Math.max(0, Math.round(evaluate(content)));
