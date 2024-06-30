@@ -17,7 +17,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     .replace(/。/g, ".")
     .replace(/\\/g, "/");
   // 堆叠数量
-  const stackCount = strArr[1] ? +strArr[1] : 64;
+  const stackCount = +strArr[1] ? +strArr[1] : 64;
   // 数量级定义
   const countLevel = [
     {
@@ -55,7 +55,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   const countItem = (count:number, level = 0, result = ""):string => {
     // 如果计算完了所有的数量级则返回
     if (level === countLevel.length) {
-      return result;
+      return result || "零";
     }
     // 获取当前等级对象
     const lv = countLevel[level++];
@@ -69,8 +69,11 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   try {
     // 尝试计算结果
     const expResult = evaluate(expression);
-    return `${message.userName} ${countItem(expResult)}！`;
+    if(expResult<0) {
+      return `${expression} = ${expResult}`;
+    }
+    return `${expression} = ${countItem(Math.round(expResult))}`;
   } catch (error) {
-		return `${message.userName} 计算出错！`;
+		return `${message.userName} 计算 ${expression} 出错！`;
   }
 };
