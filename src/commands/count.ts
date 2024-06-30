@@ -1,4 +1,5 @@
 import { GenericMessage } from 'src/clients/base';
+import { evaluate } from 'mathjs';
 
 export const USAGE = `<number|expression> [StackCount] 计算在 MC 中的易读数字表达`;
 
@@ -67,7 +68,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   };
   try {
     // 尝试计算结果
-    const expResult = eval(expression);
+    const expResult = evaluate(expression);
     return `${message.userName} ${countItem(expResult)}！`;
   } catch (error) {
 		return `${message.userName} 计算出错！`;
