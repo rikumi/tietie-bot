@@ -6,17 +6,13 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   const content = message.text!.trim().replace(/^.*?\s+/, '');
   if (!content) return;
   const strArr = content.split(/[ |，,]/);
-  // 替换特殊关键字，以便计算
-  const expression = strArr[0]
-    .replace(/！/g, "!")
-    .replace(/……/g, "^")
-    .replace(/[（【\{\[]/g, "(")
-    .replace(/[）】\}\]]/g, ")")
-    .replace(/、/g, "/")
-    .replace(/。/g, ".")
-    .replace(/\\/g, "/");
+  // 提取为数字，不是数字就拉倒吧！
+  const expression = Number(strArr[0])
+  if(isNaN(expression)){
+    return `${message.userName} ${strArr[0]} 是数字喵？！`;
+  }
   // 堆叠数量
-  const stackCount = strArr[1] ? +strArr[1] : 64;
+  const stackCount = +strArr[1] ? +strArr[1] : 64;
   // 数量级定义
   const countLevel = [
     {
@@ -65,11 +61,5 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     }
     return countItem(count, level, result);
   };
-  try {
-    // 尝试计算结果
-    const expResult = eval(expression);
-    return `${message.userName} ${countItem(expResult)}！`;
-  } catch (error) {
-		return `${message.userName} 计算出错！`;
-  }
+  return `${strArr[0]} = ${countItem(expression)}`;
 };
