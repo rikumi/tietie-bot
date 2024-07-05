@@ -76,10 +76,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.bot = undefined;
   }
 
-  public async sendMessage(message: MessageToSend): Promise<GenericMessage | null> {
-    if (/^\/\w+\b/.test(message.text) && await this.callOtherBotCommand(message.text, message.chatId)) {
-      return null;
-    }
+  public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const messageSent = await this.bot.send(message.chatId, {
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied ?? null,
@@ -121,18 +118,18 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     }
   }
 
-  private async callOtherBotCommand(text: string, chatId: string) {
+  public async callOtherBotCommand(text: string, chatId: string) {
     const guildId = this.bot.info.guilds.find((guild: any) => {
       return guild.channels.some((channel: any) => channel.id === chatId);
     })?.id;
-    if (!guildId) return false;
+    if (!guildId) return;
     const commands = await this.bot.requester.fetch_request(
       `guilds/${guildId}/application-command-index`,
       undefined, this.bot.clientData, 'GET'
     );
     const [commandName, ...args] = text.substring(1).split(/\s+/);
     const command = commands.application_commands.find((c: any) => c.name === commandName);
-    if (!command) return false;
+    if (!command) return;
     const payload = {
       type: 2,
       application_id: command.application_id,
@@ -149,7 +146,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     };
     await this.bot.call_check([]);
     await this.bot.requester.fetch_request('interactions', payload);
-    return true;
+    return;
   }
 }
 

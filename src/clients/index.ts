@@ -28,6 +28,7 @@ export class DefaultClientSet extends EventEmitter {
       prependMessageText(fromMessage, `${userNick}: `);
     }
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
+    const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
@@ -45,12 +46,14 @@ export class DefaultClientSet extends EventEmitter {
         entities: fromMessage.entities,
         rawMessageExtra: fromMessage.rawMessageExtra,
       });
-      if (!toMessage) return;
       // build bidirectional message id mapping
       this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
       this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
       if (toMessage.mediaMessageId) {
         this.recordRecentMessageId(toClientName, toChatId, toMessage.mediaMessageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+      }
+      if (hasCommand) {
+        toClient.callOtherBotCommand?.(fromMessage.text, toChatId);
       }
       return toMessage;
     }));
@@ -85,7 +88,6 @@ export class DefaultClientSet extends EventEmitter {
     const client = this.clients.get(message.clientName);
     if (!client) return;
     const messageSent = await client.sendMessage(message);
-    if (!messageSent) return;
     const messagesBridged = await this.bridgeMessage({
       ...messageSent,
       isServiceMessage: true,
