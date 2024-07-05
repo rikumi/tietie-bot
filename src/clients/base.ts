@@ -46,10 +46,9 @@ export interface GenericClient<T = any, U = any, V = {}> {
   on(eventName: 'message', handler: (message: GenericMessage) => void): void;
   on(eventName: 'edit-message', handler: (message: GenericMessage) => void): void;
 
-  sendMessage(message: MessageToSend): Promise<GenericMessage>;
+  sendMessage(message: MessageToSend): Promise<GenericMessage | null>;
   editMessage(message: MessageToEdit): Promise<void>;
 
-  callOtherBotCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }
 
