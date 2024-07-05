@@ -24,11 +24,11 @@ export class DefaultClientSet extends EventEmitter {
 
   public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
     const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
+    const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     if (!fromMessage.isServiceMessage) {
       prependMessageText(fromMessage, `${userNick}: `);
     }
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
-    const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
