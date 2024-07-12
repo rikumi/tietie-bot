@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import path from 'path';
+import { fetch, Agent } from 'undici';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
 import config from '../../config.json';
@@ -200,7 +201,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   private async uploadToMxcUri(mxcUri: string, url: string) {
-    const resource = await fetch(url);
+    const resource = await fetch(url, {
+      dispatcher: new Agent({ connect: { rejectUnauthorized: false } }),
+    });
     const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
     const buffer = Buffer.from(await resource.arrayBuffer());
     console.warn('[MatrixUserBotClient] Uploading to Matrix:', mxcUri);
