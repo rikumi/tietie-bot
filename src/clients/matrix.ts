@@ -4,6 +4,7 @@ import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
 import config from '../../config.json';
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { prependMessageText } from '.';
 
 const escapeHTML = (str: string) => str
   .replace(/&/g, '&amp;')
@@ -48,6 +49,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    }
     const matrixEventContent: any = {
       body: message.text,
       format: message.entities ? 'org.matrix.custom.html' : undefined,
@@ -80,13 +84,17 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageId,
       mediaMessageId,
       userId: this.botInfo!.user_id,
-      userName: this.botInfo!.user_id,
+      userHandle: this.botInfo!.user_id,
+      userDisplayName: this.botInfo!.user_id,
       rawMessage: { id: messageId, content: message.text },
       unixDate: Date.now() / 1000,
     };
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    }
     if (message.media && message.mediaMessageId) {
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
@@ -144,7 +152,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       clientName: 'matrix',
       text: editedContent ? getBody(editedContent) : getBody(message.content),
       userId: message.sender,
-      userName: senderUser?.displayname,
+      userHandle: message.sender.match(/\w+/)[0],
+      userDisplayName: senderUser?.displayname,
       userLink: `https://matrix.to/#/${message.sender}`,
       chatId: roomId,
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,

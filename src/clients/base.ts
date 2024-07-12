@@ -2,7 +2,8 @@ export interface GenericMessage {
   clientName: string;
   text: string;
   userId: string;
-  userName: string;
+  userHandle: string;
+  userDisplayName: string;
   userLink?: string;
   chatId: string;
   messageId: string;
@@ -62,6 +63,8 @@ export interface MessageToSend {
   rawMessage?: any;
   rawMessageExtra?: any;
   entities?: GenericMessageEntity[];
+  rawUserHandle?: string;
+  rawUserDisplayName?: string;
 }
 
 export interface MessageToEdit extends MessageToSend {
@@ -69,6 +72,9 @@ export interface MessageToEdit extends MessageToSend {
   mediaMessageId?: string;
   isServiceMessage?: boolean;
   userId?: string;
-  userName?: string;
+  userHandle?: string;
+  userDisplayName?: string;
   entities?: GenericMessageEntity[];
+  rawUserHandle?: string;
+  rawUserDisplayName?: string;
 }

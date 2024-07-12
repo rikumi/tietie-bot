@@ -11,5 +11,5 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   if (shouldAutodel) {
     telegram.bot.telegram.deleteMessage(message.chatId, Number(message.messageId)).catch();
   }
-  return `${message.userName} ${content}！`;
+  return `${message.userDisplayName} ${content}！`;
 };
