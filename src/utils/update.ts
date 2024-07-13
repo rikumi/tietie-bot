@@ -10,6 +10,11 @@ const exec = async (command: string, options: cp.ExecOptions) => {
   });
 };
 
+export const getCurrentBranchName = async () => {
+  const cwd = path.resolve(__dirname, '..');
+  return (await exec('git branch --show-current', { cwd })).trim();
+};
+
 export const unsafeUpdateBot = async (
   branch?: string,
   onPullFinished?: (pullResult: string) => Promise<void>,
