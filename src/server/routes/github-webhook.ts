@@ -22,7 +22,7 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
     await Promise.all(updateReceivers.map(receiver => defaultClientSet.sendBotMessage({
       clientName: receiver.clientName,
       chatId: receiver.chatId,
-      text: `tietie-bot 自动更新中:\n\n${changelog}`,
+      text: `tietie-bot 自动更新中\n\n${changelog}`,
     })));
     unsafeUpdateBot();
   }
