@@ -10,10 +10,10 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
   // do not trust the content until we begin to check secret here
   const body = JSON.parse((await getStreamContent(req)).toString('utf-8'));
   console.log('/github-webhook', req.headers, JSON.stringify(body, null, 2));
-  if (req.headers['X-GitHub-Event'] !== 'push') {
+
+  if ((req.headers['X-GitHub-Event'] || req.headers['x-github-event']) !== 'push') {
     return;
   }
-
   const { ref, commits, head_commit: headCommit } = body;
   const currentBranch = await getCurrentBranchName();
   const changelog = commits.map((commit: any) => commit.message.split('\n')[0]).join('\n');
