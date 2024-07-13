@@ -45,6 +45,6 @@ export const notifyAllUpdateReceivers = async (title: string, content: string = 
     clientName: receiver.clientName,
     chatId: receiver.chatId,
     text: `${title}\n\n${content}`.trim(),
-    entities: [{ type: 'bold' as const, offset: 0, length: Buffer.from(content, 'utf16le').length / 2 }],
+    entities: [{ type: 'bold' as const, offset: 0, length: Buffer.from(title, 'utf16le').length / 2 }],
   })));
 };
