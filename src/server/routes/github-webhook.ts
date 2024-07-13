@@ -22,11 +22,7 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
     const messageTemplateText = 'Updating tietie-bot with changelog:';
     const messageTemplate = {
       text: `${messageTemplateText}\n\n${changelog}`,
-      entities: [{
-        type: 'bold' as const,
-        offset: 0,
-        length: messageTemplateText.length,
-      }]
+      entities: [{ type: 'bold' as const, offset: 0, length: messageTemplateText.length }],
     };
     await Promise.all(updateReceivers.map(receiver => defaultClientSet.sendBotMessage({
       clientName: receiver.clientName,
