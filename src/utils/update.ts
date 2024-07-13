@@ -1,5 +1,8 @@
 import path from 'path';
 import cp from 'child_process';
+import { MessageToSend } from 'src/clients/base';
+import { getUpdateReceivers } from 'src/database/update';
+import defaultClientSet from 'src/clients';
 
 const exec = async (command: string, options: cp.ExecOptions) => {
   return await new Promise<string>((resolve, reject) => {
@@ -34,4 +37,14 @@ export const unsafeUpdateBot = async (
   }
   cp.spawnSync('pnpm', ['i'], { cwd });
   cp.spawn('npm', ['run', 'restart'], { cwd }).unref();
+};
+
+export const notifyAllUpdateReceivers = async (title: string, content: string = '') => {
+  const updateReceivers = await getUpdateReceivers();
+  await Promise.all(updateReceivers.map(receiver => defaultClientSet.sendBotMessage({
+    clientName: receiver.clientName,
+    chatId: receiver.chatId,
+    text: `${title}\n\n${content}`.trim(),
+    entities: [{ type: 'bold' as const, offset: 0, length: Buffer.from(content, 'utf16le').length / 2 }],
+  })));
 };

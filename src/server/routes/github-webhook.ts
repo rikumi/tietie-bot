@@ -1,8 +1,6 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import defaultClientSet from 'src/clients';
-import { getUpdateReceivers } from 'src/database/update';
 import { getStreamContent } from 'src/utils/stream';
-import { getCurrentBranchName, unsafeUpdateBot } from 'src/utils/update';
+import { getCurrentBranchName, notifyAllUpdateReceivers, unsafeUpdateBot } from 'src/utils/update';
 
 export const ROUTE = '/github-webhook';
 
@@ -18,17 +16,7 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
   const currentBranch = await getCurrentBranchName();
   const changelog = commits.map((commit: any) => commit.message.split('\n')[0]).join('\n');
   if (ref === `refs/heads/${currentBranch}` && !headCommit?.message?.includes('skip ci')) {
-    const updateReceivers = await getUpdateReceivers();
-    const messageTemplateText = 'Updating tietie-bot with changelog:';
-    const messageTemplate = {
-      text: `${messageTemplateText}\n\n${changelog}`,
-      entities: [{ type: 'bold' as const, offset: 0, length: messageTemplateText.length }],
-    };
-    await Promise.all(updateReceivers.map(receiver => defaultClientSet.sendBotMessage({
-      clientName: receiver.clientName,
-      chatId: receiver.chatId,
-      ...messageTemplate,
-    })));
+    await notifyAllUpdateReceivers('tietie-bot 正在接收更新：', changelog);
     unsafeUpdateBot();
   }
   res.writeHead(200);

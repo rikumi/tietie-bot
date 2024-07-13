@@ -12,6 +12,7 @@ import { GenericMessage } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
 import config from '../config.json';
+import { notifyAllUpdateReceivers } from './utils/update';
 
 process.on('uncaughtException', (e) => { console.error(e); });
 process.on('unhandledRejection', (e) => { throw e; });
@@ -91,4 +92,5 @@ const handleInteraction = async (message: GenericMessage, command: string, userI
   );
 
   startServer();
+  notifyAllUpdateReceivers('tietie-bot 已成功重新启动');
 })();
