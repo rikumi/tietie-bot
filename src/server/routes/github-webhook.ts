@@ -15,6 +15,7 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
   const { ref, commits, head_commit: headCommit } = body;
   const currentBranch = await getCurrentBranchName();
   const changelog = commits.map((commit: any) => commit.message.split('\n')[0]).join('\n');
+
   if (ref === `refs/heads/${currentBranch}` && !headCommit?.message?.includes('skip ci')) {
     await notifyAllUpdateReceivers('tietie-bot 正在接收更新：', changelog);
     unsafeUpdateBot();
