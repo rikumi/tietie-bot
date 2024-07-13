@@ -37,7 +37,7 @@ export const handleMessage = async (message: GenericMessage) => {
   const senderLink = message.userLink;
   const receiverLink = repliedMentionEntity ? repliedMentionEntity.url! : message.userLinkReplied ?? message.userLink!;
 
-  const senderName = message.userName;
+  const senderName = message.userDisplayName;
   const receiverName = receiverLink === senderLink
     ? '自己'
     : repliedMentionEntity

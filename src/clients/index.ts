@@ -23,12 +23,9 @@ export class DefaultClientSet extends EventEmitter {
   }
 
   public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
-    const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
+    const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userDisplayName;
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const rawText = fromMessage.text;
-    if (!fromMessage.isServiceMessage) {
-      prependMessageText(fromMessage, `${userNick}: `);
-    }
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
@@ -46,6 +43,8 @@ export class DefaultClientSet extends EventEmitter {
         rawMessage: fromMessage.rawMessage,
         entities: fromMessage.entities,
         rawMessageExtra: fromMessage.rawMessageExtra,
+        rawUserHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
+        rawUserDisplayName: fromMessage.isServiceMessage ? undefined : userNick,
       });
       // build bidirectional message id mapping
       this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
@@ -62,17 +61,14 @@ export class DefaultClientSet extends EventEmitter {
   }
 
   public async bridgeEditedMessage(fromMessage: MessageToEdit): Promise<void> {
+    const userNick = fromMessage.userId && (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userDisplayName;
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
       if (!toClient) return;
-      const userNick = fromMessage.userId && (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userName;
       const messageIdsToEdit = this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId);
       if (!messageIdsToEdit) return;
       const [messageIdToEdit, mediaMessageIdToEdit] = messageIdsToEdit;
-      if (!fromMessage.isServiceMessage) {
-        prependMessageText(fromMessage, `${userNick}: `);
-      }
       toClient.editMessage({
         clientName: toClientName,
         chatId: toChatId,
@@ -81,6 +77,8 @@ export class DefaultClientSet extends EventEmitter {
         text: fromMessage.text,
         media: fromMessage.media,
         entities: fromMessage.entities,
+        rawUserHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
+        rawUserDisplayName: fromMessage.isServiceMessage ? undefined : userNick,
       });
     }));
   }

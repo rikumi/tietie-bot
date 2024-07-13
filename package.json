@@ -41,6 +41,7 @@
   },
   "devDependencies": {
     "tsx": "^4.7.1",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "undici": "^6.19.2"
   }
 }

@@ -6,6 +6,7 @@ import discord from 'discord-user-bots';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
+import { prependMessageText } from '.';
 
 const convertDiscordMessage = (text: string) => {
   const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
@@ -77,6 +78,9 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserHandle}: `); // use handles for discord only
+    }
     const messageSent = await this.bot.send(message.chatId, {
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied ?? null,
@@ -86,6 +90,9 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserHandle}: `); // use handles for discord only
+    }
     await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }
 
@@ -105,7 +112,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       clientName: 'discord',
       text: convertDiscordMessage(message.content ?? '') + (hasMultiAttachments ? ' ' + message.attachments.map((a: any) => a.url).join(' ') : ''),
       userId: message.author?.id,
-      userName: message.author?.global_name ?? message.author?.username,
+      userHandle: message.author?.global_name ?? message.author?.username,
+      userDisplayName: message.author?.global_name ?? message.author?.username,
       chatId: message.channel_id,
       messageId: message.id,
       media,

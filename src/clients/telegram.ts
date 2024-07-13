@@ -50,6 +50,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    }
     const method = ({
       sticker: 'sendSticker',
       photo: 'sendPhoto',
@@ -78,6 +81,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
+    if (message.rawUserDisplayName) {
+      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    }
     const entities = message.entities?.map(entity => ({
       type: entity.type.replace(/^(link|mention)$/, 'text_link') as any,
       offset: entity.offset,
@@ -109,14 +115,15 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       clientName: 'telegram',
       text,
       userId: String(message.from!.id),
-      userName: this.transformUser(message.from),
+      userHandle: this.getUserHandle(message.from),
+      userDisplayName: this.getUserDisplayName(message.from),
       userLink: this.getUserLink(message.from),
       chatId: String(message.chat.id),
       messageId: String(message.message_id),
       messageIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.message_id ?? '') || undefined,
       messageReplied: 'reply_to_message' in message && await this.transformMessage(message.reply_to_message!) || undefined,
       userIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.from?.id ?? '') || undefined,
-      userNameReplied: 'reply_to_message' in message && this.transformUser(message.reply_to_message?.from) || undefined,
+      userNameReplied: 'reply_to_message' in message && this.getUserDisplayName(message.reply_to_message?.from) || undefined,
       userLinkReplied: 'reply_to_message' in message && this.getUserLink(message.reply_to_message?.from) || undefined,
       rawMessage: message,
       unixDate: message.date,
@@ -183,8 +190,12 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     return result;
   }
 
-  private transformUser(user: User | undefined): string {
-    return user?.username ?? ((user?.first_name ?? '') + ' ' + (user?.last_name ?? '')).trim();
+  private getUserHandle(user: User | undefined): string {
+    return user?.username ?? this.getUserDisplayName(user);
+  }
+
+  private getUserDisplayName(user: User | undefined): string {
+    return ((user?.first_name ?? '') + ' ' + (user?.last_name ?? '')).trim();
   }
 
   private getUserLink(user: User | undefined): string | undefined {
@@ -200,7 +211,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const o = message.forward_origin;
     const originName = o?.sender_user_name || o?.sender_chat?.title || o?.chat?.title || message.forward_sender_name;
     const originChat = o?.sender_user || o?.chat || o?.sender_chat || message.forward_from;
-    return originName || this.transformUser(originChat) || '未知会话';
+    return originName || this.getUserDisplayName(originChat) || '未知会话';
   }
 
   private transformEntity(entity: MessageEntity, text: string): GenericMessageEntity | undefined {
