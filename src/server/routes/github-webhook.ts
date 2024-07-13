@@ -19,10 +19,19 @@ const githubWebhookHandler = async (req: IncomingMessage, res: ServerResponse) =
   const changelog = commits.map((commit: any) => commit.message.split('\n')[0]).join('\n');
   if (ref === `refs/heads/${currentBranch}` && !headCommit?.message?.includes('skip ci')) {
     const updateReceivers = await getUpdateReceivers();
+    const messageTemplateText = 'Updating tietie-bot with changelog:';
+    const messageTemplate = {
+      text: `${messageTemplateText}\n\n${changelog}`,
+      entities: [{
+        type: 'bold' as const,
+        offset: 0,
+        length: messageTemplateText.length,
+      }]
+    };
     await Promise.all(updateReceivers.map(receiver => defaultClientSet.sendBotMessage({
       clientName: receiver.clientName,
       chatId: receiver.chatId,
-      text: `tietie-bot 自动更新中\n\n${changelog}`,
+      ...messageTemplate,
     })));
     unsafeUpdateBot();
   }
