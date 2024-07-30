@@ -48,7 +48,7 @@ const handleMessage = async (message: GenericMessage) => {
       clientName: message.clientName,
       chatId: message.chatId,
       text: result,
-      messageIdReplied: message.messageId,
+      // messageIdReplied: message.messageId,
     });
   } catch (e: any) {
     console.error(e);
@@ -56,7 +56,7 @@ const handleMessage = async (message: GenericMessage) => {
       clientName: message.clientName,
       chatId: message.chatId,
       text: 'Error: ' + e.message,
-      messageIdReplied: message.messageId,
+      // messageIdReplied: message.messageId,
     });
   }
 };
