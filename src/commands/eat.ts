@@ -16,7 +16,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
       return `本会话还未添加任何食物，每人可使用 /eat [foods] 推荐最多 ${MAX_FOODS_PER_USER} 个。`;
     }
     const { name, count } = result;
-    return `猜你想吃：${name} (由 ${count} 人贡献)`;
+    return `猜你想吃：${name} (${count} 次推荐)`;
   }
 
   // list
