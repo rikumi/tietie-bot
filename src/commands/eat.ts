@@ -56,5 +56,5 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     if (count <= 1) return name;
     return `${name}(*${count})`;
   }).join(', ');
-  return `已成功设置你推荐的食物：（排名不分先后，多次重复可提高出现概率）：\n${list}`;
+  return `已成功重置你推荐的食物：（排名不分先后，多次重复可提高出现概率）：\n${list}`;
 };
