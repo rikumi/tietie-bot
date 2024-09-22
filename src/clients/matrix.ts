@@ -28,7 +28,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const accessToken = config.matrixAccessToken;
     this.bot = new MatrixClient('https://' + homeServer, accessToken, storage);
     this.bot.on('room.message', this.handleMessage);
-    this.bot.on('sticker', this.handleMessage);
+    this.bot.on('room.event', (roomId, message) => {
+      if (message.type === 'm.sticker') {
+        this.handleMessage(roomId, message);
+      }
+    });
     AutojoinRoomsMixin.setupOnClient(this.bot);
     this.fetchBotInfo();
 
