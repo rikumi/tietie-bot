@@ -167,6 +167,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       media,
       messageIdReplied: repliedMessageId,
+      messageReplied: repliedMessage,
       userIdReplied: repliedMessage?.sender,
       userNameReplied: repliedMessageId && repliedUser?.displayname,
       rawMessage: message,
