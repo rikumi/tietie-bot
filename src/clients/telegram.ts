@@ -9,6 +9,7 @@ import config from '../../config.json';
 import { createShortUrl } from 'src/database/shorturl';
 import { setTelegramFileId } from 'src/database/tgfile';
 import { prependMessageText } from '.';
+import { getPuppet } from 'src/database/puppet';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
   const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
@@ -39,6 +40,8 @@ export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
   public bot: Telegraf<Context<Update>> = new Telegraf(config.telegramBotToken);
 
+  private botPuppetMap = new Map<string, Telegraf<Context<Update>>>();
+
   public constructor() {
     super();
     this.bot.on('message', async (ctx: Context<Update.MessageUpdate>) => {
@@ -63,7 +66,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    if (message.rawUserDisplayName) {
+    const bot = message.rawUserId ? await this.getBotForUser(message.rawUserId, message.chatId) : this.bot;
+    if (message.rawUserDisplayName && bot === this.bot) {
       prependMessageText(message, `${message.rawUserDisplayName}: `);
     }
     const method = ({
@@ -89,9 +93,10 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       ...message.rawMessageExtra ?? {},
     };
     const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
-    const messageSent = await this.bot.telegram[method](message.chatId, firstMessageContent, options);
+
+    const messageSent = await bot.telegram[method](message.chatId, firstMessageContent, options);
     if (message.media?.type === 'sticker') {
-      const secondMessage = await this.bot.telegram.sendMessage(message.chatId, message.text, options);
+      const secondMessage = await bot.telegram.sendMessage(message.chatId, message.text, options);
       return {
         ...message,
         ...await this.transformMessage(messageSent),
@@ -269,6 +274,26 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (type === 'mention') {
       return { type: 'mention', offset, length, url: `https://t.me/${substring.replace(/^@/, '')}` };
     }
+  }
+
+  private async getBotForUser(userId: string, chatId: string) {
+    const puppetBotToken = await getPuppet(userId);
+    if (!puppetBotToken) {
+      return this.bot;
+    }
+    const key = `${userId}:${chatId}`;
+    if (!this.botPuppetMap.has(key)) {
+      const bot = new Telegraf(puppetBotToken);
+      try {
+        const chatInfo = await bot.telegram.getChat(chatId);
+        console.error('[TelegramBotClient] getBotForUser success', chatInfo);
+        this.botPuppetMap.set(key, bot);
+      } catch (e) {
+        console.error('[TelegramBotClient] getBotForUser error', e);
+        return this.bot;
+      }
+    }
+    return this.botPuppetMap.get(key)!;
   }
 }
 

@@ -44,6 +44,7 @@ export class DefaultClientSet extends EventEmitter {
         rawMessage: fromMessage.rawMessage,
         entities: fromMessage.entities,
         rawMessageExtra: fromMessage.rawMessageExtra,
+        rawUserId: fromMessage.isServiceMessage ? undefined : fromMessage.userId,
         rawUserHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
         rawUserDisplayName: fromMessage.isServiceMessage ? undefined : userNick,
       });

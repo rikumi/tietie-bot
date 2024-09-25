@@ -65,6 +65,7 @@ export interface MessageToSend {
   rawMessage?: any;
   rawMessageExtra?: any;
   entities?: GenericMessageEntity[];
+  rawUserId?: string;
   rawUserHandle?: string;
   rawUserDisplayName?: string;
 }
@@ -76,7 +77,4 @@ export interface MessageToEdit extends MessageToSend {
   userId?: string;
   userHandle?: string;
   userDisplayName?: string;
-  entities?: GenericMessageEntity[];
-  rawUserHandle?: string;
-  rawUserDisplayName?: string;
 }
