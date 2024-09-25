@@ -136,7 +136,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       messageIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.message_id ?? '') || undefined,
       messageReplied: 'reply_to_message' in message && await this.transformMessage(message.reply_to_message!) || undefined,
       userIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.from?.id ?? '') || undefined,
-      userNameReplied: 'reply_to_message' in message && this.getUserHandle(message.reply_to_message?.from) || undefined,
+      userNameReplied: 'reply_to_message' in message && this.getUserDisplayName(message.reply_to_message?.from) || undefined,
       userLinkReplied: 'reply_to_message' in message && this.getUserLink(message.reply_to_message?.from) || undefined,
       rawMessage: message,
       unixDate: message.date,

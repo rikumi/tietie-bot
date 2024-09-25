@@ -27,10 +27,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const homeServer = config.matrixHomeServer || 'matrix.org';
     const accessToken = config.matrixAccessToken;
     this.bot = new MatrixClient('https://' + homeServer, accessToken, storage);
-    this.bot.on('room.message', async (roomId: string, message: any) => {
-      const transformedMessage = await this.transformMessage(message, roomId);
-      if (transformedMessage.userId === this.botInfo?.user_id) return;
-      this.emit(message.content['m.new_content'] ? 'edit-message' : 'message', transformedMessage);
+    this.bot.on('room.message', this.handleMessage);
+    this.bot.on('room.event', (roomId, message) => {
+      if (message.type === 'm.sticker') {
+        this.handleMessage(roomId, message);
+      }
     });
     AutojoinRoomsMixin.setupOnClient(this.bot);
     this.fetchBotInfo();
@@ -48,6 +49,12 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public async stop(): Promise<void> {
     this.bot.stop();
   }
+
+  public handleMessage = async (roomId: string, message: any) => {
+    const transformedMessage = await this.transformMessage(message, roomId);
+    if (transformedMessage.userId === this.botInfo?.user_id) return;
+    this.emit(message.content['m.new_content'] ? 'edit-message' : 'message', transformedMessage);
+  };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     if (message.rawUserDisplayName) {
