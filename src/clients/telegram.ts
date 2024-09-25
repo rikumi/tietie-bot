@@ -23,7 +23,7 @@ export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, m
   return `${serverRoot}/tgfile/${mimeType}/${fileId}`;
 };
 
-export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
+export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null) => {
   const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
   if (fileUniqueId) {
     try {
@@ -74,7 +74,10 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       default: 'sendMessage',
     } as const)[message.media?.type ?? 'default'] ?? 'sendMessage';
 
-    const content = message.media?.url ?? message.text;
+    // Send sticker using file_id can support animated stickers
+    const mediaUrl = message.media?.type === 'sticker' ? message.media?.telegramFileId ?? message.media?.url : message.media?.url;
+
+    const content = mediaUrl ?? message.text;
     const entities = message.entities?.map(entity => ({
       type: entity.type.replace(/^(link|mention)$/, 'text_link'),
       offset: entity.offset,
@@ -158,7 +161,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     if (sticker?.is_animated) {
       // Special processing of TGS (Lottie) animated stickers
-      const url = await createShortUrl(await fileIdToTGSPreviewUrl(fileId, fileUniqueId!, 'application/tgs+gzip'));
+      const url = await createShortUrl(await fileIdToTGSPreviewUrl(fileId, fileUniqueId!));
       prependMessageText(result, `[${sticker.emoji ?? '🖼️'} TGS 贴纸] ${url} `);
     } else if (sticker) {
       // Static or WEBM stickers
@@ -170,6 +173,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         url: '',
         width: sticker.width,
         height: sticker.height,
+        telegramFileId: sticker.file_id,
       };
       result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
     } else if (video) {

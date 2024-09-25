@@ -19,6 +19,7 @@ export interface GenericMessage {
   userIdReplied?: string;
   userNameReplied?: string;
   userLinkReplied?: string;
+  disableBridging?: boolean;
 
   rawMessage: any;
 }
@@ -30,6 +31,7 @@ export interface GenericMedia {
   size: number;
   width?: number;
   height?: number;
+  telegramFileId?: string;
 }
 
 export interface GenericMessageEntity {

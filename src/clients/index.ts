@@ -23,6 +23,7 @@ export class DefaultClientSet extends EventEmitter {
   }
 
   public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
+    if (fromMessage.disableBridging) return [];
     const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userDisplayName;
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const rawText = fromMessage.text;
@@ -92,6 +93,14 @@ export class DefaultClientSet extends EventEmitter {
       isServiceMessage: true,
       rawMessageExtra: message.rawMessageExtra,
     });
+    return [messageSent, ...messagesBridged];
+  }
+
+  public async replicateMessageForUser(message: GenericMessage & MessageToSend) {
+    const client = this.clients.get(message.clientName);
+    if (!client) return;
+    const messageSent = await client.sendMessage(message);
+    const messagesBridged = await this.bridgeMessage(message);
     return [messageSent, ...messagesBridged];
   }
 

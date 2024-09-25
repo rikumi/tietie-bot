@@ -21,29 +21,33 @@ const commandMap = new Map<string, any>();
 
 const handleMessage = async (message: GenericMessage) => {
   search.handleMessage(message);
-  clients.bridgeMessage({ ...message });
 
   // filter out messages mentioning other bots
   if (/@(\w+bot)\b/.test(message.text)) {
     if (![config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
+      clients.bridgeMessage({ ...message });
       return;
     }
     message.text = message.text.replace(/@\w+bot\b/g, '');
   }
   // 各种非 slash commands
   if (!message.text.startsWith('/')) {
-    if (await repeat.handleGeneralMessage(message) !== false) return;
+    clients.bridgeMessage({ ...message });
+    await repeat.handleGeneralMessage(message);
     return;
   }
   // 调用 slash commands
   const module = commandMap.get(message.text.trim().split(' ')[0].substring(1));
   if (!module) {
+    clients.bridgeMessage({ ...message });
     if (await video.handleMessage(message) !== false) return;
     if (await tietie.handleMessage(message) !== false) return;
     return await alias.handleMessage(message);
   };
   try {
     const result = await module.handleSlashCommand?.(message);
+    clients.bridgeMessage({ ...message });
+
     if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
