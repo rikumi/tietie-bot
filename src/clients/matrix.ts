@@ -95,7 +95,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userHandle: this.botInfo!.user_id,
       userDisplayName: this.botInfo!.user_id,
       rawMessage: { id: messageId, content: message.text },
-      unixDate: Date.now() / 1000,
+      unixDate: Math.floor(Date.now() / 1000),
     };
   }
 
@@ -171,7 +171,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userIdReplied: repliedMessage?.sender,
       userNameReplied: repliedMessageId && repliedUser?.displayname,
       rawMessage: message,
-      unixDate: message.origin_server_ts / 1000,
+      unixDate: Math.floor(message.origin_server_ts / 1000),
     }
   }
 

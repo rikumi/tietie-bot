@@ -74,10 +74,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       default: 'sendMessage',
     } as const)[message.media?.type ?? 'default'] ?? 'sendMessage';
 
-    // Send sticker using file_id can support animated stickers
-    const mediaUrl = message.media?.type === 'sticker' ? message.media?.telegramFileId ?? message.media?.url : message.media?.url;
-
-    const content = mediaUrl ?? message.text;
     const entities = message.entities?.map(entity => ({
       type: entity.type.replace(/^(link|mention)$/, 'text_link'),
       offset: entity.offset,
@@ -92,8 +88,21 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       disable_notification: true,
       ...message.rawMessageExtra ?? {},
     };
-    const messageSent = await this.bot.telegram[method](message.chatId, content, options);
-    return (await this.transformMessage(messageSent))!;
+    const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
+    const messageSent = await this.bot.telegram[method](message.chatId, firstMessageContent, options);
+    if (message.media?.type === 'sticker') {
+      const secondMessage = await this.bot.telegram.sendMessage(message.chatId, message.text, options);
+      return {
+        ...message,
+        ...await this.transformMessage(messageSent),
+        mediaMessageId: String(messageSent.message_id),
+        messageId: String(secondMessage.message_id),
+      };
+    }
+    return {
+      ...message,
+      ...await this.transformMessage(messageSent),
+    };
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
@@ -125,7 +134,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     await this.bot.telegram.setMyCommands(commandList);
   }
 
-  public async transformMessage(message: Message): Promise<GenericMessage | undefined> {
+  public async transformMessage(message: Message): Promise<GenericMessage> {
     const text = 'text' in message && message.text || 'caption' in message && message.caption || '';
     const result: GenericMessage = {
       clientName: 'telegram',

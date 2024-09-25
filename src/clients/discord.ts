@@ -121,7 +121,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       messageReplied: message.referenced_message && this.transformMessage(message.referenced_message),
       userIdReplied: message.referenced_message?.author?.id,
       rawMessage: message,
-      unixDate: new Date(message.timestamp).getTime() / 1000,
+      unixDate: Math.floor(new Date(message.timestamp).getTime() / 1000),
       isServiceMessage: !!message.author?.bot,
     }
   }
