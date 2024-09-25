@@ -23,6 +23,19 @@ export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, m
   return `${serverRoot}/tgfile/${mimeType}/${fileId}`;
 };
 
+export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
+  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  if (fileUniqueId) {
+    try {
+      await setTelegramFileId(fileUniqueId, fileId);
+      return `${serverRoot}/tgsuniq/${fileUniqueId}`;
+    } catch (e) {
+      console.warn('[TelegramBotClient] fileIdToTGSPreviewUrl error', e);
+    }
+  }
+  return `${serverRoot}/tgs/${fileId}`;
+};
+
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
   public bot: Telegraf<Context<Update>> = new Telegraf(config.telegramBotToken);
 
@@ -143,11 +156,16 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (!fileId) {
       return result;
     }
-    if (sticker) {
+    if (sticker?.is_animated) {
+      // Special processing of TGS (Lottie) animated stickers
+      const url = await createShortUrl(await fileIdToTGSPreviewUrl(fileId, fileUniqueId!, 'application/tgs+gzip'));
+      prependMessageText(result, `[${sticker.emoji ?? '🖼️'} TGS 贴纸] ${url} `);
+    } else if (sticker) {
+      // Static or WEBM stickers
       prependMessageText(result, `[${sticker.emoji ?? '🖼️'} 贴纸] `);
       result.media = {
         type: 'sticker',
-        mimeType: sticker?.is_video ? 'video/webm' : sticker?.is_animated ? 'application/tgs+gzip' : 'image/jpeg',
+        mimeType: sticker?.is_video ? 'video/webm' : 'image/jpeg',
         size: sticker.file_size ?? 0,
         url: '',
         width: sticker.width,
