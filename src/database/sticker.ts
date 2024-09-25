@@ -17,7 +17,7 @@ export const init = async () => {
 
 export const setFavoriteSticker = async (userId: string, keyword: string, sticker: GenericMedia) => {
   const db = await getDatabase();
-  const userKeywordHash = crypto.createHash('sha256').update(`${userId}:${keyword}`).digest();
+  const userKeywordHash = crypto.createHash('sha256').update(`${userId}:${keyword}`).digest('hex');
   await db.run(`INSERT OR REPLACE INTO sticker_favorite (
     user_id_keyword_hash,
     url, mime_type, size,
@@ -30,7 +30,7 @@ export const setFavoriteSticker = async (userId: string, keyword: string, sticke
 
 export const getFavoriteSticker = async (userId: string, keyword: string): Promise<GenericMedia | null> => {
   const db = await getDatabase();
-  const userKeywordHash = crypto.createHash('sha256').update(`${userId}:${keyword}`).digest();
+  const userKeywordHash = crypto.createHash('sha256').update(`${userId}:${keyword}`).digest('hex');
   const record = await db.get(`SELECT * FROM sticker_favorite WHERE user_id_keyword_hash = ?`, [userKeywordHash]);
   if (!record) {
     return null;
