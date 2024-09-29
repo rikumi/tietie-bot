@@ -29,7 +29,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   }
   defaultClientSet.replicateMessageForUser({
     ...message,
-    text: `[贴纸]`,
+    text: '',
     media: sticker,
   });
   message.disableBridging = true;
