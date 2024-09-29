@@ -7,7 +7,7 @@ const roll = (start: number, end: number, step: number) => {
 }
 
 export const handleSlashCommand = async (message: GenericMessage) => {
-    const [start, end, _step, _times] = message.text.split(/\s+/).slice(1).map(Number);
+    const [start, end, _step, _times] = message.text.split(/\s+/).slice(1).map((n) => parseInt(n, 10));
     if (Number.isNaN(start) || Number.isNaN(end)) {
         return `用法：/roll ${USAGE}`;
     }
