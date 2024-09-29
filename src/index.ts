@@ -48,7 +48,7 @@ const handleMessage = async (message: GenericMessage) => {
     const result = await module.handleSlashCommand?.(message);
     clients.bridgeMessage({ ...message });
 
-    if (result) defaultClientSet.sendBotMessage({
+    if (result != null) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
       text: result,
