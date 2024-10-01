@@ -215,6 +215,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         };
       }
     } else {
+      prependMessageText(result, '[文件] ');
       result.media = {
         type: 'file',
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
