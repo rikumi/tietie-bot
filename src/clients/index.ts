@@ -5,10 +5,10 @@ import { EventEmitter } from 'events';
 export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entities'>, prefix: string) => {
   const prefixLength = Buffer.from(prefix, 'utf16le').length / 2;
   message.text = prefix + message.text;
-  if (!message.entities) return;
-  for (const entity of message.entities) {
-    entity.offset += prefixLength;
-  }
+  message.entities = message.entities?.map(entity => ({
+    ...entity,
+    offset: entity.offset + prefixLength,
+  }));
 };
 
 export class DefaultClientSet extends EventEmitter {
