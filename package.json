@@ -31,7 +31,6 @@
     "discord-user-bots": "^1.6.0",
     "mathjs": "^13.0.1",
     "matrix-bot-sdk": "^0.7.1",
-    "minecraft-protocol": "^1.36.1",
     "nodejieba": "^2.6.0",
     "pm2": "^5.2.2",
     "prettier": "^2.7.1",

@@ -2,10 +2,11 @@ import { EventEmitter } from 'events';
 import path from 'path';
 import { fetch, Agent } from 'undici';
 import { load as $ } from 'cheerio';
-import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI } from 'matrix-bot-sdk';
+import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, MemoryStorageProvider } from 'matrix-bot-sdk';
 import config from '../../config.json';
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import { prependMessageText } from '.';
+import { getPuppet } from 'src/database/puppet';
 
 const escapeHTML = (str: string) => str
   .replace(/&/g, '&amp;')
@@ -17,6 +18,8 @@ const escapeHTML = (str: string) => str
 export class MatrixUserBotClient extends EventEmitter implements GenericClient<any, any, any> {
   public bot: MatrixClient;
   public botInfo: IWhoAmI | undefined;
+
+  private botPuppetMap = new Map<string, MatrixClient>();
 
   private cachedMedia = new Map<string, string>();
   private pendingMediaUpload: Promise<void> | undefined;
@@ -51,13 +54,17 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public handleMessage = async (roomId: string, message: any) => {
+    if ('mx.rkm.tietie-bot.message' in message.content) {
+      return;
+    }
     const transformedMessage = await this.transformMessage(message, roomId);
     if (transformedMessage.userId === this.botInfo?.user_id) return;
     this.emit(message.content['m.new_content'] ? 'edit-message' : 'message', transformedMessage);
   };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    if (message.bridgedMessage?.userDisplayName) {
+    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
+    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
       prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
     }
     const matrixEventContent: any = {
@@ -83,9 +90,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
       }
       const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
-      mediaMessageId = await this.bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
+      mediaMessageId = await bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
     }
-    const messageId = await this.bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
+    const messageId = await bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
     return {
       ...message,
       clientName: 'matrix',
@@ -100,7 +107,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    if (message.bridgedMessage?.userDisplayName) {
+    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
+    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
       prependMessageText(message, `${message.bridgedMessage?.userDisplayName}: `);
     }
     if (message.media && message.mediaMessageId) {
@@ -109,7 +117,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
       const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
       const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
-      await this.bot.sendEvent(message.chatId, 'm.room.message', {
+      await bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
         msgtype: 'm.' + matrixMediaType,
         'mx.rkm.tietie-bot.message': message,
@@ -123,7 +131,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       });
     }
     // MSC2676
-    await this.bot.sendEvent(message.chatId, 'm.room.message', {
+    await bot.sendEvent(message.chatId, 'm.room.message', {
       body: `* ${message.text}`,
       format: message.entities ? 'org.matrix.custom.html' : undefined,
       formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
@@ -248,6 +256,27 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     }
     stack.push(escapeHTML(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
     return stack.reverse().join('');
+  }
+
+  private async getBotForUser(fromClient: string, fromUserId: string, chatId: string) {
+    const puppetBotToken = await getPuppet(fromClient, fromUserId, 'matrix');
+    if (!puppetBotToken) {
+      return this.bot;
+    }
+    const key = `${fromUserId}:${chatId}`;
+    if (!this.botPuppetMap.has(key)) {
+      const [accessToken, homeServer] = puppetBotToken.split('@');
+      const bot = new MatrixClient('https://' + homeServer, accessToken, new MemoryStorageProvider());
+      try {
+        const chatInfo = await bot.getRoomState(chatId);
+        console.error('[MatrixUserBotClient] getBotForUser success', chatInfo);
+        this.botPuppetMap.set(key, bot);
+      } catch (e) {
+        console.error('[MatrixUserBotClient] getBotForUser error', e);
+        return this.bot;
+      }
+    }
+    return this.botPuppetMap.get(key)!;
   }
 }
 

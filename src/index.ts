@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 
-import * as alias from './commands/alias';
 import * as repeat from './commands/repeat';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
@@ -39,7 +38,7 @@ const handleMessage = async (message: GenericMessage) => {
     clients.bridgeMessage({ ...message });
     if (await video.handleMessage(message) !== false) return;
     if (await tietie.handleMessage(message) !== false) return;
-    return await alias.handleMessage(message);
+    return;
   };
   try {
     const result = await module.handleSlashCommand?.(message);
