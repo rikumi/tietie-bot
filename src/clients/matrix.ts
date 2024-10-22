@@ -133,10 +133,13 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     // MSC2676
     await bot.sendEvent(message.chatId, 'm.room.message', {
       body: `* ${message.text}`,
-      format: message.entities ? 'org.matrix.custom.html' : undefined,
-      formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
       msgtype: 'm.text',
-      'm.new_content': { body: message.text, msgtype: 'm.text' },
+      'm.new_content': {
+        body: message.text,
+        format: message.entities ? 'org.matrix.custom.html' : undefined,
+        formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
+        msgtype: 'm.text',
+      },
       'm.relates_to': { rel_type: 'm.replace', event_id: message.messageId },
     });
   }
@@ -240,8 +243,12 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   private renderEntitiesToHTML(entities: GenericMessageEntity[], text: string): string {
-    const tagsReversed = entities.map((e) => [e.offset, e.offset + e.length].map((position) => {
-      const tagName = ({ bold: 'strong', italic: 'em', strikethrough: 'del', underline: 'u', mention: 'a', link: 'a' } as any)[e.type] || e.type;
+    const newline = /\n/g;
+    while (newline.exec(text)) {
+      entities.push({ type: 'newline' as any, offset: newline.lastIndex, length: 0 });
+    }
+    const tagsReversed = entities.map((e) => ((e.type as any) === 'newline' ? [e.offset] : [e.offset, e.offset + e.length]).map((position) => {
+      const tagName = ({ bold: 'strong', italic: 'em', strikethrough: 'del', underline: 'u', mention: 'a', link: 'a', newline: 'br' } as any)[e.type] || e.type;
       const tag = position === e.offset ? `<${tagName}${e.url ? ` href="${e.url.replace(/"/g, '&quot;')}"` : ''}>` : `</${tagName}>`;
       return { tag, position };
     })).flat().sort((a, b) => b.position - a.position);
