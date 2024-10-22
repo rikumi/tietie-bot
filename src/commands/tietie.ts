@@ -32,14 +32,14 @@ export const handleMessage = async (message: GenericMessage) => {
 
   const replied = message.messageReplied;
   const repliedFirstEntity = replied?.entities?.[0];
-  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.url && !replied?.text?.startsWith(repliedFirstEntity.url) 
-    ? repliedFirstEntity 
+  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.url && !replied?.text?.startsWith(repliedFirstEntity.url)
+    ? repliedFirstEntity
     : undefined;
 
   const senderLink = message.userLink;
   const receiverLink = repliedMentionEntity ? repliedMentionEntity.url! : message.userLinkReplied ?? message.userLink!;
 
-  const senderName = message.userDisplayName;
+  const senderName = message.userDisplayName ?? '?';
   const receiverName = receiverLink === senderLink
     ? '自己'
     : repliedMentionEntity
@@ -66,7 +66,7 @@ export const handleMessage = async (message: GenericMessage) => {
     chatId: message.chatId,
     messageIdReplied: shouldAutodel ? undefined : message.messageId,
     ...result,
-    rawMessageExtra: {
+    platformMessageExtra: {
       disable_web_page_preview: true,
     },
   });

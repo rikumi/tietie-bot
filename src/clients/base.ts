@@ -2,13 +2,13 @@ export interface GenericMessage {
   clientName: string;
   text: string;
   userId: string;
-  userHandle: string;
-  userDisplayName: string;
+  userHandle?: string;
+  userDisplayName?: string;
   userLink?: string;
   chatId: string;
   messageId: string;
   mediaMessageId?: string;
-  unixDate: number;
+  unixDate?: number;
 
   media?: GenericMedia;
   entities?: GenericMessageEntity[];
@@ -21,7 +21,8 @@ export interface GenericMessage {
   userLinkReplied?: string;
   disableBridging?: boolean;
 
-  rawMessage: any;
+  platformMessage?: any;
+  bridgedMessage?: GenericMessage;
 }
 
 export interface GenericMedia {
@@ -62,12 +63,9 @@ export interface MessageToSend {
   chatId: string;
   media?: GenericMedia;
   messageIdReplied?: string;
-  rawMessage?: any;
-  rawMessageExtra?: any;
+  platformMessageExtra?: any;
+  bridgedMessage?: GenericMessage;
   entities?: GenericMessageEntity[];
-  rawUserId?: string;
-  rawUserHandle?: string;
-  rawUserDisplayName?: string;
 }
 
 export interface MessageToEdit extends MessageToSend {

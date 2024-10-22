@@ -7,7 +7,7 @@
     "start": "pm2 start --name tietie --interpreter tsx src/index.ts",
     "restart": "pm2 restart tietie",
     "stop": "pm2 stop tietie",
-    "migrate": "npm run stop; tsx database/search_migration.ts; npm run start",
+    "ts-check": "tsc --noEmit",
     "dev": "tsx --inspect src/index.ts",
     "matrix:login": "tsx src/scripts/matrix_login.ts",
     "format": "prettier --write ."

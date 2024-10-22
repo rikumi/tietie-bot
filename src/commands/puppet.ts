@@ -9,9 +9,9 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     return `用法: /puppet ${USAGE}`;
   }
   if (token === 'clear') {
-    await delPuppet(message.userId);
+    await delPuppet(message.clientName, message.userId, 'telegram');
     return 'OK';
   }
-  await setPuppet(message.userId, token);
+  await setPuppet(message.clientName, message.userId, 'telegram', token);
   return 'OK';
 }

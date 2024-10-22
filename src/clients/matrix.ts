@@ -57,8 +57,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    if (message.rawUserDisplayName) {
-      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    if (message.bridgedMessage?.userDisplayName) {
+      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
     }
     const matrixEventContent: any = {
       body: message.text,
@@ -94,14 +94,14 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userId: this.botInfo!.user_id,
       userHandle: this.botInfo!.user_id,
       userDisplayName: this.botInfo!.user_id,
-      rawMessage: { id: messageId, content: message.text },
+      platformMessage: { id: messageId, content: message.text },
       unixDate: Math.floor(Date.now() / 1000),
     };
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    if (message.rawUserDisplayName) {
-      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    if (message.bridgedMessage?.userDisplayName) {
+      prependMessageText(message, `${message.bridgedMessage?.userDisplayName}: `);
     }
     if (message.media && message.mediaMessageId) {
       const isSticker = message.media.type === 'sticker';
@@ -170,7 +170,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageReplied: repliedMessage?.content?.['mx.rkm.tietie-bot.message'],
       userIdReplied: repliedMessage?.sender,
       userNameReplied: repliedMessageId && repliedUser?.displayname,
-      rawMessage: message,
+      platformMessage: message,
       unixDate: Math.floor(message.origin_server_ts / 1000),
     }
   }
