@@ -6,5 +6,6 @@ export const handleSlashCommand = async (message: GeneralMessage) => {
     method: 'POST',
     body: JSON.stringify({ text }),
   });
-  return (await res.json()).map(({ name, trans }) => `${name}: ${trans.join(' ')}`).join('\n') || 'bn';
+  return await res.text();
+  // return (await res.json()).map(({ name, trans }) => `${name}: ${trans.join(' ')}`).join('\n') || 'bn';
 };
