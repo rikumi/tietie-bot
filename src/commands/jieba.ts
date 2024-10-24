@@ -12,7 +12,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     }
     sentence = repliedMessage.text;
   }
-  if (sentence.length > 64) {
+  if (sentence.length > 128) {
     return '句子太长了！';
   }
   try {
