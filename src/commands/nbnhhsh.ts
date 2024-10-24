@@ -9,5 +9,5 @@ export const handleSlashCommand = async (message: GeneralMessage) => {
   });
   return (await res.json())
     .filter(k => k.trans)
-    .map(({ name, trans }) => `${name}: ${trans.join(' ')}`).join('\n') || 'bn';
+    .map(({ name, trans }) => `${name}: ${trans.join(', ')}`).join('\n') || 'bn';
 };
