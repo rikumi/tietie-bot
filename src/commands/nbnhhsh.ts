@@ -7,5 +7,7 @@ export const handleSlashCommand = async (message: GeneralMessage) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ text }),
   });
-  return (await res.json()).map(({ name, trans }) => `${name}: ${trans.join(' ')}`).join('\n') || 'bn';
+  return (await res.json())
+    .filter(k => k.trans)
+    .map(({ name, trans }) => `${name}: ${trans.join(' ')}`).join('\n') || 'bn';
 };
