@@ -12,17 +12,6 @@ export const init = async () => {
     from_client,
     from_chat_id
   )`);
-  await db.run(`CREATE TABLE IF NOT EXISTS bridge_nick (
-    client_name TEXT NOT NULL,
-    chat_id TEXT NOT NULL,
-    user_id TEXT NOT NULL,
-    nickname TEXT NOT NULL
-  )`);
-  await db.run(`CREATE INDEX IF NOT EXISTS bridge_nick_index ON bridge_nick (
-    client_name,
-    chat_id,
-    user_id
-  )`);
 };
 
 export const getUnidirectionalBridgesByChat = async (fromClient: string, fromChatId: string) => {
@@ -67,20 +56,4 @@ export const removeUnidirectionalBridge = async (fromClient: string, fromChatId:
 export const removeBidirectionalBridge = async (clientName: string, chatId: string) => {
   const db = await getDatabase();
   await db.run(`DELETE FROM bridge WHERE from_client = ? AND from_chat_id = ? OR to_client = ? AND to_chat_id = ?`, [clientName, chatId, clientName, chatId]);
-};
-
-export const setBridgeNickname = async (clientName: string, chatId: string, userId: string, nickname: string) => {
-  const db = await getDatabase();
-  const exists = await db.get(`SELECT * FROM bridge_nick WHERE client_name = ? AND chat_id = ? AND user_id = ?`, [clientName, chatId, userId]);
-  if (exists) {
-    await db.run(`UPDATE bridge_nick SET nickname = ? WHERE client_name = ? AND chat_id = ? AND user_id = ?`, [nickname, clientName, chatId, userId]);
-  } else {
-    await db.run(`INSERT INTO bridge_nick (client_name, chat_id, user_id, nickname) VALUES (?, ?, ?, ?)`, [clientName, chatId, userId, nickname]);
-  }
-};
-
-export const getBridgeNickname = async (clientName: string, chatId: string, userId: string) => {
-  const db = await getDatabase();
-  const result = await db.get(`SELECT * FROM bridge_nick WHERE client_name = ? AND chat_id = ? AND user_id = ?`, [clientName, chatId, userId]);
-  return result && result.nickname;
 };

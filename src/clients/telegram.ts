@@ -66,9 +66,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const bot = message.rawUserId ? await this.getBotForUser(message.rawUserId, message.chatId) : this.bot;
-    if (message.rawUserDisplayName && bot === this.bot) {
-      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
+    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
+      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
     }
     const method = ({
       sticker: 'sendSticker',
@@ -90,7 +90,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       caption: message.media ? message.text : undefined,
       [message.media ? 'caption_entities' : 'entities']: entities,
       disable_notification: true,
-      ...message.rawMessageExtra ?? {},
+      ...message.platformMessageExtra ?? {},
     };
     const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
 
@@ -111,8 +111,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    if (message.rawUserDisplayName) {
-      prependMessageText(message, `${message.rawUserDisplayName}: `);
+    if (message.bridgedMessage?.userDisplayName) {
+      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
     }
     const entities = message.entities?.map(entity => ({
       type: entity.type.replace(/^(link|mention)$/, 'text_link') as any,
@@ -155,7 +155,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       userIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.from?.id ?? '') || undefined,
       userNameReplied: 'reply_to_message' in message && this.getUserDisplayName(message.reply_to_message?.from) || undefined,
       userLinkReplied: 'reply_to_message' in message && this.getUserLink(message.reply_to_message?.from) || undefined,
-      rawMessage: message,
+      platformMessage: message,
       unixDate: message.date,
       entities: 'entities' in message && message.entities?.map((e) => this.transformEntity(e, text)).filter(Boolean) as any[] || undefined
     };
@@ -215,6 +215,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         };
       }
     } else {
+      prependMessageText(result, '[文件] ');
       result.media = {
         type: 'file',
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
@@ -276,12 +277,12 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
   }
 
-  private async getBotForUser(userId: string, chatId: string) {
-    const puppetBotToken = await getPuppet(userId);
+  private async getBotForUser(fromClient: string, fromUserId: string, chatId: string) {
+    const puppetBotToken = await getPuppet(fromClient, fromUserId, 'telegram');
     if (!puppetBotToken) {
       return this.bot;
     }
-    const key = `${userId}:${chatId}`;
+    const key = `${fromUserId}:${chatId}`;
     if (!this.botPuppetMap.has(key)) {
       const bot = new Telegraf(puppetBotToken);
       try {

@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import * as alias from './commands/alias';
 import * as repeat from './commands/repeat';
-import * as search from './commands/search';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
 
@@ -20,8 +18,6 @@ process.on('unhandledRejection', (e) => { throw e; });
 const commandMap = new Map<string, any>();
 
 const handleMessage = async (message: GenericMessage) => {
-  search.handleMessage(message);
-
   // filter out messages mentioning other bots
   if (/@(\w+bot)\b/.test(message.text)) {
     if (![config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
@@ -42,13 +38,13 @@ const handleMessage = async (message: GenericMessage) => {
     clients.bridgeMessage({ ...message });
     if (await video.handleMessage(message) !== false) return;
     if (await tietie.handleMessage(message) !== false) return;
-    return await alias.handleMessage(message);
+    return;
   };
   try {
     const result = await module.handleSlashCommand?.(message);
     clients.bridgeMessage({ ...message });
 
-    if (result) defaultClientSet.sendBotMessage({
+    if (result != null) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
       text: result,
@@ -66,14 +62,7 @@ const handleMessage = async (message: GenericMessage) => {
 };
 
 const handleEditedMessage = async (message: GenericMessage) => {
-  search.handleEditedMessage(message);
   clients.bridgeEditedMessage(message);
-};
-
-const handleInteraction = async (message: GenericMessage, command: string, userId: string) => {
-  const module = commandMap.get(command.split(':')[0]);
-  if (!module) return;
-  await module.handleInteraction?.(message, command, userId);
 };
 
 (async () => {

@@ -12,11 +12,11 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     }
     sentence = repliedMessage.text;
   }
-  if (sentence.length > 64) {
+  if (sentence.length > 128) {
     return '句子太长了！';
   }
   try {
-    return jieba.tag(sentence).map(({ word, tag }) => tag === 'x' ? word : `${word}(${tag})`).join('');
+    return jieba.tag(sentence).map(({ word, tag }) => `${word}(${tag})`).join('');
   } catch (e) {
     return '分词失败！';
   }

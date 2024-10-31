@@ -78,20 +78,20 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    if (message.rawUserDisplayName) {
-      prependMessageText(message, `${message.rawUserHandle}: `); // use handles for discord only
+    if (message.bridgedMessage?.userDisplayName) {
+      prependMessageText(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
     }
     const messageSent = await this.bot.send(message.chatId, {
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied ?? null,
-      ...message.rawMessageExtra ?? {},
+      ...message.platformMessageExtra ?? {},
     });
     return this.transformMessage(messageSent);
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    if (message.rawUserDisplayName) {
-      prependMessageText(message, `${message.rawUserHandle}: `); // use handles for discord only
+    if (message.bridgedMessage?.userDisplayName) {
+      prependMessageText(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
     }
     await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }
@@ -120,7 +120,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       messageIdReplied: message.referenced_message?.id,
       messageReplied: message.referenced_message && this.transformMessage(message.referenced_message),
       userIdReplied: message.referenced_message?.author?.id,
-      rawMessage: message,
+      platformMessage: message,
       unixDate: Math.floor(new Date(message.timestamp).getTime() / 1000),
       isServiceMessage: !!message.author?.bot,
     }

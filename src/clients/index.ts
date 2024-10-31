@@ -1,14 +1,14 @@
-import { getBridgeNickname, getUnidirectionalBridgesByChat } from 'src/database/bridge';
-import type { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { getUnidirectionalBridgesByChat } from 'src/database/bridge';
+import type { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import { EventEmitter } from 'events';
 
 export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entities'>, prefix: string) => {
   const prefixLength = Buffer.from(prefix, 'utf16le').length / 2;
   message.text = prefix + message.text;
-  if (!message.entities) return;
-  for (const entity of message.entities) {
-    entity.offset += prefixLength;
-  }
+  message.entities = message.entities?.map(entity => ({
+    ...entity,
+    offset: entity.offset + prefixLength,
+  }));
 };
 
 export class DefaultClientSet extends EventEmitter {
@@ -24,7 +24,6 @@ export class DefaultClientSet extends EventEmitter {
 
   public async bridgeMessage(fromMessage: GenericMessage & MessageToSend): Promise<GenericMessage[]> {
     if (fromMessage.disableBridging) return [];
-    const userNick = (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userDisplayName;
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const rawText = fromMessage.text;
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
@@ -41,12 +40,12 @@ export class DefaultClientSet extends EventEmitter {
         chatId: toChatId,
         media: fromMessage.media,
         messageIdReplied: toMessageIdReplied,
-        rawMessage: fromMessage.rawMessage,
+        bridgedMessage: {
+          ...fromMessage,
+          userHandle: !fromMessage.isServiceMessage && fromMessage.userHandle || '',
+          userDisplayName: !fromMessage.isServiceMessage && fromMessage.userDisplayName || '',
+        },
         entities: fromMessage.entities,
-        rawMessageExtra: fromMessage.rawMessageExtra,
-        rawUserId: fromMessage.isServiceMessage ? undefined : fromMessage.userId,
-        rawUserHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
-        rawUserDisplayName: fromMessage.isServiceMessage ? undefined : userNick,
       });
       // build bidirectional message id mapping
       this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
@@ -62,8 +61,7 @@ export class DefaultClientSet extends EventEmitter {
     return results.filter(Boolean) as GenericMessage[];
   }
 
-  public async bridgeEditedMessage(fromMessage: MessageToEdit): Promise<void> {
-    const userNick = fromMessage.userId && (await getBridgeNickname(fromMessage.clientName, fromMessage.chatId, fromMessage.userId)) || fromMessage.userDisplayName;
+  public async bridgeEditedMessage(fromMessage: GenericMessage & MessageToEdit): Promise<void> {
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
@@ -79,8 +77,11 @@ export class DefaultClientSet extends EventEmitter {
         text: fromMessage.text,
         media: fromMessage.media,
         entities: fromMessage.entities,
-        rawUserHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
-        rawUserDisplayName: fromMessage.isServiceMessage ? undefined : userNick,
+        bridgedMessage: {
+          ...fromMessage,
+          userHandle: fromMessage.isServiceMessage ? undefined : fromMessage.userHandle,
+          userDisplayName: fromMessage.isServiceMessage ? undefined : fromMessage.userDisplayName,
+        },
       });
     }));
   }
@@ -92,7 +93,6 @@ export class DefaultClientSet extends EventEmitter {
     const messagesBridged = await this.bridgeMessage({
       ...messageSent,
       isServiceMessage: true,
-      rawMessageExtra: message.rawMessageExtra,
     });
     return [messageSent, ...messagesBridged];
   }
@@ -105,7 +105,7 @@ export class DefaultClientSet extends EventEmitter {
     return [messageSent, ...messagesBridged];
   }
 
-  public async editBotMessage(message: MessageToEdit) {
+  public async editBotMessage(message: GenericMessage & MessageToEdit) {
     const client = this.clients.get(message.clientName);
     if (!client) return;
     await client.editMessage(message);
