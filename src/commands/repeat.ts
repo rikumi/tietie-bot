@@ -7,7 +7,8 @@ export const USAGE = `<on|off> 开启/关闭感叹句复读功能`;
 export const handleSlashCommand = async (message: GenericMessage) => {
   const str = message.text.split(/\s+/)[1];
   if (!['on', 'off'].includes(str)) {
-    return '用法: /repeat <on|off>';
+    const current = await isRepeatEnabled(message.clientName, message.chatId);
+    return `当前会话感叹句复读功能已${current ? '开启' : '关闭'}，使用 /repeat ${current ? 'off' : 'on'} 来切换`;
   }
   if (str === 'on') {
     await setRepeatEnabled(message.clientName, message.chatId, true);
