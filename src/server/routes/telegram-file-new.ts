@@ -4,7 +4,7 @@ import { request } from 'https';
 import { getTelegramFileId } from 'src/database/tgfile';
 import mime from 'mime-types';
 
-export const ROUTE = /^\/f\/([^.]+)\.(\w+)(\.gz)?$/;
+export const ROUTE = /^\/f\/([^.]+)\.([\w-]+)(\.gz)?$/;
 
 const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const id = RegExp.$1;
