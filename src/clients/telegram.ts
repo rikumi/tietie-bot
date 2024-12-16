@@ -6,22 +6,23 @@ import { Telegraf } from 'telegraf';
 
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
-import { createShortUrl } from 'src/database/shorturl';
 import { setTelegramFileId } from 'src/database/tgfile';
 import { prependMessageText } from '.';
 import { getPuppet } from 'src/database/puppet';
+import mime from 'mime-types';
 
-export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string) => {
+export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
   const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  const extension = mime.extension(mimeType);
   if (fileUniqueId) {
     try {
       await setTelegramFileId(fileUniqueId, fileId);
-      return `${serverRoot}/tguniq/${mimeType}/${fileUniqueId}`;
+      return `${serverRoot}/f/${fileUniqueId}.${extension}${gzipped ? '.gz' : ''}`;
     } catch (e) {
       console.warn('[TelegramBotClient] fileIdToUrl error', e);
     }
   }
-  return `${serverRoot}/tgfile/${mimeType}/${fileId}`;
+  return `${serverRoot}/f/${fileId}.${extension}${gzipped ? '.gz' : ''}`;
 };
 
 export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null) => {
@@ -175,7 +176,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     if (sticker?.is_animated) {
       // Special processing of TGS (Lottie) animated stickers
-      const url = await createShortUrl(await fileIdToTGSPreviewUrl(fileId, fileUniqueId!));
+      const url = await fileIdToTGSPreviewUrl(fileId, fileUniqueId!);
       prependMessageText(result, `[${sticker.emoji ?? '🖼️'} TGS 贴纸] ${url} `);
     } else if (sticker) {
       // Static or WEBM stickers
@@ -189,7 +190,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         height: sticker.height,
         telegramFileId: sticker.file_id,
       };
-      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
+      result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
     } else if (video) {
       result.media = {
         type: 'video',
@@ -199,9 +200,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         width: video.width,
         height: video.height,
       };
-      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType));
+      result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
     } else if (photo) {
-      const mediaUrl = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg'));
+      const mediaUrl = await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg');
       if ('has_media_spoiler' in message && message.has_media_spoiler) {
         prependMessageText(result, `[带有内容警告的媒体] ${mediaUrl} `);
       } else {
@@ -222,7 +223,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         size: (file ?? audio)?.file_size ?? 0,
         url: '',
       };
-      result.media.url = await createShortUrl(await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType));
+      result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType);
     }
     return result;
   }

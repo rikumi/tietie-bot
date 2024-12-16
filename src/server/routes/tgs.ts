@@ -13,7 +13,7 @@ const telegramStickerHandler = async (req: IncomingMessage, res: ServerResponse)
   }
 
   const fileId = isUniqueId ? await getTelegramFileId(id) : id;
-  const url = await fileIdToUrl(fileId, null, 'application/json+gzip');
+  const url = await fileIdToUrl(fileId, null, 'application/json', true);
 
   console.log('[Server] TelegramStickerHandler fetching url:', url.toString());
 
