@@ -8,7 +8,7 @@ export const ROUTE = /^\/f\/([^.]+)\.([\w-]+)(\.gz)?$/;
 
 const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const id = RegExp.$1;
-  const isUniqueId = id?.length === 16;
+  const isUniqueId = id?.length <= 20;
   const extension = RegExp.$2;
   const isGzip = !!RegExp.$3;
   const mimeType = mime.lookup(extension);
