@@ -7,6 +7,7 @@ const hash = (text: string) => crypto.createHash('sha256').update(text).digest()
 
 export const handleSlashCommand = (message: GenericMessage) => {
   const content = message.text.split(/\s+/).slice(1);
-  if (content.length === 0) return;
+  if (content.length === 0) return '缺少选项';
+  if (content.length === 1) return `"${content[0]}" 的 SHA256 为：${hash(content[0]}，输入多个选项以进行 pk`;
   return content.reduce((a, b) => hash(b) > hash(a) ? b : a, content[0]);
 };
