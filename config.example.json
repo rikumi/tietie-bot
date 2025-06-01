@@ -8,5 +8,6 @@
   "matrixHomeServer": "matrix.org",
   "matrixAccessToken": "",
   "serverRoot": "example.com",
+  "fallbackUrl": "https://example.com/",
   "serverPort": 8383
 }

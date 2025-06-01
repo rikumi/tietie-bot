@@ -1,10 +1,11 @@
 import { IncomingMessage, ServerResponse } from 'http';
+import config from '../../../config.json';
 
 export const ROUTE = '/';
 
 const indexHandler = (req: IncomingMessage, res: ServerResponse) => {
   res.writeHead(302, 'Moved', {
-    'Location': 'https://rkm.mx/'
+    'Location': config.fallbackUrl || 'https://rkm.mx',
   });
   res.end();
 };
