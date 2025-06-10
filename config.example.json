@@ -12,10 +12,6 @@
     "server": "matrix.org",
     "token": ""
   },
-  "wecom": {
-    "token": "",
-    "encodingAESKey": ""
-  },
   "server": {
     "host": "example.com",
     "port": 8383,
