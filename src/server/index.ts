@@ -37,5 +37,5 @@ const server = http.createServer((req, res) => {
 });
 
 export const startServer = () => {
-  server.listen(config.serverPort ?? 8383);
+  server.listen(config.server.port ?? 8383);
 };

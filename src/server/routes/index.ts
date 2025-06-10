@@ -5,7 +5,7 @@ export const ROUTE = '/';
 
 const indexHandler = (req: IncomingMessage, res: ServerResponse) => {
   res.writeHead(302, 'Moved', {
-    'Location': config.fallbackUrl || 'https://rkm.mx',
+    'Location': config.server.fallbackUrl || 'https://rkm.mx',
   });
   res.end();
 };

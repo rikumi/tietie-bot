@@ -6,10 +6,10 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 const ask = async (q: string) => new Promise<string>(r => rl.question(q, r));
 
 (async () => {
-  if (!config.matrixHomeServer) {
+  if (!config.matrix.server) {
     console.log('Using default home server; you can change it in config.json');
   }
-  const homeserverUrl = 'https://' + (config.matrixHomeServer || 'matrix.org');
+  const homeserverUrl = 'https://' + (config.matrix.server || 'matrix.org');
   const auth = new MatrixAuth(homeserverUrl);
   const client = await auth.passwordLogin(await ask('Username: '), await ask('Password: '), await ask('Device Name: '));
   console.log('AccessToken:', client.accessToken);

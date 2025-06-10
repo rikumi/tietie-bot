@@ -22,7 +22,7 @@ export const createShortUrl = async (url: string) => {
     }
     if (exists === url) break;
   }
-  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   return `${serverRoot}/s/${id}`;
 };
 

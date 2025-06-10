@@ -27,8 +27,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public constructor() {
     super();
     const storage = new SimpleFsStorageProvider(path.resolve(__dirname, '../../matrix-bot-storage.json'));
-    const homeServer = config.matrixHomeServer || 'matrix.org';
-    const accessToken = config.matrixAccessToken;
+    const homeServer = config.matrix.server || 'matrix.org';
+    const accessToken = config.matrix.token;
     this.bot = new MatrixClient('https://' + homeServer, accessToken, storage);
     this.bot.on('room.message', this.handleMessage);
     this.bot.on('room.event', (roomId, message) => {

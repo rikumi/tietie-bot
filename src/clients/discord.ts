@@ -42,20 +42,20 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (this.bot) {
       this.stop();
     }
-    if (!config.discordUserToken) {
+    if (!config.discord.token) {
       return;
     }
-    this.bot = new discord.Client(config.discordUserToken);
+    this.bot = new discord.Client(config.discord.token);
     this.botReady = new Promise(r => this.bot.on.ready = r);
 
     this.bot.on.message_create = (message: any) => {
       const transformedMessage = this.transformMessage(message);
-      if (message.author?.username === config.discordUsername) return;
+      if (message.author?.username === config.discord.username) return;
       this.emit('message', transformedMessage);
     };
     this.bot.on.message_edit = (message: any) => {
       const transformedMessage = this.transformMessage(message);
-      if (message.author?.username === config.discordUsername) return;
+      if (message.author?.username === config.discord.username) return;
       this.emit(message.interaction ? 'message' : 'edit-message', transformedMessage);
     };
     this.bot.on.heartbeat_received = () => {
@@ -66,7 +66,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     };
     this.bot.on.reply = (message: any) => {
       const transformedMessage = this.transformMessage(message);
-      if (message.author?.username === config.discordUsername) return;
+      if (message.author?.username === config.discord.username) return;
       this.emit('message', transformedMessage);
     };
     await this.botReady;

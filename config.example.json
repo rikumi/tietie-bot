@@ -1,13 +1,24 @@
 {
-  "telegramBotToken": "",
-  "openaiApiKey": "",
-  "discordUserToken": "",
-  "discordUsername": "rikumi_tietie_bot",
-  "botUsername": "rikumi_tietie_bot",
-  "matrixUsername": "rikumi_tietie_bot",
-  "matrixHomeServer": "matrix.org",
-  "matrixAccessToken": "",
-  "serverRoot": "example.com",
-  "fallbackUrl": "https://example.com/",
-  "serverPort": 8383
+  "telegram": {
+    "username": "rikumi_tietie_bot",
+    "token": ""
+  },
+  "discord": {
+    "username": "rikumi_tietie_bot",
+    "token": ""
+  },
+  "matrix": {
+    "username": "rikumi_tietie_bot",
+    "server": "matrix.org",
+    "token": ""
+  },
+  "wecom": {
+    "token": "",
+    "encodingAESKey": ""
+  },
+  "server": {
+    "host": "example.com",
+    "port": 8383,
+    "fallbackUrl": "https://example.com/"
+  }
 }

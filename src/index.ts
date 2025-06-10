@@ -20,7 +20,7 @@ const commandMap = new Map<string, any>();
 const handleMessage = async (message: GenericMessage) => {
   // filter out messages mentioning other bots
   if (/@(\w+bot)\b/.test(message.text)) {
-    if (![config.botUsername, config.discordUsername, config.matrixUsername].includes(RegExp.$1)) {
+    if (![config.telegram.username, config.discord.username, config.matrix.username].includes(RegExp.$1)) {
       clients.bridgeMessage({ ...message });
       return;
     }

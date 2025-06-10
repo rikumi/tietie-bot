@@ -12,7 +12,7 @@ import { getPuppet } from 'src/database/puppet';
 import mime from 'mime-types';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
-  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   const extension = mime.extension(mimeType);
   if (fileUniqueId) {
     try {
@@ -26,7 +26,7 @@ export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, m
 };
 
 export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null) => {
-  const serverRoot = /^https?:/.test(config.serverRoot) ? config.serverRoot : 'https://' + config.serverRoot;
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   if (fileUniqueId) {
     try {
       await setTelegramFileId(fileUniqueId, fileId);
@@ -39,7 +39,7 @@ export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string
 };
 
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
-  public bot: Telegraf<Context<Update>> = new Telegraf(config.telegramBotToken);
+  public bot: Telegraf<Context<Update>> = new Telegraf(config.telegram.token);
 
   private botPuppetMap = new Map<string, Telegraf<Context<Update>>>();
 
