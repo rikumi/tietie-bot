@@ -5,6 +5,9 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
+  '@wecom/crypto':
+    specifier: ^1.0.1
+    version: 1.0.1
   await-semaphore:
     specifier: ^0.1.3
     version: 0.1.3
@@ -523,6 +526,10 @@ packages:
       '@types/http-errors': 2.0.4
       '@types/node': 20.4.5
       '@types/send': 0.17.4
+    dev: false
+
+  /@wecom/crypto@1.0.1:
+    resolution: {integrity: sha512-K4Ilkl1l64ceJDbj/kflx8ND/J88pcl8tKx4Ivp7IiCrshRJU+Uo5uWCjAa+PjUiLIdcQSZ4m4d0t1npMPCX5A==}
     dev: false
 
   /abbrev@1.1.1:
@@ -3123,9 +3130,6 @@ packages:
   /sqlite3@5.1.2:
     resolution: {integrity: sha512-D0Reg6pRWAFXFUnZKsszCI67tthFD8fGPewRddDCX6w4cYwz3MbvuwRICbL+YQjBAh9zbw+lJ/V9oC8nG5j6eg==}
     requiresBuild: true
-    peerDependenciesMeta:
-      node-gyp:
-        optional: true
     dependencies:
       '@mapbox/node-pre-gyp': 1.0.11
       node-addon-api: 4.3.0

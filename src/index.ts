@@ -75,7 +75,7 @@ const handleEditedMessage = async (message: GenericMessage) => {
     const commandName = fileName.replace(/\.ts$/, '');
     const filePath = path.resolve(__dirname, 'commands', fileName);
     commandMap.set(commandName, await import(filePath));
-    console.log('[CommandHandlers] registered command:', commandName, filePath);
+    console.log('[CommandHandlers] Registered command:', commandName, filePath);
   }
 
   clients.setCommandList(

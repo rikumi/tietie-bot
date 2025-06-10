@@ -299,4 +299,4 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 }
 
-export default new TelegramBotClient();
+export default config.telegram.enable !== false ? new TelegramBotClient() : null;

@@ -287,4 +287,4 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 }
 
-export default new MatrixUserBotClient();
+export default config.matrix.enable !== false ? new MatrixUserBotClient() : null;

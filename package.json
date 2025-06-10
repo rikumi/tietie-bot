@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/rikumi/tietie-bot#readme",
   "dependencies": {
+    "@wecom/crypto": "^1.0.1",
     "await-semaphore": "^0.1.3",
     "axios": "^1.4.0",
     "cheerio": "1.0.0-rc.12",

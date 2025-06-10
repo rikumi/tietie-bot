@@ -1,18 +1,22 @@
 {
   "telegram": {
+    "enable": true,
     "username": "rikumi_tietie_bot",
     "token": ""
   },
   "discord": {
+    "enable": false,
     "username": "rikumi_tietie_bot",
     "token": ""
   },
   "matrix": {
+    "enable": false,
     "username": "rikumi_tietie_bot",
     "server": "matrix.org",
     "token": ""
   },
   "wecom": {
+    "enable": false,
     "token": "",
     "encodingAESKey": ""
   },

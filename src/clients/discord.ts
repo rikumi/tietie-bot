@@ -158,4 +158,4 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 }
 
-export default new DiscordUserBotClient();
+export default config.discord.enable !== false ? new DiscordUserBotClient() : null;

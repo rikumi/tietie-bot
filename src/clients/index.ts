@@ -1,6 +1,7 @@
 import { getUnidirectionalBridgesByChat } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import { EventEmitter } from 'events';
+import config from '../../config.json';
 
 export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entities'>, prefix: string) => {
   const prefixLength = Buffer.from(prefix, 'utf16le').length / 2;
@@ -14,10 +15,13 @@ export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entit
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
   private recentBridgedMessages = new Map<string, [string, string | undefined]>();
-  public static readonly CLIENT_NAMES = ['telegram', 'discord', 'matrix'] as const;
+  public static readonly CLIENT_NAMES = ['telegram', 'discord', 'matrix', 'wecom'] as const;
 
   public async start() {
     for (const clientName of DefaultClientSet.CLIENT_NAMES) {
+      if (!(clientName in config) || config[clientName].enable === false) {
+        continue;
+      }
       await this.registerAndStartClient(clientName);
     }
   }
@@ -129,8 +133,9 @@ export class DefaultClientSet extends EventEmitter {
       });
       this.clients.set(clientName, client);
       await client.start();
+      console.log('[DefaultClientSet] Started client:', clientName);
     } catch (e) {
-      console.warn('[DefaultClientSet] Failed to initialize bot', clientName, e);
+      console.warn('[DefaultClientSet] Failed to initialize bot:', clientName, e);
     }
   }
 

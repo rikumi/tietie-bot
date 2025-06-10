@@ -23,14 +23,14 @@ const server = http.createServer((req, res) => {
   const pathname = req.url?.split(/\?#/g)[0].replace(/(?<=.)\/$/g, '') ?? '';
   const use = (matcher: string | RegExp, handler: (req: IncomingMessage, res: ServerResponse) => void) => {
     if (typeof matcher === 'string' ? matcher === pathname : matcher.test(pathname)) {
-      console.log('[Server] Handling route', pathname);
+      console.log('[Server] Handling route:', pathname);
       isHandled = true;
       return handler(req, res);
     }
   };
   handlers.forEach((handler) => handler && use(handler?.route, handler?.handler));
   if (!isHandled) {
-    console.warn('[Server] No handler for', pathname);
+    console.warn('[Server] No handler for:', pathname);
     res.writeHead(404);
     res.end();
   }
