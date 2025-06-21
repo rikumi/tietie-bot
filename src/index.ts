@@ -30,7 +30,8 @@ const handleMessage = async (message: GenericMessage) => {
   // 各种非 slash commands
   if (!message.text.startsWith('/')) {
     clients.bridgeMessage({ ...message });
-    await repeat.handleGeneralMessage(message);
+    repeat.handleGeneralMessage(message);
+    autoreact.handleMessage(message);
     return;
   }
   // 调用 slash commands
@@ -39,14 +40,13 @@ const handleMessage = async (message: GenericMessage) => {
     clients.bridgeMessage({ ...message });
     if (await video.handleMessage(message) !== false) return;
     if (await tietie.handleMessage(message) !== false) return;
-    autoreact.handleMessage(message);
     return;
   };
   try {
     const result = await module.handleSlashCommand?.(message);
     clients.bridgeMessage({ ...message });
 
-    if (result != null) defaultClientSet.sendBotMessage({
+    if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
       text: result,

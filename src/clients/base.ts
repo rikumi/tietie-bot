@@ -53,7 +53,7 @@ export interface GenericClient<T = any, U = any, V = {}> {
   sendMessage(message: MessageToSend): Promise<GenericMessage>;
   editMessage(message: MessageToEdit): Promise<void>;
 
-  reactToMessage?(messageId: string, emoji: string, reactorDisplayName: string): Promise<void>;
+  reactToMessage?(chatId: string, messageId: string, emoji: string, reactorDisplayName: string): Promise<void>;
   callOtherBotCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }

@@ -1,5 +1,5 @@
 import type Context from 'telegraf/typings/context';
-import type { Message, MessageEntity, Update, User } from 'telegraf/typings/core/types/typegram'
+import type { Message, MessageEntity, TelegramEmoji, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
@@ -10,6 +10,7 @@ import { setTelegramFileId } from 'src/database/tgfile';
 import { prependMessageText } from '.';
 import { getPuppet } from 'src/database/puppet';
 import mime from 'mime-types';
+import { CUSTOM_EMOJI_PREFIX } from 'src/commands/autoreact';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
@@ -134,6 +135,17 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       caption: message.text,
       caption_entities: entities,
     });
+  }
+
+  public async reactToMessage(chatId: string, messageId: string, emoji: string) {
+    const isCustomEmoji = emoji.startsWith(CUSTOM_EMOJI_PREFIX);
+    await this.bot.telegram.setMessageReaction(chatId, Number(messageId), [isCustomEmoji ? {
+      type: 'custom_emoji',
+      custom_emoji_id: emoji.substring(CUSTOM_EMOJI_PREFIX.length),
+    } : {
+      type: 'emoji',
+      emoji: emoji as TelegramEmoji,
+    }]);
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {

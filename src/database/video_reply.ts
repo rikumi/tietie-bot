@@ -15,7 +15,7 @@ export const setVideoReply = async (clientName: string, chatId: string, command:
   const db = await getDatabase();
   const exists = await db.get(`SELECT * FROM video_reply WHERE client_name = ? AND group_id = ? AND command = ?`, [clientName, chatId, command]);
   if (exists) {
-    await db.run(`UPDATE video_reply SET video_id = ? WHERE client_name = ? AND group_id = ? AND command = ?`, [clientName, videoId, chatId, command]);
+    await db.run(`UPDATE video_reply SET video_id = ? WHERE client_name = ? AND group_id = ? AND command = ?`, [videoId, clientName, chatId, command]);
   } else {
     await db.run(`INSERT INTO video_reply (client_name, group_id, command, video_id) VALUES (?, ?, ?, ?)`, [clientName, chatId, command, videoId]);
   }

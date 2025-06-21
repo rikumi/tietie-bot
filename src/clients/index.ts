@@ -115,7 +115,7 @@ export class DefaultClientSet extends EventEmitter {
   public async reactToMessage(message: GenericMessage, emoji: string, reactorDisplayName: string) {
     const client = this.clients.get(message.clientName);
     if (!client) return;
-    await client.reactToMessage?.(message.messageId, emoji, reactorDisplayName);
+    await client.reactToMessage?.(message.chatId, message.messageId, emoji, reactorDisplayName);
     const bridges = await getUnidirectionalBridgesByChat(message.clientName, message.chatId);
     await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
@@ -123,7 +123,7 @@ export class DefaultClientSet extends EventEmitter {
       const targetMessageIds = this.convertRecentMessageId(message.clientName, message.chatId, message.messageId, toClientName, toChatId);
       if (!targetMessageIds) return;
       const [targetMessageId] = targetMessageIds;
-      toClient.reactToMessage?.(targetMessageId, emoji, reactorDisplayName)
+      toClient.reactToMessage?.(toChatId, targetMessageId, emoji, reactorDisplayName)
     }));
   }
 
