@@ -33,8 +33,10 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   }
   const customEmojiId = (message.platformMessage?.entities as any[])?.find(ent => ent.type === 'custom_emoji')?.custom_emoji_id;
   try {
+    const emojiId = customEmojiId ? `${CUSTOM_EMOJI_PREFIX}${customEmojiId}` : emoji;
+    await defaultClientSet.reactToMessage(message, emojiId, config.generalName);
+    await setAutoReact(message.clientName, message.chatId, keyword, emojiId);
     await defaultClientSet.reactToMessage(message, '👌', config.generalName);
-    await setAutoReact(message.clientName, message.chatId, keyword, customEmojiId ? `${CUSTOM_EMOJI_PREFIX}${customEmojiId}` : emoji);
   } catch (e) {
     if (message.chatId.startsWith('-100')) {
       return '当前 Telegram 会话不支持发送该 Reaction，请将对应的 Custom Emoji Pack 设置为群组表情包后再试';
