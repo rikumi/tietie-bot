@@ -112,6 +112,21 @@ export class DefaultClientSet extends EventEmitter {
     await this.bridgeEditedMessage({ ...message, isServiceMessage: true });
   }
 
+  public async reactToMessage(message: GenericMessage, emoji: string, reactorDisplayName: string) {
+    const client = this.clients.get(message.clientName);
+    if (!client) return;
+    await client.reactToMessage?.(message.messageId, emoji, reactorDisplayName);
+    const bridges = await getUnidirectionalBridgesByChat(message.clientName, message.chatId);
+    await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
+      const toClient = this.clients.get(toClientName);
+      if (!toClient) return;
+      const targetMessageIds = this.convertRecentMessageId(message.clientName, message.chatId, message.messageId, toClientName, toChatId);
+      if (!targetMessageIds) return;
+      const [targetMessageId] = targetMessageIds;
+      toClient.reactToMessage?.(targetMessageId, emoji, reactorDisplayName)
+    }));
+  }
+
   public async setCommandList(commandList: { command: string; description: string }[]) {
     await Promise.all(Array.from(this.clients.values()).map(async (client) => {
       return await client.setCommandList?.(commandList);

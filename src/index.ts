@@ -4,6 +4,7 @@ import path from 'path';
 import * as repeat from './commands/repeat';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
+import * as autoreact from './commands/autoreact';
 
 import clients from './clients';
 import { GenericMessage } from './clients/base';
@@ -38,6 +39,7 @@ const handleMessage = async (message: GenericMessage) => {
     clients.bridgeMessage({ ...message });
     if (await video.handleMessage(message) !== false) return;
     if (await tietie.handleMessage(message) !== false) return;
+    autoreact.handleMessage(message);
     return;
   };
   try {
