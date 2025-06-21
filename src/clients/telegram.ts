@@ -10,7 +10,6 @@ import { setTelegramFileId } from 'src/database/tgfile';
 import { prependMessageText } from '.';
 import { getPuppet } from 'src/database/puppet';
 import mime from 'mime-types';
-import { CUSTOM_EMOJI_PREFIX } from 'src/commands/autoreact';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
@@ -138,11 +137,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async reactToMessage(chatId: string, messageId: string, emoji: string) {
-    const isCustomEmoji = emoji.startsWith(CUSTOM_EMOJI_PREFIX);
-    await this.bot.telegram.setMessageReaction(chatId, Number(messageId), [isCustomEmoji ? {
-      type: 'custom_emoji',
-      custom_emoji_id: emoji.substring(CUSTOM_EMOJI_PREFIX.length),
-    } : {
+    await this.bot.telegram.setMessageReaction(chatId, Number(messageId), [{
       type: 'emoji',
       emoji: emoji as TelegramEmoji,
     }]);

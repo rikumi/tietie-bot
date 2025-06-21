@@ -3,9 +3,7 @@ import defaultClientSet from 'src/clients';
 import { getAutoReact, setAutoReact } from 'src/database/autoreact';
 import config from '../../config.json';
 
-export const USAGE = `<keyword> <emoji> 为本会话中的特定关键词消息设置自动回应`;
-
-export const CUSTOM_EMOJI_PREFIX = 'custom_emoji:';
+export const USAGE = `<keyword> <emoji> 为本会话中的特定关键词消息设置自动回应，目前仅支持 Telegram 默认 Reaction 集合中的 emoji`;
 
 const TELEGRAM_EMOJI = '👍,👎,❤,🔥,🥰,👏,😁,🤔,🤯,😱,🤬,😢,🎉,🤩,🤮,💩,🙏,👌,🕊,🤡,🥱,🥴,😍,🐳,❤‍🔥,🌚,🌭,💯,🤣,⚡,🍌,🏆,💔,🤨,😐,🍓,🍾,💋,🖕,😈,😴,😭,🤓,👻,👨‍💻,👀,🎃,🙈,😇,😨,🤝,✍,🤗,🫡,🎅,🎄,☃,💅,🤪,🗿,🆒,💘,🙉,🦄,😘,💊,🙊,😎,👾,🤷‍♂,🤷,🤷‍♀,😡'.split(',');
 
@@ -31,17 +29,9 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   if (!keyword || !emoji || !/^\p{Emoji_Presentation}$/u.test(emoji)) {
     return `用法：${USAGE}`;
   }
-  const customEmojiId = (message.platformMessage?.entities as any[])?.find(ent => ent.type === 'custom_emoji')?.custom_emoji_id;
-  try {
-    const emojiId = customEmojiId ? `${CUSTOM_EMOJI_PREFIX}${customEmojiId}` : emoji;
-    await defaultClientSet.reactToMessage(message, emojiId, config.generalName);
-    await setAutoReact(message.clientName, message.chatId, keyword, emojiId);
-    await defaultClientSet.reactToMessage(message, '👌', config.generalName);
-  } catch (e) {
-    if (message.chatId.startsWith('-100')) {
-      return '当前 Telegram 会话不支持发送该 Reaction，请将对应的 Custom Emoji Pack 设置为群组表情包后再试';
-    } else {
-      return 'Telegram 不支持发送该 Reaction，请更换';
-    }
+  if (!TELEGRAM_EMOJI.includes(emoji)) {
+    return 'Telegram 暂时不支持发送该 Reaction，请更换';
   }
+  await setAutoReact(message.clientName, message.chatId, keyword, emoji);
+  await defaultClientSet.reactToMessage(message, '👌', config.generalName);
 };
