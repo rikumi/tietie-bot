@@ -140,6 +140,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     await this.bot.telegram.setMessageReaction(chatId, Number(messageId), [{
       type: 'emoji',
       emoji: emoji as TelegramEmoji,
+      is_big: true,
     }]);
   }
 
