@@ -26,11 +26,11 @@ export const handleMessage = async (message: GenericMessage) => {
 
 export const handleSlashCommand = async (message: GenericMessage) => {
   const [, keyword, emoji] = message.text.trim().split(/\s+/);
-  if (!keyword || !emoji || !/^\p{Emoji_Presentation}$/u.test(emoji)) {
+  if (!keyword || !emoji) {
     return `用法：${USAGE}`;
   }
   if (!TELEGRAM_EMOJI.includes(emoji)) {
-    return 'Telegram 暂时不支持发送该 Reaction，请更换';
+    return '请给出 Telegram 支持的 Emoji Reaction 之一';
   }
   await setAutoReact(message.clientName, message.chatId, keyword, emoji);
   await defaultClientSet.reactToMessage(message, '👌', config.generalName);
