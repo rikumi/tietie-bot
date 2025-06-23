@@ -25,3 +25,8 @@ export const getAutoReact = async (clientName: string, chatId: string) => {
   const db = await getDatabase();
   return await db.all(`SELECT * FROM autoreact WHERE client_name = ? AND group_id = ?`, [clientName, chatId]);
 };
+
+export const deleteAutoReact = async (clientName: string, chatId: string, keyword: string) => {
+  const db = await getDatabase();
+  await db.run(`DELETE FROM autoreact WHERE client_name = ? AND group_id = ? AND keyword = ?`, [clientName, chatId, keyword]);
+};
