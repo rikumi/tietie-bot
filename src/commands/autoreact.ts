@@ -3,7 +3,7 @@ import defaultClientSet from 'src/clients';
 import { deleteAutoReact, getAutoReact, setAutoReact } from 'src/database/autoreact';
 import config from '../../config.json';
 
-export const USAGE = `<keyword> <emoji> 为本会话中的特定关键词消息设置自动回应，目前仅支持 Telegram 默认 Reaction 集合中的 emoji`;
+export const USAGE = `<keyword> <emoji> | del <keyword> 为本会话中的特定关键词消息设置自动回应`;
 
 const TELEGRAM_EMOJI = '👍,👎,❤,🔥,🥰,👏,😁,🤔,🤯,😱,🤬,😢,🎉,🤩,🤮,💩,🙏,👌,🕊,🤡,🥱,🥴,😍,🐳,❤‍🔥,🌚,🌭,💯,🤣,⚡,🍌,🏆,💔,🤨,😐,🍓,🍾,💋,🖕,😈,😴,😭,🤓,👻,👨‍💻,👀,🎃,🙈,😇,😨,🤝,✍,🤗,🫡,🎅,🎄,☃,💅,🤪,🗿,🆒,💘,🙉,🦄,😘,💊,🙊,😎,👾,🤷‍♂,🤷,🤷‍♀,😡'.split(',');
 
@@ -30,7 +30,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     const records = await getAutoReact(message.clientName, message.chatId);
     return [
       `当前会话将根据 ${records.length} 条规则自动回应：`,
-      records.map(record => `消息包含 "${record.keyword}": 回应 "${record.emoji}"`).join('\n'),
+      records.map(record => `消息包含 "${record.keyword}": 回应 "${record.emoji_name}"`).join('\n'),
       `使用 /autoreact ${USAGE}`
     ].filter(Boolean).join('\n\n');
   }
