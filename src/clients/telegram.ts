@@ -5,6 +5,7 @@ import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
 
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import * as autoreact from '../commands/autoreact';
 import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
 import { prependMessageText } from '.';
@@ -105,10 +106,13 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         messageId: String(secondMessage.message_id),
       };
     }
-    return {
+    const result: GenericMessage = {
       ...message,
       ...await this.transformMessage(messageSent),
     };
+    // Someone doubts if messages sent by bot itself can be auto-reacted, so let's support it here because why not.
+    autoreact.handleMessage(result);
+    return result;
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
