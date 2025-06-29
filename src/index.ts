@@ -27,11 +27,11 @@ const handleMessage = async (message: GenericMessage) => {
     }
     message.text = message.text.replace(/@\w+bot\b/g, '');
   }
+  autoreact.handleMessage(message);
   // 各种非 slash commands
   if (!message.text.startsWith('/')) {
     clients.bridgeMessage({ ...message });
     repeat.handleGeneralMessage(message);
-    autoreact.handleMessage(message);
     return;
   }
   // 调用 slash commands
