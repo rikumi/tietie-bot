@@ -8,9 +8,6 @@ export const USAGE = `<keyword> <emoji> | del <keyword> 为本会话中的特定
 const TELEGRAM_EMOJI = '👍,👎,❤,🔥,🥰,👏,😁,🤔,🤯,😱,🤬,😢,🎉,🤩,🤮,💩,🙏,👌,🕊,🤡,🥱,🥴,😍,🐳,❤‍🔥,🌚,🌭,💯,🤣,⚡,🍌,🏆,💔,🤨,😐,🍓,🍾,💋,🖕,😈,😴,😭,🤓,👻,👨‍💻,👀,🎃,🙈,😇,😨,🤝,✍,🤗,🫡,🎅,🎄,☃,💅,🤪,🗿,🆒,💘,🙉,🦄,😘,💊,🙊,😎,👾,🤷‍♂,🤷,🤷‍♀,😡'.split(',');
 
 export const handleMessage = async (message: GenericMessage) => {
-  if (message.text.startsWith('/')) {
-    return false;
-  }
   const records = await getAutoReact(message.clientName, message.chatId);
   const firstOccur = records
     .map(record => ({ ...record, position: message.text.indexOf(record.keyword) }))
@@ -18,10 +15,9 @@ export const handleMessage = async (message: GenericMessage) => {
     .sort((a, b) => a.position - b.position)[0];
 
   if (!firstOccur) {
-    return false;
+    return;
   }
   defaultClientSet.reactToMessage(message, firstOccur.emoji_name, config.generalName);
-  return true;
 };
 
 export const handleSlashCommand = async (message: GenericMessage) => {
