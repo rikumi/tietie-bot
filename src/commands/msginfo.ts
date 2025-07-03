@@ -1,5 +1,5 @@
-import defaultClientSet, { prependMessageText } from 'src/clients';
-import { GenericMessage, MessageToSend } from 'src/clients/base';
+import defaultClientSet from 'src/clients';
+import { GenericMessage } from 'src/clients/base';
 
 export const USAGE = `显示被引用的消息的原始数据`;
 

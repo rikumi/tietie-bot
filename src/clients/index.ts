@@ -2,13 +2,19 @@ import { getUnidirectionalBridgesByChat } from 'src/database/bridge';
 import type { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import { EventEmitter } from 'events';
 
-export const prependMessageText = (message: Pick<GenericMessage, 'text' | 'entities'>, prefix: string) => {
+export const prependMessageBridgingPrefix = (message: Pick<GenericMessage, 'text' | 'entities' | 'bridgingPrefix'>, prefix: string) => {
+  message.bridgingPrefix = prefix + (message.bridgingPrefix ?? '');
+};
+
+export const applyMessageBridgingPrefix = (message: Pick<GenericMessage, 'text' | 'entities' | 'bridgingPrefix'>) => {
+  const prefix = message.bridgingPrefix ?? '';
   const prefixLength = Buffer.from(prefix, 'utf16le').length / 2;
   message.text = prefix + message.text;
   message.entities = message.entities?.map(entity => ({
     ...entity,
     offset: entity.offset + prefixLength,
   }));
+  message.bridgingPrefix = undefined;
 };
 
 export class DefaultClientSet extends EventEmitter {
@@ -26,6 +32,7 @@ export class DefaultClientSet extends EventEmitter {
     if (fromMessage.disableBridging) return [];
     const hasCommand = /^\/\w+\b/.test(fromMessage.text);
     const rawText = fromMessage.text;
+    applyMessageBridgingPrefix(fromMessage);
     const bridges = await getUnidirectionalBridgesByChat(fromMessage.clientName, fromMessage.chatId);
     const results = await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);

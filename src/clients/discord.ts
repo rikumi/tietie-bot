@@ -6,7 +6,7 @@ import discord from 'discord-user-bots';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
-import { prependMessageText } from '.';
+import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 
 const convertDiscordMessage = (text: string) => {
   const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
@@ -79,7 +79,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     if (message.bridgedMessage?.userDisplayName) {
-      prependMessageText(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      applyMessageBridgingPrefix(message);
     }
     const messageSent = await this.bot.send(message.chatId, {
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
@@ -91,7 +92,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     if (message.bridgedMessage?.userDisplayName) {
-      prependMessageText(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      applyMessageBridgingPrefix(message);
     }
     await this.bot.edit(message.messageId, message.chatId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }

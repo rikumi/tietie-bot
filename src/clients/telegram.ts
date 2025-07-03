@@ -8,7 +8,7 @@ import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, Mes
 import * as autoreact from '../commands/autoreact';
 import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
-import { prependMessageText } from '.';
+import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { getPuppet } from 'src/database/puppet';
 import mime from 'mime-types';
 
@@ -70,7 +70,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
     if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
-      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
+      applyMessageBridgingPrefix(message);
     }
     const method = ({
       sticker: 'sendSticker',
@@ -117,7 +118,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     if (message.bridgedMessage?.userDisplayName) {
-      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
+      applyMessageBridgingPrefix(message);
     }
     const entities = message.entities?.map(entity => ({
       type: entity.type.replace(/^(link|mention)$/, 'text_link') as any,
@@ -173,7 +175,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       entities: 'entities' in message && message.entities?.map((e) => this.transformEntity(e, text)).filter(Boolean) as any[] || undefined
     };
     if ('forward_origin' in message || 'forward_from' in message) {
-      prependMessageText(result, `[转发自 ${this.transformForwardOrigin(message)}] `);
+      prependMessageBridgingPrefix(result, `[转发自 ${this.transformForwardOrigin(message)}] `);
     }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
@@ -189,10 +191,10 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (sticker?.is_animated) {
       // Special processing of TGS (Lottie) animated stickers
       const url = await fileIdToTGSPreviewUrl(fileId, fileUniqueId!);
-      prependMessageText(result, `[${sticker.emoji ?? '🖼️'} TGS 贴纸] ${url} `);
+      prependMessageBridgingPrefix(result, `[${sticker.emoji ?? '🖼️'} TGS 贴纸] ${url} `);
     } else if (sticker) {
       // Static or WEBM stickers
-      prependMessageText(result, `[${sticker.emoji ?? '🖼️'} 贴纸] `);
+      prependMessageBridgingPrefix(result, `[${sticker.emoji ?? '🖼️'} 贴纸] `);
       result.media = {
         type: 'sticker',
         mimeType: sticker?.is_video ? 'video/webm' : 'image/jpeg',
@@ -216,7 +218,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     } else if (photo) {
       const mediaUrl = await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg');
       if ('has_media_spoiler' in message && message.has_media_spoiler) {
-        prependMessageText(result, `[带有内容警告的媒体] ${mediaUrl} `);
+        prependMessageBridgingPrefix(result, `[带有内容警告的媒体] ${mediaUrl} `);
       } else {
         result.media = {
           type: 'photo',
@@ -228,7 +230,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         };
       }
     } else {
-      prependMessageText(result, '[文件] ');
+      prependMessageBridgingPrefix(result, '[文件] ');
       result.media = {
         type: 'file',
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',

@@ -13,6 +13,7 @@ export interface GenericMessage {
   media?: GenericMedia;
   entities?: GenericMessageEntity[];
   messageReplied?: GenericMessage;
+  bridgingPrefix?: string;
 
   isServiceMessage?: boolean;
   messageIdReplied?: string;

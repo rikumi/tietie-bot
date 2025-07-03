@@ -5,7 +5,7 @@ import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, MemoryStorageProvider } from 'matrix-bot-sdk';
 import config from '../../config.json';
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
-import { prependMessageText } from '.';
+import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { getPuppet } from 'src/database/puppet';
 
 const escapeHTML = (str: string) => str
@@ -65,7 +65,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
     if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
-      prependMessageText(message, `${message.bridgedMessage.userDisplayName}: `);
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
+      applyMessageBridgingPrefix(message);
     }
     const matrixEventContent: any = {
       body: message.text,
@@ -109,7 +110,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public async editMessage(message: MessageToEdit): Promise<void> {
     const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
     if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
-      prependMessageText(message, `${message.bridgedMessage?.userDisplayName}: `);
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage?.userDisplayName}: `);
+      applyMessageBridgingPrefix(message);
     }
     if (message.media && message.mediaMessageId) {
       const isSticker = message.media.type === 'sticker';

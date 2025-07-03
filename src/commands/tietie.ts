@@ -1,7 +1,7 @@
 import { setTietieEnabled, isTietieEnabled } from '../database/tietie';
 import { isAutodelEnabled } from 'src/database/autodel';
 import { GenericMessage, GenericMessageEntity } from 'src/clients/base';
-import defaultClientSet, { prependMessageText } from 'src/clients';
+import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from 'src/clients';
 import telegram from 'src/clients/telegram';
 
 export const USAGE = `<on|off> 开启/关闭任意非 ASCII 指令贴贴功能`;
@@ -50,10 +50,12 @@ export const handleMessage = async (message: GenericMessage) => {
   const suffix = rest.join(' ').trim();
   const result = { text: '', entities: [] as GenericMessageEntity[] };
 
-  prependMessageText(result, `${receiverName} ${suffix}！`);
+  prependMessageBridgingPrefix(result, `${receiverName} ${suffix}！`);
+  applyMessageBridgingPrefix(result);
   result.entities.unshift({ type: 'link', offset: 0, length: utf16Length(receiverName), url: receiverLink });
 
-  prependMessageText(result, `${senderName} ${action}${suffix || action.includes('了') ? '' : '了'} `);
+  prependMessageBridgingPrefix(result, `${senderName} ${action}${suffix || action.includes('了') ? '' : '了'} `);
+  applyMessageBridgingPrefix(result);
   result.entities.unshift({ type: 'link', offset: 0, length: utf16Length(senderName), url: senderLink });
 
   const shouldAutodel = await isAutodelEnabled(message.userId);
