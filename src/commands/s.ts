@@ -15,12 +15,16 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     await defaultClientSet.sendBotMessage({
       clientName: message.clientName,
       chatId: message.chatId,
-      text: `${text}\n\n该消息仅在当前平台可见`,
+      text: `${text}\n本消息仅在当前平台可见`,
       disableBridging: true,
       messageIdReplied: message.messageId,
     });
     return undefined;
   };
+
+  if (message.clientName === 'telegram') {
+    return await replyWithoutBridging('请在第三方平台使用该功能');
+  }
 
   if (!stickerName) {
     return await replyWithoutBridging('用法: /s <贴纸名称>');
