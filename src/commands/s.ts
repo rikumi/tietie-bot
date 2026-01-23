@@ -27,15 +27,17 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   }
 
   // 如果有回复消息，且回复的是 Telegram 贴纸，则收藏该贴纸
-  const stickerFileId = message.messageReplied?.bridgedMessage?.media?.telegramFileId;
-  if (message.messageReplied && message.messageReplied.media?.type === 'sticker' && stickerFileId) {
+  const media = (message.messageReplied?.bridgedMessage ?? message.messageReplied)?.media;
+  console.log('media:', media);
+  console.log('messageReplied:', message.messageReplied);
+
+  if (media?.type === 'sticker' && media.telegramFileId) {
     // 检查该名称是否已被用户使用
     const existingSticker = await getSticker(message.userId, message.clientName, stickerName);
     if (existingSticker) {
       return await replyWithoutBridging(`你已经使用过名称 "${stickerName}" 收藏了其他贴纸，请使用不同的名称。`);
     }
-
-    await addSticker(message.userId, message.clientName, stickerName, stickerFileId);
+    await addSticker(message.userId, message.clientName, stickerName, media.telegramFileId);
     return await replyWithoutBridging(`已收藏贴纸为 "${stickerName}"。`);
   }
 
