@@ -68,6 +68,7 @@ export interface MessageToSend {
   platformMessageExtra?: any;
   bridgedMessage?: GenericMessage;
   entities?: GenericMessageEntity[];
+  disableBridging?: boolean;
 }
 
 export interface MessageToEdit extends MessageToSend {

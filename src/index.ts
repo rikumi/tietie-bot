@@ -44,7 +44,10 @@ const handleMessage = async (message: GenericMessage) => {
   };
   try {
     const result = await module.handleSlashCommand?.(message);
-    clients.bridgeMessage({ ...message });
+    // 如果设置了 disableBridging，则不转发到其他平台
+    if (!message.disableBridging) {
+      clients.bridgeMessage({ ...message });
+    }
 
     if (result) defaultClientSet.sendBotMessage({
       clientName: message.clientName,

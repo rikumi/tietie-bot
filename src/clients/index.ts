@@ -100,6 +100,7 @@ export class DefaultClientSet extends EventEmitter {
     const messagesBridged = await this.bridgeMessage({
       ...messageSent,
       isServiceMessage: true,
+      disableBridging: message.disableBridging,
     });
     return [messageSent, ...messagesBridged];
   }
