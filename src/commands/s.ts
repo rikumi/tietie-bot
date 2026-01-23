@@ -8,13 +8,19 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   const args = message.text.trim().split(/\s+/).slice(1);
   const stickerName = args.join(' ').trim();
 
-  const replyWithoutBridging = async (text: string) => await defaultClientSet.sendBotMessage({
-    clientName: message.clientName,
-    chatId: message.chatId,
-    text: `${text}\n\n该消息仅在当前平台可见`,
-    disableBridging: true,
-    messageIdReplied: message.messageId,
-  });
+  // 设置不转发到其他平台
+  message.disableBridging = true;
+
+  const replyWithoutBridging = async (text: string) => {
+    await defaultClientSet.sendBotMessage({
+      clientName: message.clientName,
+      chatId: message.chatId,
+      text: `${text}\n\n该消息仅在当前平台可见`,
+      disableBridging: true,
+      messageIdReplied: message.messageId,
+    });
+    return undefined;
+  };
 
   if (!stickerName) {
     return await replyWithoutBridging('用法: /s <贴纸名称>');
@@ -38,9 +44,6 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   if (!sticker) {
     return await replyWithoutBridging(`未找到名称为 "${stickerName}" 的贴纸。`);
   }
-
-  // 设置不转发到其他平台
-  message.disableBridging = true;
 
   // 发送贴纸，附上发送者名字
   const senderName = message.userDisplayName || message.userHandle || 'Unknown';
