@@ -1,6 +1,6 @@
-import { GeneralMessage } from '../clients/base';
+import { GenericMessage } from '../clients/base';
 
-export const handleSlashCommand = async (message: GeneralMessage) => {
+export const handleSlashCommand = async (message: GenericMessage) => {
   const text = message.messageReplied?.text ?? message.text.replace(/^\S+/, '');
   const res = await fetch('https://lab.magiconch.com/api/nbnhhsh/guess', {
     method: 'POST',
