@@ -223,7 +223,12 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
     // fetching uri should be included in the pendingMediaUpload promise...
     mxcLog(`Fetching MXC URI for ${url}`);
-    const mxcUriPromise = this.bot.doRequest('POST', '/_matrix/media/v1/create').then(res => res.content_uri);
+    const mxcUriPromise = this.bot.doRequest('POST', '/_matrix/media/v1/create')
+      .then(res => {
+        const mxcUri = res.content_uri;
+        mxcLog(`Fetched MXC URI for ${url}: ${mxcUri}`);
+        return mxcUri;
+      });
 
     this.pendingMediaUpload = Promise.race([(async () => {
       const mxcUri = await mxcUriPromise;
@@ -231,13 +236,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     })(), new Promise<void>(r => setTimeout(r, 60000))]);
 
     // ...and also be awaited alone
-    const mxcUri = await mxcUriPromise;
-    mxcLog(`Fetched MXC URI for ${url}: ${mxcUri}`);
-    return mxcUri;
+    return await mxcUriPromise;
   }
 
   private async uploadToMxcUri(mxcUri: string, url: string) {
-    mxcLog(`Uploading to MXC URI ${mxcUri} for ${url}`);
+    mxcLog(`Uploading to MXC URI ${mxcUri}`);
     while (true) {
       try {
         const resource = await fetch(url, {
@@ -252,6 +255,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         }, buffer, 60000, undefined, contentType);
         this.cachedMedia.set(url, mxcUri);
         this.pendingMediaUpload = undefined;
+        mxcLog(`Uploaded to MXC URI ${mxcUri}`);
         break;
       } catch (e) {
         mxcLog(`Failed to upload to MXC URI ${mxcUri} for ${url}, scheduling retry: ${util.inspect(e)}`);
