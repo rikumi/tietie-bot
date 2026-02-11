@@ -24,7 +24,7 @@ if (fs.existsSync(mxcLogFile)) {
 }
 
 const mxcLog = (text: string) => {
-  fs.appendFileSync(mxcLogFile, text);
+  fs.appendFileSync(mxcLogFile, `[${new Date().toISOString().replace(/T/, ' ').trim()}] ${text}\n`);
 };
 
 export class MatrixUserBotClient extends EventEmitter implements GenericClient<any, any, any> {
