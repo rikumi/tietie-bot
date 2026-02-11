@@ -1,5 +1,7 @@
 import { EventEmitter } from 'events';
+import fs from 'fs';
 import path from 'path';
+import util from 'util';
 import { fetch, Agent } from 'undici';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, MemoryStorageProvider } from 'matrix-bot-sdk';
@@ -14,6 +16,16 @@ const escapeHTML = (str: string) => str
   .replace(/>/g, '&gt;')
   .replace(/"/g, '&quot;')
   .replace(/'/g, '&#039;');
+
+const mxcLogFile = path.resolve(__dirname, '../../matrix-log.txt');
+
+if (fs.existsSync(mxcLogFile)) {
+  fs.rmSync(mxcLogFile, { recursive: true, force: true });
+}
+
+const mxcLog = (text: string) => {
+  fs.appendFileSync(mxcLogFile, text);
+};
 
 export class MatrixUserBotClient extends EventEmitter implements GenericClient<any, any, any> {
   public bot: MatrixClient;
@@ -210,6 +222,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     }
 
     // fetching uri should be included in the pendingMediaUpload promise...
+    mxcLog(`Fetching MXC URI for ${url}`);
     const mxcUriPromise = this.bot.doRequest('POST', '/_matrix/media/v1/create').then(res => res.content_uri);
 
     this.pendingMediaUpload = Promise.race([(async () => {
@@ -218,22 +231,33 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     })(), new Promise<void>(r => setTimeout(r, 60000))]);
 
     // ...and also be awaited alone
-    return await mxcUriPromise;
+    const mxcUri = await mxcUriPromise;
+    mxcLog(`Fetched MXC URI for ${url}: ${mxcUri}`);
+    return mxcUri;
   }
 
   private async uploadToMxcUri(mxcUri: string, url: string) {
-    const resource = await fetch(url, {
-      dispatcher: new Agent({ connect: { rejectUnauthorized: false } }),
-    });
-    const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
-    const buffer = Buffer.from(await resource.arrayBuffer());
-    console.warn('[MatrixUserBotClient] Uploading to Matrix:', mxcUri);
-    const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
-    await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
-      filename: contentType.replace(/\//g, '.'), // temporary, yet geek
-    }, buffer, 60000, undefined, contentType);
-    this.cachedMedia.set(url, mxcUri);
-    this.pendingMediaUpload = undefined;
+    mxcLog(`Uploading to MXC URI ${mxcUri} for ${url}`);
+    while (true) {
+      try {
+        const resource = await fetch(url, {
+          dispatcher: new Agent({ connect: { rejectUnauthorized: false } }),
+        });
+        const contentType = resource.headers.get('Content-Type') ?? resource.headers.get('content-type') ?? 'application/octet-stream';
+        const buffer = Buffer.from(await resource.arrayBuffer());
+        console.warn('[MatrixUserBotClient] Uploading to Matrix:', mxcUri);
+        const [, serverName, mediaId] = /^mxc:\/\/(.*?)\/(.+)$/.exec(mxcUri)!;
+        await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
+          filename: contentType.replace(/\//g, '.'), // temporary, yet geek
+        }, buffer, 60000, undefined, contentType);
+        this.cachedMedia.set(url, mxcUri);
+        this.pendingMediaUpload = undefined;
+        break;
+      } catch (e) {
+        mxcLog(`Failed to upload to MXC URI ${mxcUri} for ${url}, scheduling retry: ${util.inspect(e)}`);
+        await new Promise<void>(r => setTimeout(r, 60000));
+      }
+    }
   }
 
   public async flushMedia(mxcUri: string) {
