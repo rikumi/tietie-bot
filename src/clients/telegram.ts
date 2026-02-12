@@ -65,11 +65,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
   }
 
   public async sendMessage(message: MessageToSend, fallbackToHostBot = false): Promise<GenericMessage> {
-    const bot = message.bridgedMessage?.userId && !fallbackToHostBot
-      ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId)
-      : this.bot;
     try {
-      if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
+      if (message.bridgedMessage?.userDisplayName) {
         prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
         applyMessageBridgingPrefix(message);
       }
@@ -97,9 +94,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
 
-      const messageSent = await bot.telegram[method](message.chatId, firstMessageContent, options);
+      const messageSent = await this.bot.telegram[method](message.chatId, firstMessageContent, options);
       if (message.media?.type === 'sticker') {
-        const secondMessage = await bot.telegram.sendMessage(message.chatId, message.text, options);
+        const secondMessage = await this.bot.telegram.sendMessage(message.chatId, message.text, options);
         return {
           ...message,
           ...await this.transformMessage(messageSent),
@@ -115,7 +112,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       autoreact.handleMessage(result);
       return result;
     } catch (e) {
-      if (!fallbackToHostBot && bot !== this.bot) {
+      if (!fallbackToHostBot) {
         console.warn('TelegramBotClient Puppeting bot cross-boundary error detected:', e);
         console.warn('-- trying with fallbackToHostBot = true');
         return await this.sendMessage(message, true);
