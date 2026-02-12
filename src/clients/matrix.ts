@@ -95,7 +95,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     if (message.media && message.media.size < 1024 * 1024) {
       const { type, mimeType, width, height, size, url, thumbnail } = message.media;
       const isSticker = type === 'sticker';
-      const isSupportedSticker = true; // isSticker && mimeType === 'image/jpeg';
+      const isSupportedSticker = isSticker && mimeType.startsWith('image/');
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : type === 'photo' ? 'image' : type;
       const mediaEvent: any = {
         body: '',
@@ -133,7 +133,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     if (message.media && message.mediaMessageId) {
       const { type, mimeType, width, height, size, url, thumbnail } = message.media;
       const isSticker = type === 'sticker';
-      const isSupportedSticker = true; // isSticker && mimeType === 'image/jpeg';
+      const isSupportedSticker = isSticker && mimeType.startsWith('image/');
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : type === 'photo' ? 'image' : type;
       await this.bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
