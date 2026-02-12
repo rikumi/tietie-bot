@@ -11,14 +11,15 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
     res.writeHead(404, 'Not Found').end();
     return;
   }
-  const url = await matrixClient.bot.doRequest('GET', `/_matrix/client/v1/media/download/${serverDomain}/${fileId}`)
+  const res = await matrixClient.bot.doRequest(
+    'GET', `/_matrix/client/v1/media/download/${serverDomain}/${fileId}`,
+    null, null, 60000, true, 'application/json',
+    /* noEncoding: */ true,
+  );
 
-  console.log('[Server] MatrixFileHandler fetching url:', url.toString());
-
-  const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
-  console.log('[Server] MatrixFileHandler got headers:', fetchRes.headers);
-  res.writeHead(200, 'OK', fetchRes.headers);
-  fetchRes.pipe(res);
+  res.writeHead(200, 'OK', res.headers);
+  res.write(res.body);
+  res.end();
 };
 
 export default fileHandler;
