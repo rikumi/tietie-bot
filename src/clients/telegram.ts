@@ -185,7 +185,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     const sticker = 'sticker' in message ? message.sticker : undefined;
     const photo = 'photo' in message ? message.photo.slice(-1)[0] : undefined;
-    const video = 'video' in message ? message.video : undefined;
+    const video = 'video' in message ? message.video
+      : 'animation' in message ? message.animation
+      : undefined;
     const audio = 'audio' in message ? message.audio : undefined;
     const file = 'document' in message ? message.document : undefined;
     const fileId = (video ?? photo ?? audio ?? sticker ?? file)?.file_id;
