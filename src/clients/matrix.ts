@@ -96,8 +96,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
-      const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
-      const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
+      const displayWidth = isSticker ? Math.round((message.media.width ?? 512) / 3) : message.media.width;
+      const displayHeight = isSticker ? Math.round((message.media.height ?? 512) / 3) : message.media.height;
       const mediaEvent: any = {
         body: '',
         msgtype: 'm.' + matrixMediaType,
@@ -134,8 +134,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const isSticker = message.media.type === 'sticker';
       const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
-      const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
-      const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
+      const displayWidth = isSticker ? Math.round((message.media.width ?? 512) / 3) : message.media.width;
+      const displayHeight = isSticker ? Math.round((message.media.height ?? 512) / 3) : message.media.height;
       await this.bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
         msgtype: 'm.' + matrixMediaType,
