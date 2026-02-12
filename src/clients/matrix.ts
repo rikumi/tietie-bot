@@ -75,8 +75,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
-    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
+    if (message.bridgedMessage?.userDisplayName) {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
       applyMessageBridgingPrefix(message);
     }
@@ -103,9 +102,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
       }
       const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
-      mediaMessageId = await bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
+      mediaMessageId = await this.bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
     }
-    const messageId = await bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
+    const messageId = await this.bot.sendEvent(message.chatId, 'm.room.message', matrixEventContent);
     return {
       ...message,
       clientName: 'matrix',
@@ -120,8 +119,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
-    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
+    if (message.bridgedMessage?.userDisplayName) {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage?.userDisplayName}: `);
       applyMessageBridgingPrefix(message);
     }
@@ -131,7 +129,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
       const displayWidth = isSticker ? (message.media.width ?? 512) / 2 : message.media.width;
       const displayHeight = isSticker ? (message.media.height ?? 512) / 2 : message.media.height;
-      await bot.sendEvent(message.chatId, 'm.room.message', {
+      await this.bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
         msgtype: 'm.' + matrixMediaType,
         'mx.rkm.tietie-bot.message': message,
@@ -145,7 +143,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       });
     }
     // MSC2676
-    await bot.sendEvent(message.chatId, 'm.room.message', {
+    await this.bot.sendEvent(message.chatId, 'm.room.message', {
       body: `* ${message.text}`,
       msgtype: 'm.text',
       'm.new_content': {
@@ -293,27 +291,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     }
     stack.push(escapeHTML(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
     return stack.reverse().join('');
-  }
-
-  private async getBotForUser(fromClient: string, fromUserId: string, chatId: string) {
-    const puppetBotToken = await getPuppet(fromClient, fromUserId, 'matrix');
-    if (!puppetBotToken) {
-      return this.bot;
-    }
-    const key = `${fromUserId}:${chatId}`;
-    if (!this.botPuppetMap.has(key)) {
-      const [accessToken, homeServer] = puppetBotToken.split('@');
-      const bot = new MatrixClient('https://' + homeServer, accessToken, new MemoryStorageProvider());
-      try {
-        const chatInfo = await bot.getRoomState(chatId);
-        console.error('[MatrixUserBotClient] getBotForUser success', chatInfo);
-        this.botPuppetMap.set(key, bot);
-      } catch (e) {
-        console.error('[MatrixUserBotClient] getBotForUser error', e);
-        return this.bot;
-      }
-    }
-    return this.botPuppetMap.get(key)!;
   }
 }
 
