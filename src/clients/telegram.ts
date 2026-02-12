@@ -11,6 +11,8 @@ import { setTelegramFileId } from 'src/database/tgfile';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';
 
+const MEDIA_SCALING = 0.4;
+
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   const extension = mime.extension(mimeType);
@@ -195,9 +197,16 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const fileUniqueId = anyAttachment?.file_unique_id;
 
     const thumbnail = anyAttachment && ('thumbnail' in anyAttachment) ? anyAttachment.thumbnail : undefined;
-    const thumbnailFileId = thumbnail?.file_id;
-    const thumbnailFileUniqueId = thumbnail?.file_unique_id;
-    const thumbnailUrl = thumbnailFileId && await fileIdToUrl(thumbnailFileId, thumbnailFileUniqueId!, 'image/jpeg');
+    const thumbnailResult = thumbnail && {
+      url: '',
+      width: Math.round(thumbnail.width * MEDIA_SCALING),
+      height: Math.round(thumbnail.height * MEDIA_SCALING),
+      size: thumbnail.file_size,
+      mimeType: 'image/jpeg',
+    };
+    if (thumbnail) {
+      thumbnailResult!.url = await fileIdToUrl(thumbnail.file_id, thumbnail.file_unique_id, thumbnailResult!.mimeType);
+    }
 
     if (!fileId) {
       return result;
@@ -214,12 +223,12 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         mimeType: sticker?.is_video ? 'video/webm' : 'image/jpeg',
         size: sticker.file_size ?? 0,
         url: '',
-        width: sticker.width,
-        height: sticker.height,
+        thumbnail: thumbnailResult,
+        width: Math.round(sticker.width * MEDIA_SCALING),
+        height: Math.round(sticker.height * MEDIA_SCALING),
         telegramFileId: sticker.file_id,
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
-      result.media.thumbnailUrl = thumbnailUrl;
     } else if (video) {
       prependMessageBridgingPrefix(result, '[视频] ');
       result.media = {
@@ -227,11 +236,11 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         mimeType: video.mime_type ?? 'video/mp4',
         size: video.file_size ?? 0,
         url: '',
-        width: video.width,
-        height: video.height,
+        thumbnail: thumbnailResult,
+        width: Math.round(video.width * MEDIA_SCALING),
+        height: Math.round(video.height * MEDIA_SCALING),
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
-      result.media.thumbnailUrl = thumbnailUrl;
     } else if (photo) {
       const mediaUrl = await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg');
       if ('has_media_spoiler' in message && message.has_media_spoiler) {
@@ -243,9 +252,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
           mimeType: 'image/jpeg',
           size: photo.file_size ?? 0,
           url: mediaUrl,
-          thumbnailUrl,
-          width: photo.width,
-          height: photo.height,
+          thumbnail: thumbnailResult,
+          width: Math.round(photo.width * MEDIA_SCALING),
+          height: Math.round(photo.height * MEDIA_SCALING),
         };
       }
     } else {
@@ -255,9 +264,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
         size: (file ?? audio)?.file_size ?? 0,
         url: '',
-        thumbnailUrl,
+        thumbnail: thumbnailResult,
       };
-      result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType);
+      result.media!.url = await fileIdToUrl(fileId, fileUniqueId!, result.media!.mimeType);
     }
     return result;
   }

@@ -93,20 +93,19 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     };
     let mediaMessageId: string | undefined;
     if (message.media && message.media.size < 1024 * 1024) {
-      const isSticker = message.media.type === 'sticker';
-      const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
-      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
-      const displayWidth = isSticker ? Math.round((message.media.width ?? 512) / 2) : message.media.width;
-      const displayHeight = isSticker ? Math.round((message.media.height ?? 512) / 2) : message.media.height;
+      const { type, mimeType, width, height, size, url, thumbnail } = message.media;
+      const isSticker = type === 'sticker';
+      const isSupportedSticker = isSticker && mimeType === 'image/jpeg';
+      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : type === 'photo' ? 'image' : type;
       const mediaEvent: any = {
         body: '',
         msgtype: 'm.' + matrixMediaType,
         'mx.rkm.tietie-bot.message': message,
-        url: await this.getMxcUriAndBeginUpload(message.media.url!),
+        url: await this.getMxcUriAndBeginUpload(url!),
         info: {
-          w: displayWidth, h: displayHeight, mimetype: message.media.mimeType!, size: message.media.size!,
-          thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
-          thumbnail_info: { w: displayWidth, h: displayHeight }
+          w: width, h: height, mimetype: mimeType!, size: size!,
+          thumbnail_url: thumbnail && await this.getMxcUriAndBeginUpload(thumbnail.url),
+          thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimeType: thumbnail.mimeType, size: thumbnail.size }
         },
       }
       const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
@@ -132,11 +131,10 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       applyMessageBridgingPrefix(message);
     }
     if (message.media && message.mediaMessageId) {
-      const isSticker = message.media.type === 'sticker';
-      const isSupportedSticker = isSticker && message.media.mimeType === 'image/jpeg';
-      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : message.media.type === 'photo' ? 'image' : message.media.type;
-      const displayWidth = isSticker ? Math.round((message.media.width ?? 512) / 2) : message.media.width;
-      const displayHeight = isSticker ? Math.round((message.media.height ?? 512) / 2) : message.media.height;
+      const { type, mimeType, width, height, size, url, thumbnail } = message.media;
+      const isSticker = type === 'sticker';
+      const isSupportedSticker = isSticker && mimeType === 'image/jpeg';
+      const matrixMediaType = isSticker && !isSupportedSticker ? 'video' : type === 'photo' ? 'image' : type;
       await this.bot.sendEvent(message.chatId, 'm.room.message', {
         body: '[已编辑媒体]',
         msgtype: 'm.' + matrixMediaType,
@@ -144,11 +142,11 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         'm.new_content': {
           body: '[已编辑媒体]',
           msgtype: 'm.' + matrixMediaType,
-          url: await this.getMxcUriAndBeginUpload(message.media.url!),
+          url: await this.getMxcUriAndBeginUpload(url!),
           info: {
-            w: displayWidth, h: displayHeight, mimetype: message.media.mimeType!, size: message.media.size!,
-            thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
-            thumbnail_info: { w: displayWidth, h: displayHeight }
+            w: width, h: height, mimetype: mimeType!, size: size!,
+            thumbnail_url: thumbnail && await this.getMxcUriAndBeginUpload(thumbnail.url),
+            thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimeType: thumbnail.mimeType, size: thumbnail.size }
           },
         },
         'm.relates_to': { rel_type: 'm.replace', event_id: message.mediaMessageId },

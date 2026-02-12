@@ -29,12 +29,20 @@ export interface GenericMessage {
 export interface GenericMedia {
   type: 'sticker' | 'photo' | 'video' | 'file';
   url: string;
-  thumbnailUrl?: string;
+  thumbnail?: GenericMediaThumbnail;
   mimeType: string;
   size: number;
   width?: number;
   height?: number;
   telegramFileId?: string;
+}
+
+export interface GenericMediaThumbnail {
+  url: string;
+  width?: number;
+  height?: number;
+  size?: number;
+  mimeType: string;
 }
 
 export interface GenericMessageEntity {
