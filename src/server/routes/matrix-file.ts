@@ -11,14 +11,14 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
     res.writeHead(404, 'Not Found').end();
     return;
   }
-  const res = await matrixClient.bot.doRequest(
+  const fetchRes = await matrixClient.bot.doRequest(
     'GET', `/_matrix/client/v1/media/download/${serverDomain}/${fileId}`,
     null, null, 60000, true, 'application/json',
     /* noEncoding: */ true,
   );
 
-  res.writeHead(200, 'OK', res.headers);
-  res.write(res.body);
+  res.writeHead(200, 'OK', fetchRes.headers);
+  res.write(fetchRes.body);
   res.end();
 };
 
