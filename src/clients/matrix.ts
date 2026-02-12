@@ -103,8 +103,10 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         msgtype: 'm.' + matrixMediaType,
         'mx.rkm.tietie-bot.message': message,
         url: await this.getMxcUriAndBeginUpload(message.media.url!),
-        thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
-        info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
+        info: {
+          h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size!,
+          thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
+        },
       }
       const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
       mediaMessageId = await this.bot.sendEvent(message.chatId, matrixEventType, mediaEvent);
@@ -142,8 +144,10 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
           body: '[已编辑媒体]',
           msgtype: 'm.' + matrixMediaType,
           url: await this.getMxcUriAndBeginUpload(message.media.url!),
-          thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
-          info: { h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size! },
+          info: {
+            h: displayHeight, w: displayWidth, mimetype: message.media.mimeType!, size: message.media.size!,
+            thumbnail_url: message.media.thumbnailUrl && await this.getMxcUriAndBeginUpload(message.media.thumbnailUrl),
+          },
         },
         'm.relates_to': { rel_type: 'm.replace', event_id: message.mediaMessageId },
       });
