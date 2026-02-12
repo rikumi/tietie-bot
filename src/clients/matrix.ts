@@ -105,7 +105,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         info: {
           w: width, h: height, mimetype: mimeType!, size: size!,
           thumbnail_url: thumbnail && await this.getMxcUriAndBeginUpload(thumbnail.url),
-          thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimeType: thumbnail.mimeType, size: thumbnail.size }
+          thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimetype: thumbnail.mimeType, size: thumbnail.size }
         },
       }
       const matrixEventType = matrixMediaType === 'sticker' ? 'm.sticker' : 'm.room.message';
@@ -146,7 +146,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
           info: {
             w: width, h: height, mimetype: mimeType!, size: size!,
             thumbnail_url: thumbnail && await this.getMxcUriAndBeginUpload(thumbnail.url),
-            thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimeType: thumbnail.mimeType, size: thumbnail.size }
+            thumbnail_info: thumbnail && { w: thumbnail.width, h: thumbnail.height, mimetype: thumbnail.mimeType, size: thumbnail.size }
           },
         },
         'm.relates_to': { rel_type: 'm.replace', event_id: message.mediaMessageId },
