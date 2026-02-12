@@ -9,7 +9,6 @@ import * as autoreact from '../commands/autoreact';
 import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
-import { getPuppet } from 'src/database/puppet';
 import mime from 'mime-types';
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
@@ -41,8 +40,6 @@ export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string
 
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
   public bot: Telegraf<Context<Update>> = new Telegraf(config.telegram.token);
-
-  private botPuppetMap = new Map<string, Telegraf<Context<Update>>>();
 
   public constructor() {
     super();
@@ -302,26 +299,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (type === 'mention') {
       return { type: 'mention', offset, length, url: `https://t.me/${substring.replace(/^@/, '')}` };
     }
-  }
-
-  private async getBotForUser(fromClient: string, fromUserId: string, chatId: string) {
-    const puppetBotToken = await getPuppet(fromClient, fromUserId, 'telegram');
-    if (!puppetBotToken) {
-      return this.bot;
-    }
-    const key = `${fromUserId}:${chatId}`;
-    if (!this.botPuppetMap.has(key)) {
-      const bot = new Telegraf(puppetBotToken);
-      try {
-        const chatInfo = await bot.telegram.getChat(chatId);
-        console.error('[TelegramBotClient] getBotForUser success', chatInfo);
-        this.botPuppetMap.set(key, bot);
-      } catch (e) {
-        console.error('[TelegramBotClient] getBotForUser error', e);
-        return this.bot;
-      }
-    }
-    return this.botPuppetMap.get(key)!;
   }
 }
 

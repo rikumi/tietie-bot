@@ -8,7 +8,6 @@ import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, Mem
 import config from '../../config.json';
 import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
-import { getPuppet } from 'src/database/puppet';
 
 const escapeHTML = (str: string) => str
   .replace(/&/g, '&amp;')
