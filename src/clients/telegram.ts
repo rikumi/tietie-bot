@@ -11,7 +11,7 @@ import { setTelegramFileId } from 'src/database/tgfile';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';
 
-const MEDIA_SCALING = 0.4;
+const MEDIA_SCALING = 1 / 3;
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
