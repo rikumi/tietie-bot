@@ -212,6 +212,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
     } else if (video) {
+      prependMessageBridgingPrefix(result, '[视频] ');
       result.media = {
         type: 'video',
         mimeType: video.mime_type ?? 'video/mp4',
@@ -226,6 +227,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if ('has_media_spoiler' in message && message.has_media_spoiler) {
         prependMessageBridgingPrefix(result, `[带有内容警告的媒体] ${mediaUrl} `);
       } else {
+        prependMessageBridgingPrefix(result, '[图片] ');
         result.media = {
           type: 'photo',
           mimeType: 'image/jpeg',
