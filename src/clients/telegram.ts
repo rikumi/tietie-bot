@@ -190,8 +190,14 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       : undefined;
     const audio = 'audio' in message ? message.audio : undefined;
     const file = 'document' in message ? message.document : undefined;
-    const fileId = (video ?? photo ?? audio ?? sticker ?? file)?.file_id;
-    const fileUniqueId = (video ?? photo ?? audio ?? sticker ?? file)?.file_unique_id;
+    const anyAttachment = video ?? photo ?? audio ?? sticker ?? file;
+    const fileId = anyAttachment?.file_id;
+    const fileUniqueId = anyAttachment?.file_unique_id;
+
+    const thumbnail = anyAttachment && ('thumbnail' in anyAttachment) ? anyAttachment.thumbnail : undefined;
+    const thumbnailFileId = thumbnail?.file_id;
+    const thumbnailFileUniqueId = thumbnail?.file_unique_id;
+    const thumbnailUrl = thumbnailFileId && await fileIdToUrl(thumbnailFileId, thumbnailFileUniqueId!, 'image/jpeg');
 
     if (!fileId) {
       return result;
@@ -213,6 +219,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         telegramFileId: sticker.file_id,
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
+      result.media.thumbnailUrl = thumbnailUrl;
     } else if (video) {
       prependMessageBridgingPrefix(result, '[视频] ');
       result.media = {
@@ -224,6 +231,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         height: video.height,
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media?.mimeType);
+      result.media.thumbnailUrl = thumbnailUrl;
     } else if (photo) {
       const mediaUrl = await fileIdToUrl(fileId, fileUniqueId!, 'image/jpeg');
       if ('has_media_spoiler' in message && message.has_media_spoiler) {
@@ -235,6 +243,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
           mimeType: 'image/jpeg',
           size: photo.file_size ?? 0,
           url: mediaUrl,
+          thumbnailUrl,
           width: photo.width,
           height: photo.height,
         };
@@ -246,6 +255,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         mimeType: (file ?? audio)?.mime_type ?? 'application/octet-stream',
         size: (file ?? audio)?.file_size ?? 0,
         url: '',
+        thumbnailUrl,
       };
       result.media.url = await fileIdToUrl(fileId, fileUniqueId!, result.media.mimeType);
     }

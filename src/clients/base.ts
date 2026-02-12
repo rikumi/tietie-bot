@@ -29,6 +29,7 @@ export interface GenericMessage {
 export interface GenericMedia {
   type: 'sticker' | 'photo' | 'video' | 'file';
   url: string;
+  thumbnailUrl?: string;
   mimeType: string;
   size: number;
   width?: number;
