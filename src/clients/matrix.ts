@@ -18,7 +18,7 @@ const escapeHTML = (str: string) => str
 
 const mxcLogFile = path.resolve(__dirname, '../../matrix-log.txt');
 
-export const mxcToUrl = async (mxcUri: string) => {
+export const mxcToUrl = (mxcUri: string) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   return `${serverRoot}/mxc/${mxcUri.replace(/^mxc:\/\//, '')}`;
 };
