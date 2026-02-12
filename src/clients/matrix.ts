@@ -19,6 +19,11 @@ const escapeHTML = (str: string) => str
 
 const mxcLogFile = path.resolve(__dirname, '../../matrix-log.txt');
 
+export const mxcToUrl = async (mxcUri: string) => {
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
+  return `${serverRoot}/mxc/${mxcUri.replace(/^mxc:\/\//, '')}`;
+};
+
 if (fs.existsSync(mxcLogFile)) {
   fs.rmSync(mxcLogFile, { recursive: true, force: true });
 }
@@ -170,7 +175,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
         image: 'photo',
         video: 'video',
       } as any)[attachmentType] || 'file',
-      url: this.bot.mxcToHttp(message.content.url),
+      url: mxcToUrl(message.content.url),
       mimeType: message.content.info?.mimetype,
       size: message.content.info?.size,
     } : undefined;
