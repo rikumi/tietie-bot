@@ -67,53 +67,65 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     this.bot.stop();
   }
 
-  public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    const bot = message.bridgedMessage?.userId ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId) : this.bot;
-    if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
-      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
-      applyMessageBridgingPrefix(message);
-    }
-    const method = ({
-      sticker: 'sendSticker',
-      photo: 'sendPhoto',
-      video: 'sendVideo',
-      file: 'sendDocument',
-      default: 'sendMessage',
-    } as const)[message.media?.type ?? 'default'] ?? 'sendMessage';
+  public async sendMessage(message: MessageToSend, fallbackToHostBot = false): Promise<GenericMessage> {
+    const bot = message.bridgedMessage?.userId && !fallbackToHostBot
+      ? await this.getBotForUser(message.bridgedMessage.clientName, message.bridgedMessage.userId, message.chatId)
+      : this.bot;
+    try {
+      if (message.bridgedMessage?.userDisplayName && bot === this.bot) {
+        prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
+        applyMessageBridgingPrefix(message);
+      }
+      const method = ({
+        sticker: 'sendSticker',
+        photo: 'sendPhoto',
+        video: 'sendVideo',
+        file: 'sendDocument',
+        default: 'sendMessage',
+      } as const)[message.media?.type ?? 'default'] ?? 'sendMessage';
 
-    const entities = message.entities?.map(entity => ({
-      type: entity.type.replace(/^(link|mention)$/, 'text_link'),
-      offset: entity.offset,
-      length: entity.length,
-      url: entity.url,
-      language: entity.codeLanguage,
-    }));
-    const options = {
-      reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
-      caption: message.media ? message.text : undefined,
-      [message.media ? 'caption_entities' : 'entities']: entities,
-      disable_notification: true,
-      ...message.platformMessageExtra ?? {},
-    };
-    const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
+      const entities = message.entities?.map(entity => ({
+        type: entity.type.replace(/^(link|mention)$/, 'text_link'),
+        offset: entity.offset,
+        length: entity.length,
+        url: entity.url,
+        language: entity.codeLanguage,
+      }));
+      const options = {
+        reply_to_message_id: message.messageIdReplied ? Number(message.messageIdReplied) : undefined,
+        caption: message.media ? message.text : undefined,
+        [message.media ? 'caption_entities' : 'entities']: entities,
+        disable_notification: true,
+        ...message.platformMessageExtra ?? {},
+      };
+      const firstMessageContent = message.media?.telegramFileId ?? message.media?.url ?? message.text;
 
-    const messageSent = await bot.telegram[method](message.chatId, firstMessageContent, options);
-    if (message.media?.type === 'sticker') {
-      const secondMessage = await bot.telegram.sendMessage(message.chatId, message.text, options);
-      return {
+      const messageSent = await bot.telegram[method](message.chatId, firstMessageContent, options);
+      if (message.media?.type === 'sticker') {
+        const secondMessage = await bot.telegram.sendMessage(message.chatId, message.text, options);
+        return {
+          ...message,
+          ...await this.transformMessage(messageSent),
+          mediaMessageId: String(messageSent.message_id),
+          messageId: String(secondMessage.message_id),
+        };
+      }
+      const result: GenericMessage = {
         ...message,
         ...await this.transformMessage(messageSent),
-        mediaMessageId: String(messageSent.message_id),
-        messageId: String(secondMessage.message_id),
       };
+      // Someone doubts if messages sent by bot itself can be auto-reacted, so let's support it here because why not.
+      autoreact.handleMessage(result);
+      return result;
+    } catch (e) {
+      if (!fallbackToHostBot && bot !== this.bot) {
+        console.warn('TelegramBotClient Puppeting bot cross-boundary error detected:', e);
+        console.warn('-- trying with fallbackToHostBot = true');
+        return await this.sendMessage(message, true);
+      }
+      console.error('TelegramBotClient Error sending message', e);
+      throw e;
     }
-    const result: GenericMessage = {
-      ...message,
-      ...await this.transformMessage(messageSent),
-    };
-    // Someone doubts if messages sent by bot itself can be auto-reacted, so let's support it here because why not.
-    autoreact.handleMessage(result);
-    return result;
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
