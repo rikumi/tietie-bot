@@ -5,6 +5,7 @@ export interface GenericMessage {
   userHandle?: string;
   userDisplayName?: string;
   userLink?: string;
+  userAvatarUrl?: string;
   chatId: string;
   messageId: string;
   mediaMessageId?: string;

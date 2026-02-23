@@ -35,8 +35,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public bot: MatrixClient;
   public botInfo: IWhoAmI | undefined;
 
-  private botPuppetMap = new Map<string, MatrixClient>();
-
   private cachedMedia = new Map<string, string>();
   private pendingMediaUpload: Promise<void> | undefined;
 
@@ -45,6 +43,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const storage = new SimpleFsStorageProvider(path.resolve(__dirname, '../../matrix-bot-storage.json'));
     const homeServer = config.matrix.server || 'matrix.org';
     const accessToken = config.matrix.token;
+    if (!accessToken) return;
+
     this.bot = new MatrixClient('https://' + homeServer, accessToken, storage);
     this.bot.on('room.message', this.handleMessage);
     this.bot.on('room.event', (roomId, message) => {

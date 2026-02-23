@@ -2,13 +2,17 @@ import { IncomingMessage, ServerResponse } from 'http';
 import telegramClient from '../../clients/telegram';
 import { request } from 'https';
 import { getTelegramFileId } from 'src/database/tgfile';
+import mime from 'mime-types';
 
-export const ROUTE = /^\/(tgfile|tguniq)\/(.+)\/(.*?)$/;
+export const ROUTE = /^\/f\/([^.]+)\.([\w-]+)(\.gz)?$/;
 
 const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
-  const isUniqueId = RegExp.$1 === 'tguniq';
-  const mimeType = RegExp.$2;
-  const id = RegExp.$3;
+  const id = RegExp.$1;
+  const isUniqueId = id?.length <= 20;
+  const extension = RegExp.$2;
+  const isGzip = !!RegExp.$3;
+  const mimeType = mime.lookup(extension);
+
   if (!id || !mimeType) {
     res.writeHead(404, 'Not Found').end();
     return;
@@ -23,10 +27,10 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
   console.log('[Server] TelegramFileHandler got headers:', mimeType, fetchRes.headers['content-length']);
   const headers: any = {
-    'content-type': mimeType.replace(/\+gzip$/, ''),
+    'content-type': mimeType,
     'content-length': fetchRes.headers['content-length'],
   };
-  if (mimeType.endsWith('+gzip')) {
+  if (isGzip) {
     headers['content-encoding'] = 'gzip';
   }
   res.writeHead(200, 'OK', headers);

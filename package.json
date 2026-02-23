@@ -29,6 +29,7 @@
     "dayjs": "^1.11.10",
     "discord-emoji": "^2.4.0",
     "discord-user-bots": "^1.6.0",
+    "discord.js": "^14.25.1",
     "mathjs": "^13.0.1",
     "matrix-bot-sdk": "^0.7.1",
     "mime-types": "^2.1.35",

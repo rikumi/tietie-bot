@@ -8,6 +8,10 @@
     "username": "rikumi_tietie_bot",
     "token": ""
   },
+  "discord-bot": {
+    "token": "",
+    "clientId": ""
+  },
   "matrix": {
     "username": "rikumi_tietie_bot",
     "server": "matrix.org",

@@ -20,7 +20,7 @@ export const applyMessageBridgingPrefix = (message: Pick<GenericMessage, 'text' 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
   private recentBridgedMessages = new Map<string, [string, string | undefined]>();
-  public static readonly CLIENT_NAMES = ['telegram', 'discord', 'matrix'] as const;
+  public static readonly CLIENT_NAMES = ['telegram', 'discord', 'discord-bot', 'matrix'] as const;
 
   public async start() {
     for (const clientName of DefaultClientSet.CLIENT_NAMES) {

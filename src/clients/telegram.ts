@@ -27,6 +27,11 @@ export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, m
   return `${serverRoot}/f/${fileId}.${extension}${gzipped ? '.gz' : ''}`;
 };
 
+export const userIdToAvatarUrl = (userId: number) => {
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
+  return `${serverRoot}/tavatar/${userId}`;
+};
+
 export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null) => {
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   if (fileUniqueId) {
@@ -171,6 +176,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       userHandle: this.getUserHandle(message.from),
       userDisplayName: this.getUserDisplayName(message.from),
       userLink: this.getUserLink(message.from),
+      userAvatarUrl: this.getUserAvatarUrl(message.from),
       chatId: String(message.chat.id),
       messageId: String(message.message_id),
       messageIdReplied: 'reply_to_message' in message && String(message.reply_to_message?.message_id ?? '') || undefined,
@@ -283,6 +289,11 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (!user) return;
     const { username, id } = user;
     return username ? `https://t.me/${username}` : `tg://user?id=${id}`;
+  }
+
+  private getUserAvatarUrl(user: User | undefined): string | undefined {
+    if (!user) return;
+    return userIdToAvatarUrl(user.id);
   }
 
   /**
