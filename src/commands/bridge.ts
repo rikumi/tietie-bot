@@ -1,4 +1,4 @@
-import { DefaultClientSet } from 'src/clients';
+import defaultClientSet, { DefaultClientSet } from 'src/clients';
 import { GenericMessage } from 'src/clients/base';
 import { getBidirectionalBridgesByChat, registerBidirectionalBridge, removeBidirectionalBridge } from 'src/database/bridge';
 import config from '../../config.json';
@@ -30,9 +30,20 @@ export const handleSlashCommand = async (message: GenericMessage) => {
   }
   await registerBidirectionalBridge(message.clientName, message.chatId, clientName, chatId);
   const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
-  return [
+  const replyMessage = [
     `已尝试双向绑定到会话 ${clientName}: ${chatId}`,
     '',
-    clientName === 'discord-bot' ? `点击链接邀请 Bot 到 Discord 服务器（如果是带锁频道，请给予加入权限）：\n${serverRoot}/discord-invite\n$}` : '',
-    ].join('\n').trim();
+    clientName === 'discord-bot' ? `点击链接邀请 Bot 到 Discord 服务器（如果是带锁频道，请给予加入权限）：\n${serverRoot}/discord-invite\n` : '',
+  ].join('\n').trim();
+
+  await defaultClientSet.sendBotMessage({
+    clientName: message.clientName,
+    chatId: message.chatId,
+    text: replyMessage,
+    platformMessageExtra: {
+      disable_web_page_preview: true,
+    },
+  });
+
+  return;
 };
