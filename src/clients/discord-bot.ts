@@ -51,7 +51,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.botReady = new Promise(r => this.client!.on(Events.ClientReady, () => r()));
 
     this.client.on(Events.MessageCreate, async (message) => {
-      if (message.author.id === this.client?.user?.id) return;
+      if (message.author.id === this.client?.user?.id || message.webhookId) return;
       const transformedMessage = await this.transformMessage(message);
       this.emit('message', transformedMessage);
     });
@@ -63,7 +63,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.client.login(config['discord-bot'].token);
 
     await this.botReady;
-    console.log(`[DiscordBotClient] Started! Bot invite link: https://discordapp.com/oauth2/authorize?client_id=${config['discord-bot'].clientId}&scope=bot`)
+    console.log(`[DiscordBotClient] Started! Bot invite link: https://discordapp.com/oauth2/authorize?client_id=${config['discord-bot'].clientId}&permissions=8533303838112832&scope=bot`)
   }
 
   public async stop(): Promise<void> {
