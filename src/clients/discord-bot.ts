@@ -82,22 +82,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
 
-    let sender: Channel | Webhook = channel;
-    if (message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel)) {
-      try {
-        if (!this.webhookForChannel.has(channel.id)) {
-          const existingWebhook = (await channel.fetchWebhooks()).find(webhook => webhook.applicationId === config['discord-bot'].clientId);
-          const webhook = existingWebhook ?? await channel.createWebhook({
-            name: this.client?.user?.displayName ?? config.generalName,
-            avatar: this.client?.user?.avatarURL() ?? '',
-          });
-          this.webhookForChannel.set(channel.id, webhook);
-        }
-        sender = this.webhookForChannel.get(channel.id)!;
-      } catch (e) {
-        console.error(`Failed to create webhook for channel ${channel.id}: ${e}`);
-      }
-    }
+    const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
+    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
 
     // apply bridging prefix for non-webhook messages only
     if (sender === channel && message.bridgedMessage?.userDisplayName) {
@@ -128,6 +114,12 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
     await channel.messages.edit(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim())
+  }
+
+  public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
+    await this.rest?.put(Routes.applicationCommands(config['discord-bot'].clientId), {
+      body: commandList.map(({ command, description }) => ({ name: command, description })),
+    });
   }
 
   private async transformMessage(message: Message): Promise<GenericMessage> {
@@ -176,10 +168,20 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     }
   }
 
-  public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
-    await this.rest?.put(Routes.applicationCommands(config['discord-bot'].clientId), {
-      body: commandList.map(({ command, description }) => ({ name: command, description })),
-    });
+  private async getWebhookForChannel(channel: TextChannel): Promise<Webhook | undefined> {
+    try {
+      if (!this.webhookForChannel.has(channel.id)) {
+        const existingWebhook = (await channel.fetchWebhooks()).find(webhook => webhook.applicationId === config['discord-bot'].clientId);
+        const webhook = existingWebhook ?? await channel.createWebhook({
+          name: this.client?.user?.displayName ?? config.generalName,
+          avatar: this.client?.user?.avatarURL() ?? '',
+        });
+        this.webhookForChannel.set(channel.id, webhook);
+      }
+      return this.webhookForChannel.get(channel.id)!;
+    } catch (e) {
+      console.error(`Failed to create webhook for channel ${channel.id}: ${e}`);
+    }
   }
 }
 
