@@ -11,7 +11,7 @@ const avatarHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const firstPic = photos[0][0];
 
   // the link has the bot token and should never be exposed to the user
-  const url = await telegramClient.bot.telegram.getFileLink(firstPic.file_unique_id);
+  const url = await telegramClient.bot.telegram.getFileLink(firstPic.file_id);
 
   const fetchRes = await new Promise<IncomingMessage>(r => request(url).on('response', r).end());
   console.log('[Server] TelegramFileHandler got headers:', 'image/jpeg', fetchRes.headers['content-length']);

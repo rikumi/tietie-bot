@@ -83,8 +83,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (!channel.isSendable()) {
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
-    const sender = (message.bridgedMessage && (channel instanceof TextChannel) ? await channel.createWebhook({
-      name: message.bridgedMessage.userDisplayName ?? '',
+    const sender = (message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel) ? await channel.createWebhook({
+      name: message.bridgedMessage.userDisplayName,
       avatar: message.bridgedMessage.userAvatarUrl ?? '',
     }) : channel);
 
