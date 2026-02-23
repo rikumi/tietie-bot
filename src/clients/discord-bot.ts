@@ -72,10 +72,6 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
-    if (message.bridgedMessage?.userDisplayName) {
-      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
-      applyMessageBridgingPrefix(message);
-    }
     const channel = await this.client?.channels.fetch(message.chatId);
     if (!channel) {
       throw new Error(`Channel ${message.chatId} not found`);
@@ -87,6 +83,12 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       name: message.bridgedMessage.userDisplayName,
       avatar: message.bridgedMessage.userAvatarUrl ?? '',
     }) : channel);
+
+    // apply bridging prefix for non-webhook messages only
+    if (sender === channel && message.bridgedMessage?.userDisplayName) {
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      applyMessageBridgingPrefix(message);
+    }
 
     const messageSent = await sender.send({
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
