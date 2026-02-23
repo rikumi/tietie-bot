@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { Channel, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
+import discord, { Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
@@ -102,10 +102,6 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 
   public async editMessage(message: MessageToEdit): Promise<void> {
-    if (message.bridgedMessage?.userDisplayName) {
-      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
-      applyMessageBridgingPrefix(message);
-    }
     const channel = await this.client?.channels.fetch(message.chatId);
     if (!channel) {
       throw new Error(`Channel ${message.chatId} not found`);
@@ -113,7 +109,15 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (!channel.isSendable()) {
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
-    await channel.messages.edit(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim())
+    const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
+    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel.messages;
+
+    // apply bridging prefix for non-webhook messages only
+    if (sender === channel.messages && message.bridgedMessage?.userDisplayName) {
+      prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
+      applyMessageBridgingPrefix(message);
+    }
+    await sender.edit(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
