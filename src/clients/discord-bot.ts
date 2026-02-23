@@ -110,14 +110,15 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
-    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel.messages;
+    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
 
     // apply bridging prefix for non-webhook messages only
-    if (sender === channel.messages && message.bridgedMessage?.userDisplayName) {
+    if (sender === channel && message.bridgedMessage?.userDisplayName) {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
       applyMessageBridgingPrefix(message);
     }
-    await sender.edit(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim());
+    const editMessage = (sender instanceof Webhook ? sender.editMessage.bind(sender) : sender.messages.edit.bind(sender.messages));
+    await editMessage(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim());
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
