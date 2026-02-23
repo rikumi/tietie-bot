@@ -86,10 +86,12 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel)) {
       try {
         if (!this.webhookForChannel.has(channel.id)) {
-          this.webhookForChannel.set(channel.id, await channel.createWebhook({
-            name: message.bridgedMessage.userDisplayName,
-            avatar: message.bridgedMessage.userAvatarUrl ?? '',
-          }));
+          const existingWebhook = (await channel.fetchWebhooks()).find(webhook => webhook.applicationId === config['discord-bot'].clientId);
+          const webhook = existingWebhook ?? await channel.createWebhook({
+            name: this.client?.user?.displayName ?? config.generalName,
+            avatar: this.client?.user?.avatarURL() ?? '',
+          });
+          this.webhookForChannel.set(channel.id, webhook);
         }
         sender = this.webhookForChannel.get(channel.id)!;
       } catch (e) {
