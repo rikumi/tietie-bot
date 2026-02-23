@@ -1,6 +1,7 @@
 import { DefaultClientSet } from 'src/clients';
 import { GenericMessage } from 'src/clients/base';
 import { getBidirectionalBridgesByChat, registerBidirectionalBridge, removeBidirectionalBridge } from 'src/database/bridge';
+import config from '../../config.json';
 
 export const USAGE = `<platform> <chatId> | rm | list 在多个会话之间建立绑定关系`;
 
@@ -28,5 +29,10 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     return '平台名无效，请使用正确的平台名继续绑定';
   }
   await registerBidirectionalBridge(message.clientName, message.chatId, clientName, chatId);
-  return `已尝试双向绑定到会话 ${clientName}: ${chatId}`;
+  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
+  return [
+    `已尝试双向绑定到会话 ${clientName}: ${chatId}`,
+    '',
+    clientName === 'discord-bot' ? `点击链接邀请 Bot 到 Discord 服务器（如果是带锁频道，请给予加入权限）：\n${serverRoot}/discord-invite\n$}` : '',
+    ].join('\n').trim();
 };

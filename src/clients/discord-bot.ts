@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
+import discord, { Events, GatewayIntentBits, Interaction, Message, PermissionsBitField, Routes, TextChannel, Webhook } from 'discord.js';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
@@ -33,7 +33,7 @@ if (!crypto.getRandomValues) {
   crypto.getRandomValues = getRandomValues as any; // usable
 }
 
-export class DiscordUserBotClient extends EventEmitter implements GenericClient {
+export class DiscordBotClient extends EventEmitter implements GenericClient {
   public rest: discord.REST | undefined;
   public client: discord.Client | undefined;
   public webhook: discord.Webhook | undefined;
@@ -65,7 +65,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.client.login(config['discord-bot'].token);
 
     await this.botReady;
-    console.log(`[DiscordBotClient] Started! Bot invite link: https://discordapp.com/oauth2/authorize?client_id=${config['discord-bot'].clientId}&permissions=8533303838112832&scope=bot`)
+    console.log(`[DiscordBotClient] Started! Bot invite link: ${this.getInviteLink()}`)
   }
 
   public async stop(): Promise<void> {
@@ -125,6 +125,10 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     await this.rest?.put(Routes.applicationCommands(config['discord-bot'].clientId), {
       body: commandList.map(({ command, description }) => ({ name: command, description })),
     });
+  }
+
+  public getInviteLink() {
+    return `https://discordapp.com/oauth2/authorize?client_id=${config['discord-bot'].clientId}&permissions=8533303838112832&scope=bot`;
   }
 
   private async transformMessage(message: Message): Promise<GenericMessage> {
@@ -190,4 +194,4 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   }
 }
 
-export default new DiscordUserBotClient();
+export default new DiscordBotClient();
