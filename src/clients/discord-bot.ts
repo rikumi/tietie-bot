@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel } from 'discord.js';
+import discord, { Channel, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
@@ -38,6 +38,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
   public client: discord.Client | undefined;
   public webhook: discord.Webhook | undefined;
   public botReady: Promise<void> | undefined;
+
+  private webhookForChannel = new Map<string, discord.Webhook>();
 
   public async start(): Promise<void> {
     if (this.client) {
@@ -79,10 +81,21 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     if (!channel.isSendable()) {
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
-    const sender = (message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel) ? await channel.createWebhook({
-      name: message.bridgedMessage.userDisplayName,
-      avatar: message.bridgedMessage.userAvatarUrl ?? '',
-    }) : channel);
+
+    let sender: Channel | Webhook = channel;
+    if (message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel)) {
+      try {
+        if (!this.webhookForChannel.has(channel.id)) {
+          this.webhookForChannel.set(channel.id, await channel.createWebhook({
+            name: message.bridgedMessage.userDisplayName,
+            avatar: message.bridgedMessage.userAvatarUrl ?? '',
+          }));
+        }
+        sender = this.webhookForChannel.get(channel.id)!;
+      } catch (e) {
+        console.error(`Failed to create webhook for channel ${channel.id}: ${e}`);
+      }
+    }
 
     // apply bridging prefix for non-webhook messages only
     if (sender === channel && message.bridgedMessage?.userDisplayName) {
@@ -91,6 +104,8 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     }
 
     const messageSent = await sender.send({
+      username: message.bridgedMessage?.userDisplayName,
+      avatarURL: message.bridgedMessage?.userAvatarUrl,
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
