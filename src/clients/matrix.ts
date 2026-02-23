@@ -92,7 +92,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       'mx.rkm.tietie-bot.message': message,
     };
     let mediaMessageId: string | undefined;
-    if (message.media && message.media.size < 1024 * 1024) {
+    if (message.media) {
       const { type, mimeType, width, height, size, url, thumbnail } = message.media;
       const isSticker = type === 'sticker';
       const isSupportedSticker = isSticker && mimeType.startsWith('image/');
