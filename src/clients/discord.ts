@@ -9,9 +9,9 @@ import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 
 const convertDiscordMessage = (text: string) => {
-  const rtlTextRegex = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF]+)/g;
-  if (rtlTextRegex.test(text)) {
-    text = text.replace(rtlTextRegex, '(RTL: \u202B$1\u202C)')
+  const rtlCharRegexp = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF])/g;
+  if (rtlCharRegexp.test(text)) {
+    text = text.replace(rtlCharRegexp, '$1\u202C'); // Force switch back to LTR for major chat clients
   }
   return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
     for (const category of Object.keys(dismoji)) {
