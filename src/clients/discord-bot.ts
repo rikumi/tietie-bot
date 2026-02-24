@@ -85,15 +85,20 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     }
 
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
-    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
+    const target = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
+
+    // workaround for missing messages property on Webhook class
+    Object.assign(target, {
+      messages: channel.messages,
+    });
 
     // apply bridging prefix for non-webhook messages only
-    if (sender === channel && message.bridgedMessage?.userDisplayName) {
+    if (target === channel && message.bridgedMessage?.userDisplayName) {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
       applyMessageBridgingPrefix(message);
     }
 
-    const messageSent = await sender.send({
+    const messageSent = await target.send({
       username: message.bridgedMessage?.userDisplayName,
       avatarURL: message.bridgedMessage?.userAvatarUrl,
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
