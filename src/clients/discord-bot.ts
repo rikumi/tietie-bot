@@ -6,6 +6,7 @@ import discord, { Events, GatewayIntentBits, Interaction, Message, PermissionsBi
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
+import { isDiscordWebhookEnabled } from 'src/database/discord';
 
 const convertDiscordMessage = (text: string) => {
   const rtlCharRegexp = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF])/g;
@@ -179,6 +180,9 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   }
 
   private async getWebhookForChannel(channel: TextChannel): Promise<Webhook | undefined> {
+    if (!await isDiscordWebhookEnabled(channel.id)) {
+      return undefined;
+    }
     try {
       if (!this.webhookForChannel.has(channel.id)) {
         const existingWebhook = (await channel.fetchWebhooks()).find(webhook => webhook.applicationId === config['discord-bot'].clientId);
