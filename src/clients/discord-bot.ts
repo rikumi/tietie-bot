@@ -53,7 +53,8 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     this.botReady = new Promise(r => this.client!.on(Events.ClientReady, () => r()));
 
     this.client.on(Events.MessageCreate, async (message) => {
-      if (message.author.id === this.client?.user?.id || message.webhookId) return;
+      if (message.author.id === this.client?.user?.id) return;
+      if (message.webhookId && [...this.webhookForChannel.values()].some(webhook => webhook.id === message.webhookId)) return;
       const transformedMessage = await this.transformMessage(message);
       this.emit('message', transformedMessage);
     });
