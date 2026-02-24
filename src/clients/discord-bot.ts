@@ -86,11 +86,16 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
     const target = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
+    const isUserSpoofingAvailable = target instanceof Webhook;
 
-    // workaround for missing messages property on Webhook class
-    Object.assign(target, {
-      messages: channel.messages,
-    });
+    // native replies does not work with user spoofing - see https://github.com/discord/discord-api-docs/discussions/3282
+    if (message.messageIdReplied && isUserSpoofingAvailable) {
+      const repliedMessage = await channel.messages.fetch(message.messageIdReplied);
+      const repliedMessageContent = repliedMessage.content.slice(0, 10) + '...';
+
+      prependMessageBridgingPrefix(message, `[回复给 ${repliedMessage.author.username}: ${repliedMessageContent}]: `); // use handles for discord only
+      applyMessageBridgingPrefix(message);
+    }
 
     // apply bridging prefix for non-webhook messages only
     if (target === channel && message.bridgedMessage?.userDisplayName) {
@@ -102,7 +107,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       username: message.bridgedMessage?.userDisplayName,
       avatarURL: message.bridgedMessage?.userAvatarUrl,
       content: `${message.text} ${message.media?.url ?? ''}`.trim(),
-      reply: message.messageIdReplied ? { messageReference: message.messageIdReplied } : undefined,
+      reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
     return await this.transformMessage(messageSent);
