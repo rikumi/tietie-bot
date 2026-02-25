@@ -292,7 +292,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       return { tag, position };
     })).flat()
       // close tags should be closed first
-      .sort((a, b) => a.position === b.position ? b.tag.indexOf('</') - a.tag.indexOf('</') : b.position - a.position);
+      .sort((a, b) => a.position === b.position ? a.tag.indexOf('</') - b.tag.indexOf('</') : b.position - a.position);
 
     const buffer = Buffer.from(text, 'utf16le');
     const stack: string[] = [];
