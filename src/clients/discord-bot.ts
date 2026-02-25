@@ -108,7 +108,8 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     const messageSent = await target.send({
       username: isUserSpoofingAvailable ? message.bridgedMessage?.userDisplayName : undefined,
       avatarURL: isUserSpoofingAvailable ? message.bridgedMessage?.userAvatarUrl : undefined,
-      content: `${renderedText} ${message.media?.url ?? ''}`.trim(),
+      content: renderedText.trim(),
+      embeds: this.renderEmbeds(message.media),
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -137,7 +138,8 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
     const editMessage = (target instanceof Webhook ? target.editMessage.bind(target) : target.messages.edit.bind(target.messages));
     await editMessage(message.messageId, {
-      content: `${renderedText} ${message.media?.url ?? ''}`.trim(),
+      content: renderedText.trim(),
+      embeds: this.renderEmbeds(message.media),
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -241,6 +243,23 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     }
     stack.push(escapeMarkdown(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
     return stack.reverse().join('');
+  }
+  
+  private renderEmbeds(media: GenericMedia | undefined): APIEmbed[] | undefined {
+    if (!media) return undefined;
+    if (media.type === 'sticker') {
+      const embedType = media.mimeType.startsWith('image/') ? 'image' : 'video';
+      return [{ [embedType]: { url: media.url }, thumbnail: { url: media.thumbnailUrl }, description: '贴纸' }];
+    }
+    if (media.type === 'photo' || media.type === 'sticker' && media.mimeType.startsWith('image/')) {
+      return [{ image: { url: media.url }, thumbnail: { url: media.thumbnailUrl }, description: '图片' }];
+    }
+    if (media.type === 'video') {
+      return [{ video: { url: media.url }, thumbnail: { url: media.thumbnailUrl }, description: '视频' }];
+    }
+    if (media.type === 'file') {
+      return [{ provider: { url: media.url }, description: '附件' }];
+    }
   }
 }
 
