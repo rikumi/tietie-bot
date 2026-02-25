@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { Events, GatewayIntentBits, Interaction, Message, PermissionsBitField, Routes, TextChannel, Webhook } from 'discord.js';
+import discord, { escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, PermissionsBitField, Routes, TextChannel, Webhook } from 'discord.js';
 
-import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { isDiscordWebhookEnabled } from 'src/database/discord';
@@ -103,10 +103,12 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       applyMessageBridgingPrefix(message);
     }
 
+    const renderedText = this.renderEntitiesToDFM(message.entities ?? [], message.text);
+
     const messageSent = await target.send({
       username: message.bridgedMessage?.userDisplayName,
       avatarURL: message.bridgedMessage?.userAvatarUrl,
-      content: `${message.text} ${message.media?.url ?? ''}`.trim(),
+      content: `${renderedText} ${message.media?.url ?? ''}`.trim(),
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -129,8 +131,11 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
       applyMessageBridgingPrefix(message);
     }
+
+    const renderedText = this.renderEntitiesToDFM(message.entities ?? [], message.text);
+
     const editMessage = (sender instanceof Webhook ? sender.editMessage.bind(sender) : sender.messages.edit.bind(sender.messages));
-    await editMessage(message.messageId, `${message.text} ${message.media?.url ?? ''}`.trim());
+    await editMessage(message.messageId, `${renderedText} ${message.media?.url ?? ''}`.trim());
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
@@ -206,6 +211,35 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     } catch (e) {
       console.error(`Failed to create webhook for channel ${channel.id}: ${e}`);
     }
+  }
+
+  private renderEntitiesToDFM(entities: GenericMessageEntity[], text: string): string {
+    const newline = /\n/g;
+    while (newline.exec(text)) {
+      entities.push({ type: 'newline' as any, offset: newline.lastIndex, length: 0 });
+    }
+    const tagsReversed = entities.map((e) => ((e.type as any) === 'newline' ? [e.offset] : [e.offset, e.offset + e.length]).map((position) => {
+      const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[', newline: '\n\n' } as any)[e.type] || e.type;
+      const isOpenTag = position === e.offset;
+      if (!tagName.startsWith('[') || isOpenTag) {
+        return { tag: tagName, position, isCloseTag: !isOpenTag };
+      }
+      // close tags for closable tags
+      return { tag: `](${e.url})`, position, isCloseTag: true };
+    })).flat()
+      // close tags should be closed first
+      .sort((a, b) => a.position === b.position ? Number(b.isCloseTag) - Number(a.isCloseTag) : b.position - a.position);
+
+    const buffer = Buffer.from(text, 'utf16le');
+    const stack: string[] = [];
+    let lastPosition = buffer.length / 2;
+    for (const { tag, position } of tagsReversed) {
+      stack.push(escapeMarkdown(buffer.subarray(position * 2, lastPosition * 2).toString('utf16le')));
+      stack.push(tag);
+      lastPosition = position;
+    }
+    stack.push(escapeMarkdown(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
+    return stack.reverse().join('');
   }
 }
 
