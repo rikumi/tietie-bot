@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, PermissionsBitField, Routes, TextChannel, Webhook } from 'discord.js';
+import discord, { APIEmbed, escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
-import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMedia, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { isDiscordWebhookEnabled } from 'src/database/discord';
@@ -109,7 +109,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       username: isUserSpoofingAvailable ? message.bridgedMessage?.userDisplayName : undefined,
       avatarURL: isUserSpoofingAvailable ? message.bridgedMessage?.userAvatarUrl : undefined,
       content: renderedText.trim(),
-      embeds: message.media?.url ? [{ url: message.media.url, description: message.media.type }] : undefined,
+      embeds: this.renderEmbeds(message.media),
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -139,7 +139,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     const editMessage = (target instanceof Webhook ? target.editMessage.bind(target) : target.messages.edit.bind(target.messages));
     await editMessage(message.messageId, {
       content: renderedText.trim(),
-      embeds: message.media?.url ? [{ url: message.media.url, description: message.media.type }] : undefined,
+      embeds: this.renderEmbeds(message.media),
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -247,6 +247,19 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     }
     stack.push(escapeMarkdown(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
     return stack.reverse().join('');
+  }
+
+  private renderEmbeds(media: GenericMedia | undefined): APIEmbed[] | undefined {
+    if (!media) return undefined;
+    if (media.type === 'photo' || media.type === 'sticker') {
+      return [{ image: { url: media.url }, description: media.type === 'sticker' ? '贴纸' : '图片' }];
+    }
+    if (media.type === 'video') {
+      return [{ video: { url: media.url }, description: '视频' }];
+    }
+    if (media.type === 'file') {
+      return [{ provider: { url: media.url }, description: '附件' }];
+    }
   }
 }
 
