@@ -2,7 +2,7 @@ import { IncomingMessage, ServerResponse } from 'http';
 import telegramClient, { fileIdToTGSPreviewUrl, fileIdToUrl } from '../../clients/telegram';
 import { request } from 'https';
 
-export const ROUTE = /^\/temoji\/(.+)$/;
+export const ROUTE = /^\/tgmoji\/(.+)$/;
 
 const customEmojiPreviewHandler = async (req: IncomingMessage, res: ServerResponse) => {
   const emojiId = RegExp.$1;

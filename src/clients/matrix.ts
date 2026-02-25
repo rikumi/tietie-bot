@@ -290,7 +290,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       const tagName = ({ bold: 'strong', italic: 'em', strikethrough: 'del', underline: 'u', mention: 'a', link: 'a', newline: 'br' } as any)[e.type] || e.type;
       const tag = position === e.offset ? `<${tagName}${e.url ? ` href="${e.url.replace(/"/g, '&quot;')}"` : ''}>` : `</${tagName}>`;
       return { tag, position };
-    })).flat().sort((a, b) => b.position - a.position);
+    })).flat().sort((a, b) => (b.tag.startsWith('</') ? 1 : (a.tag.startsWith('</') ? -1 : b.position - a.position)));
 
     const buffer = Buffer.from(text, 'utf16le');
     const stack: string[] = [];
