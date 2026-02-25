@@ -228,7 +228,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       return { tag: `](${e.url})`, position, isCloseTag: true };
     })).flat()
       // close tags should be closed first
-      .sort((a, b) => a.position === b.position ? Number(b.isCloseTag) - Number(a.isCloseTag) : b.position - a.position);
+      .sort((a, b) => a.position === b.position ? Number(a.isCloseTag) - Number(b.isCloseTag) : b.position - a.position);
 
     const buffer = Buffer.from(text, 'utf16le');
     const stack: string[] = [];
