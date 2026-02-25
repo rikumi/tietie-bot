@@ -222,7 +222,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[', newline: '\n\n' } as any)[e.type] || e.type;
       const isOpenTag = position === e.offset;
       if (!tagName.startsWith('[') || isOpenTag) {
-        return { tag: isOpenTag ? ` ${tagName}` : `${tagName} `, position, isCloseTag: !isOpenTag };
+        return { tag: isOpenTag ? `\u200D${tagName}` : `${tagName}\u200D`, position, isCloseTag: !isOpenTag };
       }
       // close tags for closable tags
       return { tag: `](${e.url})`, position, isCloseTag: true };
