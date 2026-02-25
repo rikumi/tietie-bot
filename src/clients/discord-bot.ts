@@ -109,7 +109,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       username: isUserSpoofingAvailable ? message.bridgedMessage?.userDisplayName : undefined,
       avatarURL: isUserSpoofingAvailable ? message.bridgedMessage?.userAvatarUrl : undefined,
       content: renderedText.trim(),
-      embeds: message.media?.url ? [{ url: message.media.url }] : undefined,
+      embeds: message.media?.url ? [{ url: message.media.url, description: message.media.type }] : undefined,
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -139,7 +139,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     const editMessage = (target instanceof Webhook ? target.editMessage.bind(target) : target.messages.edit.bind(target.messages));
     await editMessage(message.messageId, {
       content: renderedText.trim(),
-      embeds: message.media?.url ? [{ url: message.media.url }] : undefined,
+      embeds: message.media?.url ? [{ url: message.media.url, description: message.media.type }] : undefined,
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
