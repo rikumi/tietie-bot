@@ -248,7 +248,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   private renderEmbeds(media: GenericMedia | undefined): APIEmbed[] | undefined {
     if (!media) return undefined;
     if (media.type === 'sticker') {
-      const embedType = media.mimeType.startsWith('image/') ? 'image' : 'video';
+      const embedType = media.mimeType.startsWith('image/') ? 'image' : 'provider';
       return [{ [embedType]: { url: media.url }, thumbnail: { url: media.thumbnailUrl }, description: '贴纸' }];
     }
     if (media.type === 'photo' || media.type === 'sticker' && media.mimeType.startsWith('image/')) {
