@@ -106,9 +106,10 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
     const renderedText = this.renderEntitiesToDFM(message.entities ?? [], message.text);
 
     const messageSent = await target.send({
-      username: message.bridgedMessage?.userDisplayName,
-      avatarURL: message.bridgedMessage?.userAvatarUrl,
-      content: `${renderedText} ${message.media?.url ?? ''}`.trim(),
+      username: isUserSpoofingAvailable ? message.bridgedMessage?.userDisplayName : undefined,
+      avatarURL: isUserSpoofingAvailable ? message.bridgedMessage?.userAvatarUrl : undefined,
+      content: renderedText.trim(),
+      embeds: message.media?.url ? [{ url: message.media.url }] : undefined,
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
@@ -124,18 +125,24 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       throw new Error(`Channel ${message.chatId} is not sendable`);
     }
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
-    const sender = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
+    const target = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
+    const isUserSpoofingAvailable = target instanceof Webhook;
 
     // apply bridging prefix for non-webhook messages only
-    if (sender === channel && message.bridgedMessage?.userDisplayName) {
+    if (target === channel && message.bridgedMessage?.userDisplayName) {
       prependMessageBridgingPrefix(message, `${message.bridgedMessage.userHandle}: `); // use handles for discord only
       applyMessageBridgingPrefix(message);
     }
 
     const renderedText = this.renderEntitiesToDFM(message.entities ?? [], message.text);
 
-    const editMessage = (sender instanceof Webhook ? sender.editMessage.bind(sender) : sender.messages.edit.bind(sender.messages));
-    await editMessage(message.messageId, `${renderedText} ${message.media?.url ?? ''}`.trim());
+    const editMessage = (target instanceof Webhook ? target.editMessage.bind(target) : target.messages.edit.bind(target.messages));
+    await editMessage(message.messageId, {
+      content: renderedText.trim(),
+      embeds: message.media?.url ? [{ url: message.media.url }] : undefined,
+      reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
+      ...message.platformMessageExtra ?? {},
+    });
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
