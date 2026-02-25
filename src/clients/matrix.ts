@@ -282,6 +282,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   }
 
   private renderEntitiesToHTML(entities: GenericMessageEntity[], text: string): string {
+    entities = entities.slice();
     const newline = /\n/g;
     while (newline.exec(text)) {
       entities.push({ type: 'newline' as any, offset: newline.lastIndex, length: 0 });
