@@ -221,12 +221,8 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   }
 
   private renderEntitiesToDFM(entities: GenericMessageEntity[], text: string): string {
-    const newline = /\n/g;
-    while (newline.exec(text)) {
-      entities.push({ type: 'newline' as any, offset: newline.lastIndex, length: 0 });
-    }
     const tagsReversed = entities.map((e) => ((e.type as any) === 'newline' ? [e.offset] : [e.offset, e.offset + e.length]).map((position) => {
-      const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[', newline: '\n\n' } as any)[e.type] || e.type;
+      const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[' } as any)[e.type] || e.type;
       const isOpenTag = position === e.offset;
       if (!tagName.startsWith('[') || isOpenTag) {
         return { tag: isOpenTag ? `\u200D${tagName}` : `${tagName}\u200D`, position, isCloseTag: !isOpenTag };
@@ -252,7 +248,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   private renderEmbeds(media: GenericMedia | undefined): APIEmbed[] | undefined {
     if (!media) return undefined;
     if (media.type === 'photo' || media.type === 'sticker') {
-      return [{ image: { url: media.url }, description: media.type === 'sticker' ? '贴纸' : '图片' }];
+      return [{ image: { url: media.url }, thumbnail: { url: media.url }, description: media.type === 'sticker' ? '贴纸' : '图片' }];
     }
     if (media.type === 'video') {
       return [{ video: { url: media.url }, description: '视频' }];
