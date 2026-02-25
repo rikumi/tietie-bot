@@ -12,9 +12,9 @@ import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';
 
 const MEDIA_SCALING = 1 / 3;
+const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
 
 export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, mimeType: string, gzipped = false) => {
-  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   const extension = mime.extension(mimeType);
   if (fileUniqueId) {
     try {
@@ -28,12 +28,10 @@ export const fileIdToUrl = async (fileId: string, fileUniqueId: string | null, m
 };
 
 export const userIdToAvatarUrl = (userId: number) => {
-  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   return `${serverRoot}/tavatar/${userId}`;
 };
 
 export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string | null) => {
-  const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
   if (fileUniqueId) {
     try {
       await setTelegramFileId(fileUniqueId, fileId);
@@ -188,6 +186,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       unixDate: message.date,
       entities: 'entities' in message && message.entities?.map((e) => this.transformEntity(e, text)).filter(Boolean) as any[] || undefined
     };
+    if ('entities' in message && message.entities?.some(e => e.type === 'custom_emoji')) {
+      prependMessageBridgingPrefix(result, `[点击 emoji 查看对应自定义表情] `);
+    }
     if ('forward_origin' in message || 'forward_from' in message) {
       prependMessageBridgingPrefix(result, `[转发自 ${this.transformForwardOrigin(message)}] `);
     }
@@ -319,6 +320,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     if (type === 'text_mention') {
       return { type: 'mention', offset, length, url: this.getUserLink(entity.user) };
+    }
+    if (type === 'custom_emoji') {
+      return { type: 'link', offset, length, url: `${serverRoot}/tgmoji/${entity.custom_emoji_id}` };
     }
     if (type === 'expandable_blockquote' as any) {
       return { type: 'blockquote', offset, length };
