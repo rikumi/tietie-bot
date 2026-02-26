@@ -17,7 +17,9 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
     /* noEncoding: */ true,
   );
 
-  res.writeHead(200, 'OK', fetchRes.headers);
+  console.log('MatrixFileHandler fetchRes', fetchRes);
+
+  res.writeHead(fetchRes.status, fetchRes.statusText, fetchRes.headers);
   res.write(fetchRes.body);
   res.end();
 };
