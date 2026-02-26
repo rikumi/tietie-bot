@@ -17,9 +17,15 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
     /* noEncoding: */ true,
   );
 
-  console.log('MatrixFileHandler fetchRes', fetchRes);
+  const returningHeaders = {
+    'Content-Disposition': fetchRes.headers['content-disposition'],
+    'Content-Encoding': fetchRes.headers['content-encoding'],
+    'Content-Length': fetchRes.headers['content-length'],
+    'Content-Type': fetchRes.headers['content-type'],
+  };
+  console.log('MatrixFileHandler fetchRes', returningHeaders, fetchRes.body);
 
-  res.writeHead(200, 'OK', fetchRes.headers);
+  res.writeHead(200, 'OK', returningHeaders);
   res.write(fetchRes.body);
   res.end();
 };
