@@ -19,7 +19,7 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
 
   console.log('MatrixFileHandler fetchRes', fetchRes);
 
-  res.writeHead(fetchRes.status, fetchRes.statusText, fetchRes.headers);
+  res.writeHead(200, 'OK', fetchRes.headers);
   res.write(fetchRes.body);
   res.end();
 };
