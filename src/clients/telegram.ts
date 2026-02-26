@@ -77,7 +77,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       }
       const method = ({
         sticker: 'sendSticker',
-        photo: 'sendPhoto',
+        photo: message.media?.file_size < 500000000 ? 'sendPhoto' : 'sendDocument',
         video: 'sendVideo',
         file: 'sendDocument',
         default: 'sendMessage',
