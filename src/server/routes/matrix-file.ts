@@ -19,7 +19,6 @@ const fileHandler = async (req: IncomingMessage, res: ServerResponse) => {
 
   const returningHeaders = {
     'Content-Disposition': fetchRes.headers['content-disposition'],
-    'Content-Encoding': fetchRes.headers['content-encoding'],
     'Content-Length': fetchRes.headers['content-length'],
     'Content-Type': fetchRes.headers['content-type'],
   };
