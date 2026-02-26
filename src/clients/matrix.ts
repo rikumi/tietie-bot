@@ -189,7 +189,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const repliedMessage = repliedMessageId && await this.bot.getEvent(roomId, repliedMessageId).catch(console.error);
     const senderUser = await this.bot.getUserProfile(message.sender).catch(console.error);
     const repliedUser = repliedMessage && await this.bot.getUserProfile(repliedMessage.sender).catch(console.error);
-    return {
+    const result = {
       clientName: 'matrix',
       text: editedContent ? getBody(editedContent) : getBody(message.content),
       userId: message.sender,
@@ -206,7 +206,23 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       userNameReplied: repliedMessageId && repliedUser?.displayname,
       platformMessage: message,
       unixDate: Math.floor(message.origin_server_ts / 1000),
+    };
+
+    // HEAD the media to check if it is already uploaded
+    if (result.media?.url) {
+      try {
+        const res = await fetch(media.url, { method: 'HEAD' });
+        console.warn('MatrixUserBotClient HEAD media finished:', res.status);
+      } catch (e) {
+        console.warn('MatrixUserBotClient HEAD media error, falling back to text link:', e);
+        return {
+          ...result,
+          media: undefined,
+          text: `${result.text} \n\n[损坏或异步的媒体文件] ${result.media.url}`.trim(),
+        };
+      }
     }
+    return result;
   }
 
   private async fetchBotInfo() {

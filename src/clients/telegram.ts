@@ -69,7 +69,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     this.bot.stop();
   }
 
-  public async sendMessage(message: MessageToSend, fallbackToHostBot = false): Promise<GenericMessage> {
+  public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     try {
       if (message.bridgedMessage?.userDisplayName) {
         prependMessageBridgingPrefix(message, `${message.bridgedMessage.userDisplayName}: `);
@@ -117,11 +117,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       autoreact.handleMessage(result);
       return result;
     } catch (e) {
-      if (!fallbackToHostBot) {
-        console.warn('TelegramBotClient Puppeting bot cross-boundary error detected:', e);
-        console.warn('-- trying with fallbackToHostBot = true');
-        return await this.sendMessage(message, true);
-      }
       console.error('TelegramBotClient Error sending message', e);
       throw e;
     }
