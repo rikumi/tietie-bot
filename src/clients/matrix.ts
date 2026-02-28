@@ -194,7 +194,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       text: editedContent ? getBody(editedContent) : getBody(message.content),
       userId: message.sender,
       userHandle: message.sender.match(/\w+/)[0],
-      userDisplayName: senderUser?.displayname,
+      userDisplayName: senderUser?.displayname ?? message.sender.match(/\w+/)[0],
       userLink: `https://matrix.to/#/${message.sender}`,
       userAvatarUrl: senderUser?.avatar_url ? mxcToUrl(senderUser.avatar_url) : undefined,
       chatId: roomId,
