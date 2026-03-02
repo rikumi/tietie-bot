@@ -187,7 +187,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       const textBuffer = Buffer.from(text, 'utf16le');
       for (const spoiler of spoilerEntities) {
         Array(spoiler.length).fill(0).map((_, index) => {
-          textBuffer.write('\u2588', spoiler.offset + index, 2, 'utf16le');
+          textBuffer.write('\u2588', (spoiler.offset + index) * 2, 2, 'utf16le');
         });
       }
       result.text = textBuffer.toString('utf16le');
