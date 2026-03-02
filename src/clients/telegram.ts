@@ -335,7 +335,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       return { type: 'link', offset, length, url: substring };
     }
     if (type === 'spoiler') {
-      return { type: 'link', offset, length, url: `${serverRoot}/spoiler/${encodeURIComponent(text)}` };
+      return { type: 'link', offset, length, url: `https://httpbin.org/base64/${encodeURIComponent(Buffer.from(text).toString('base64'))}` };
     }
     if (type === 'mention') {
       return { type: 'mention', offset, length, url: `https://t.me/${substring.replace(/^@/, '')}` };
