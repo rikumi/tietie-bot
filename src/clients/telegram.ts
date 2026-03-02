@@ -181,6 +181,17 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       unixDate: message.date,
       entities: 'entities' in message && message.entities?.map((e) => this.transformEntity(e, text)).filter(Boolean) as any[] || undefined
     };
+    // spoilers has been transformed to links, now replace them per-character with U+2588 Full Block's
+    if ('entities' in message && message.entities?.some(e => e.type === 'spoiler')) {
+      const spoilerEntities = message.entities.filter(e => e.type === 'spoiler');
+      const textBuffer = Buffer.from(text, 'utf16le');
+      for (const spoiler of spoilerEntities) {
+        Array(spoiler.length).fill(0).map((_, index) => {
+          textBuffer.write('\u2588', spoiler.offset + index, 2, 'utf16le');
+        });
+      }
+      result.text = textBuffer.toString('utf16le');
+    }
     if ('entities' in message && message.entities?.some(e => e.type === 'custom_emoji')) {
       prependMessageBridgingPrefix(result, `[点击 emoji 查看对应自定义表情] `);
     }
@@ -324,7 +335,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       return { type: 'link', offset, length, url: substring };
     }
     if (type === 'spoiler') {
-      return { type: 'link', offset, length, url: `data:text/plain;base64,${Buffer.from(substring).toString('base64')}` };
+      return { type: 'link', offset, length, url: `${serverRoot}/spoiler/${encodeURIComponent(text)}` };
     }
     if (type === 'mention') {
       return { type: 'mention', offset, length, url: `https://t.me/${substring.replace(/^@/, '')}` };
