@@ -307,9 +307,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     if (['bold', 'italic', 'underline', 'strikethrough', 'blockquote', 'code', 'pre'].includes(type)) {
       return { type: type as any, offset, length };
     }
-    if (type === 'spoiler') {
-      return { type: 'strikethrough', offset, length };
-    }
     if (type === 'text_link') {
       return { type: 'link', offset, length, url: entity.url };
     }
@@ -325,6 +322,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const substring = Buffer.from(text, 'utf16le').subarray(offset * 2, (offset + length) * 2).toString('utf16le');
     if (type === 'url') {
       return { type: 'link', offset, length, url: substring };
+    }
+    if (type === 'spoiler') {
+      return { type: 'link', offset, length, url: `data:text/plain;base64,${Buffer.from(substring).toString('base64')}` };
     }
     if (type === 'mention') {
       return { type: 'mention', offset, length, url: `https://t.me/${substring.replace(/^@/, '')}` };
