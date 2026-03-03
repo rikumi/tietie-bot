@@ -1,10 +1,10 @@
 import type Context from 'telegraf/typings/context';
-import type { ChatMemberUpdated, Message, MessageEntity, TelegramEmoji, Update, User } from 'telegraf/typings/core/types/typegram'
+import type { ChatMemberUpdated, Message, MessageEntity, MessageReactionUpdated, TelegramEmoji, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
 
-import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import * as autoreact from '../commands/autoreact';
 import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
@@ -65,6 +65,9 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       if (getTag(oldMember) !== getTag(newMember)) {
         this.handleTagChange(ctx.chatMember, getTag(newMember));
       }
+    });
+    this.bot.on('message_reaction', async (ctx: Context<Update.MessageReactionUpdate>) => {
+      this.handleReactionChange(ctx.messageReaction);
     });
   }
 
@@ -299,6 +302,29 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       chatId: String(chatMember.chat.id),
       text: `${this.getUserDisplayName(chatMember.old_chat_member.user)} 的头衔已变更为 ${newTag}。(/tag)`,
     });
+  }
+
+  private handleReactionChange(reactions: MessageReactionUpdated) {
+    const oldReactions = reactions.old_reaction.filter(r => !reactions.new_reaction.includes(r));
+    const newReactions = reactions.new_reaction.filter(r => !reactions.old_reaction.includes(r));
+    for (const reaction of oldReactions) {
+      this.emit('remove-reaction', {
+        clientName: 'telegram',
+        chatId: String(reactions.chat.id),
+        userId: String(reactions.user?.id),
+        reaction: reaction.type === 'emoji' ? reaction.emoji : '👀',
+      } satisfies GenericMessageReaction);
+    }
+    for (const reaction of newReactions) {
+      this.emit('reaction', {
+        clientName: 'telegram',
+        chatId: String(reactions.chat.id),
+        userId: String(reactions.user?.id),
+        userDisplayName: this.getUserDisplayName(reactions.user),
+        reaction: reaction.type === 'emoji' ? reaction.emoji : '👀',
+        customReactionUrl: reaction.type === 'custom_emoji' ? `${serverRoot}/tgmoji/${reaction.custom_emoji_id}` : undefined
+      } satisfies GenericMessageReaction);
+    }
   }
 
   private getUserHandle(user: User | undefined): string {

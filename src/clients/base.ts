@@ -54,6 +54,15 @@ export interface GenericMessageEntity {
   codeLanguage?: string;
 }
 
+export interface GenericMessageReaction {
+  clientName: string;
+  chatId: string;
+  reaction: string;
+  customReactionUrl?: string;
+  userId?: string;
+  userDisplayName?: string;
+}
+
 export interface GenericClient<T = any, U = any, V = {}> {
   start(): Promise<void>;
   stop(): Promise<void>;

@@ -160,6 +160,8 @@ export class DefaultClientSet extends EventEmitter {
   private recordRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localMessageId: string, localMediaMessageId?: string) {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
     this.recentBridgedMessages.set(key, [localMessageId, localMediaMessageId]);
+    // some poor handling of cache eviction
+    setTimeout(() => this.recentBridgedMessages.delete(key), 1000 * 60 * 60 * 10);
   }
 
   private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): [string, string | undefined] | undefined {

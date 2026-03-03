@@ -1,9 +1,9 @@
 import crypto from 'crypto';
 import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
-import discord, { APIEmbed, escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
+import discord, { escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
-import { GenericClient, GenericMedia, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { isDiscordWebhookEnabled } from 'src/database/discord';
@@ -50,7 +50,9 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       return;
     }
     this.rest = new discord.REST({ version: '10' }).setToken(config['discord-bot'].token);
-    this.client = new discord.Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent] });
+    this.client = new discord.Client({
+      intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent],
+    });
     this.botReady = new Promise(r => this.client!.on(Events.ClientReady, () => r()));
 
     this.client.on(Events.MessageCreate, async (message) => {

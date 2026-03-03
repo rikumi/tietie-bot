@@ -4,7 +4,7 @@ import telegramBotClient from 'src/clients/telegram';
 export const USAGE = `[newTag] 查看或更改被回复群成员的头衔`;
 
 export const handleSlashCommand = async (message: GenericMessage) => {
-  const newTag = message.text.trim().split(/\s+/)[1];
+  const newTag = message.text.trim().replace(/^\S*\s*/, '');
   const userId = message.userIdReplied || message.userId;
   const isSelf = userId === message.userId;
   const userName = message.userIdReplied ? message.userNameReplied : message.userDisplayName;

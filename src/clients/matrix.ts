@@ -73,9 +73,17 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     if ('mx.rkm.tietie-bot.message' in message.content) {
       return;
     }
+    if (message.content['m.reaction']) {
+      console.log('[MatrixUserBotClient] reaction received', message.content);
+      return;
+    }
     const transformedMessage = await this.transformMessage(message, roomId);
     if (transformedMessage.userId === this.botInfo?.user_id) return;
-    this.emit(message.content['m.new_content'] ? 'edit-message' : 'message', transformedMessage);
+    if (message.content['m.new_content']) {
+      this.emit('edit-message', transformedMessage);
+      return;
+    }
+    this.emit('message', transformedMessage);
   };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
