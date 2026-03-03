@@ -70,7 +70,6 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       }
     });
     this.bot.on('message_reaction', async (ctx: Context<Update.MessageReactionUpdate>) => {
-      console.log('[TelegramBotClient] received reaction', ctx.messageReaction);
       this.handleReactionChange(ctx.messageReaction);
     });
   }
