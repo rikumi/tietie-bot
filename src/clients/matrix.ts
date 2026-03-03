@@ -222,7 +222,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       media,
       messageIdReplied: repliedMessageId,
-      messageReplied: repliedMessage ? this.transformMessage(repliedMessage, roomId) : undefined,
+      messageReplied: repliedMessage ? await this.transformMessage(repliedMessage, roomId) : undefined,
       userIdReplied: repliedMessage?.sender,
       userNameReplied: repliedMessageId && repliedUser?.displayname,
       platformMessage: message,
@@ -232,7 +232,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     // HEAD the media to check if it is already uploaded
     if (result.media?.url) {
       try {
-        const res = await fetch(media.url, { method: 'HEAD' });
+        const res = await fetch(media!.url, { method: 'HEAD' });
         console.warn('MatrixUserBotClient HEAD media finished:', res.status);
       } catch (e) {
         console.warn('MatrixUserBotClient HEAD media error, falling back to text link:', e);
@@ -260,6 +260,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   };
 
   private handleReaction = async (roomId: string, message: any) => {
+    if (message.sender === this.botInfo?.user_id) {
+      return;
+    }
     const senderUser = await this.bot.getUserProfile(message.sender).catch(console.error);
     const reaction = {
       clientName: 'matrix',
