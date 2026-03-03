@@ -27,7 +27,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
       return '更改头衔失败，请检查参数';
     }
   }
-  const { tag } = (await telegram.getChatMember(message.chatId, Number(message.userIdReplied))) as any;
+  const { tag } = (await telegram.getChatMember(message.chatId, Number(userId))) as any;
   if (!tag) {
     return `${isSelf ? '你' : `${userName} `}目前没有头衔。`
   }
