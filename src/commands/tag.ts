@@ -22,7 +22,7 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     }
     try {
       await telegram.callApi('setChatMemberTag' as any, { chat_id: message.chatId, user_id: userId, tag: newTag });
-      return `${isSelf ? '你' : `${userName} `}的头衔已更改为 ${newTag}。`
+      return; // `${isSelf ? '你' : `${userName} `}的头衔已更改为 ${newTag}。`
     } catch (e) {
       return '更改头衔失败，请检查参数';
     }
