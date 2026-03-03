@@ -222,7 +222,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
       messageId: editedContent ? message.content['m.relates_to'].event_id : message.event_id,
       media,
       messageIdReplied: repliedMessageId,
-      messageReplied: repliedMessage?.content?.['mx.rkm.tietie-bot.message'],
+      messageReplied: repliedMessage ? this.transformMessage(repliedMessage, roomId) : undefined,
       userIdReplied: repliedMessage?.sender,
       userNameReplied: repliedMessageId && repliedUser?.displayname,
       platformMessage: message,
