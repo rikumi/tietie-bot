@@ -13,6 +13,6 @@ export const handleSlashCommand = (message: GenericMessage | undefined) => {
     chatId: message.chatId,
     messageIdReplied: message.messageId,
     text: code!,
-    entities: [{ type: 'pre', offset: 0, length: Buffer.from(code, 'utf16le').length / 2, codeLanguage: 'json' }],
+    entities: [{ type: 'expandable_blockquote', offset: 0, length: Buffer.from(code, 'utf16le').length / 2, codeLanguage: 'json' }],
   });
 };
