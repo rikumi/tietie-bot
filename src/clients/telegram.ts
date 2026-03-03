@@ -1,5 +1,5 @@
 import type Context from 'telegraf/typings/context';
-import type { Message, MessageEntity, TelegramEmoji, Update, User } from 'telegraf/typings/core/types/typegram'
+import type { ChatMemberUpdated, Message, MessageEntity, TelegramEmoji, Update, User } from 'telegraf/typings/core/types/typegram'
 
 import { EventEmitter } from 'events';
 import { Telegraf } from 'telegraf';
@@ -8,7 +8,7 @@ import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, Mes
 import * as autoreact from '../commands/autoreact';
 import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
-import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
+import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';
 
 const MEDIA_SCALING = 1 / 3;
@@ -58,6 +58,13 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       const transformedMessage = await this.transformMessage(ctx.editedMessage!);
       if (!transformedMessage) return;
       this.emit('edit-message', transformedMessage);
+    });
+    this.bot.on('chat_member', async (ctx: Context<Update.ChatMemberUpdate>) => {
+      const { old_chat_member: oldMember, new_chat_member: newMember } = ctx.chatMember;
+      const getTag = (member: any) => member.tag || member.custom_title || '(空)';
+      if (getTag(oldMember) !== getTag(newMember)) {
+        this.handleTagChange(ctx.chatMember, getTag(newMember));
+      }
     });
   }
 
@@ -282,6 +289,14 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       result.media!.url = await fileIdToUrl(fileId, fileUniqueId!, result.media!.mimeType);
     }
     return result;
+  }
+
+  private handleTagChange(chatMember: ChatMemberUpdated, newTag: string) {
+    defaultClientSet.sendBotMessage({
+      clientName: 'telegram',
+      chatId: String(chatMember.chat.id),
+      text: `${this.getUserDisplayName(chatMember.old_chat_member.user)} 的头衔已变更为 ${newTag}。(/tag)`,
+    });
   }
 
   private getUserHandle(user: User | undefined): string {
