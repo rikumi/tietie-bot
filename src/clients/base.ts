@@ -71,6 +71,7 @@ export interface GenericClient<T = any, U = any, V = {}> {
 
   on(eventName: 'message', handler: (message: GenericMessage) => void): void;
   on(eventName: 'edit-message', handler: (message: GenericMessage) => void): void;
+  on(eventName: 'reaction', handler: (reaction: GenericMessageReaction) => void): void;
 
   sendMessage(message: MessageToSend): Promise<GenericMessage>;
   editMessage(message: MessageToEdit): Promise<void>;

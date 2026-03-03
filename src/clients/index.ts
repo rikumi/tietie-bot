@@ -187,6 +187,9 @@ export class DefaultClientSet extends EventEmitter {
       client.on('edit-message', (message) => {
         this.emit('edit-message', message);
       });
+      client.on('reaction', (reaction) => {
+        this.emit('reaction', reaction);
+      });
       this.clients.set(clientName, client);
       await client.start();
     } catch (e) {
