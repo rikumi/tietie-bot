@@ -6,7 +6,7 @@ import { fetch, Agent } from 'undici';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, MemoryStorageProvider } from 'matrix-bot-sdk';
 import config from '../../config.json';
-import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 
 const escapeHTML = (str: string) => str
@@ -36,6 +36,8 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public botInfo: IWhoAmI | undefined;
 
   private cachedMedia = new Map<string, string>();
+  private recentReceivedReactionIdToReaction = new Map<string, GenericMessageReaction>();
+  private recentSentReactionMessageIdToReactionId = new Map<string, string>();
   private pendingMediaUpload: Promise<void> | undefined;
 
   public constructor() {
@@ -47,9 +49,13 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
     this.bot = new MatrixClient('https://' + homeServer, accessToken, storage);
     this.bot.on('room.message', this.handleMessage);
+    this.bot.on('room.redaction', this.handleRedaction);
     this.bot.on('room.event', (roomId, message) => {
       if (message.type === 'm.sticker') {
         this.handleMessage(roomId, message);
+      }
+      if (message.type === 'm.reaction') {
+        this.handleReaction(roomId, message);
       }
     });
     AutojoinRoomsMixin.setupOnClient(this.bot);
@@ -68,23 +74,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
   public async stop(): Promise<void> {
     this.bot.stop();
   }
-
-  public handleMessage = async (roomId: string, message: any) => {
-    if ('mx.rkm.tietie-bot.message' in message.content) {
-      return;
-    }
-    if (message.content['m.reaction']) {
-      console.log('[MatrixUserBotClient] reaction received', message.content);
-      return;
-    }
-    const transformedMessage = await this.transformMessage(message, roomId);
-    if (transformedMessage.userId === this.botInfo?.user_id) return;
-    if (message.content['m.new_content']) {
-      this.emit('edit-message', transformedMessage);
-      return;
-    }
-    this.emit('message', transformedMessage);
-  };
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     if (message.bridgedMessage?.userDisplayName) {
@@ -174,6 +163,30 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     });
   }
 
+  public async applyReaction(reaction: GenericMessageReaction) {
+    if (reaction.isRetracted) {
+      return await this.retractReaction(reaction);
+    }
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const key = `${messageId}|${emoji}`;
+    const reactionEventId = await this.bot.sendEvent(chatId, 'm.reaction', {
+      'm.relates_to': { rel_type: 'm.annotation', event_id: messageId, key: emoji },
+    });
+    this.recentSentReactionMessageIdToReactionId.set(key, reactionEventId);
+    // some poor handling of cache eviction
+    setTimeout(() => this.recentSentReactionMessageIdToReactionId.delete(key), 1000 * 60 * 60);
+  }
+
+  public async retractReaction(reaction: GenericMessageReaction) {
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const key = `${messageId}|${emoji}`;
+    const reactionEventId = this.recentSentReactionMessageIdToReactionId.get(key);
+    await this.bot.sendEvent(chatId, 'm.room.redaction', {
+      'redacts': reactionEventId,
+    });
+    this.recentSentReactionMessageIdToReactionId.delete(key);
+  }
+
   private async transformMessage(message: any, roomId: string): Promise<GenericMessage> {
     const attachmentType = message.content.info?.mimetype?.split('/')[0];
     const editedContent = message.content['m.new_content'];
@@ -232,6 +245,50 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     }
     return result;
   }
+
+  private handleMessage = async (roomId: string, message: any) => {
+    if ('mx.rkm.tietie-bot.message' in message.content) {
+      return;
+    }
+    const transformedMessage = await this.transformMessage(message, roomId);
+    if (transformedMessage.userId === this.botInfo?.user_id) return;
+    if (message.content['m.new_content']) {
+      this.emit('edit-message', transformedMessage);
+      return;
+    }
+    this.emit('message', transformedMessage);
+  };
+
+  private handleReaction = async (roomId: string, message: any) => {
+    const senderUser = await this.bot.getUserProfile(message.sender).catch(console.error);
+    const reaction = {
+      clientName: 'matrix',
+      chatId: roomId,
+      messageId: message.content['m.relates_to'].event_id,
+      userId: message.sender,
+      userDisplayName: senderUser?.displayname ?? message.sender.match(/\w+/)[0],
+      reaction: message.content['m.relates_to'].key,
+    } satisfies GenericMessageReaction;
+    this.recentReceivedReactionIdToReaction.set(message.event_id, reaction);
+    // some poor handling of cache eviction
+    setTimeout(() => this.recentReceivedReactionIdToReaction.delete(message.event_id), 1000 * 60 * 60);
+    this.emit('reaction', reaction);
+  };
+
+  private handleRedaction = async (roomId: string, message: any) => {
+    const senderUser = await this.bot.getUserProfile(message.sender).catch(console.error);
+    const reaction = this.recentReceivedReactionIdToReaction.get(message.content.redacts);
+    if (!reaction) return;
+    this.emit('reaction', {
+      clientName: 'matrix',
+      chatId: roomId,
+      messageId: reaction.messageId,
+      userId: message.sender,
+      userDisplayName: senderUser?.displayname ?? message.sender.match(/\w+/)[0],
+      reaction: reaction.reaction,
+      isRetracted: true,
+    } satisfies GenericMessageReaction);
+  };
 
   private async fetchBotInfo() {
     try {

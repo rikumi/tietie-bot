@@ -5,7 +5,7 @@ import config from '../../config.json';
 
 export const USAGE = `<keyword> <emoji> | del <keyword> 为本会话中的特定关键词消息设置自动回应`;
 
-const TELEGRAM_EMOJI = '👍,👎,❤,🔥,🥰,👏,😁,🤔,🤯,😱,🤬,😢,🎉,🤩,🤮,💩,🙏,👌,🕊,🤡,🥱,🥴,😍,🐳,❤‍🔥,🌚,🌭,💯,🤣,⚡,🍌,🏆,💔,🤨,😐,🍓,🍾,💋,🖕,😈,😴,😭,🤓,👻,👨‍💻,👀,🎃,🙈,😇,😨,🤝,✍,🤗,🫡,🎅,🎄,☃,💅,🤪,🗿,🆒,💘,🙉,🦄,😘,💊,🙊,😎,👾,🤷‍♂,🤷,🤷‍♀,😡'.split(',');
+export const TELEGRAM_EMOJI = '👍,👎,❤,🔥,🥰,👏,😁,🤔,🤯,😱,🤬,😢,🎉,🤩,🤮,💩,🙏,👌,🕊,🤡,🥱,🥴,😍,🐳,❤‍🔥,🌚,🌭,💯,🤣,⚡,🍌,🏆,💔,🤨,😐,🍓,🍾,💋,🖕,😈,😴,😭,🤓,👻,👨‍💻,👀,🎃,🙈,😇,😨,🤝,✍,🤗,🫡,🎅,🎄,☃,💅,🤪,🗿,🆒,💘,🙉,🦄,😘,💊,🙊,😎,👾,🤷‍♂,🤷,🤷‍♀,😡'.split(',');
 
 export const handleMessage = async (message: GenericMessage) => {
   const records = await getAutoReact(message.clientName, message.chatId);
@@ -17,7 +17,7 @@ export const handleMessage = async (message: GenericMessage) => {
   if (!firstOccur) {
     return;
   }
-  defaultClientSet.reactToMessage(message, firstOccur.emoji_name, config.generalName);
+  defaultClientSet.reactToMessage(message, firstOccur.emoji_name);
 };
 
 export const handleSlashCommand = async (message: GenericMessage) => {
@@ -39,5 +39,5 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     }
     await setAutoReact(message.clientName, message.chatId, keyword, emoji);
   }
-  await defaultClientSet.reactToMessage(message, '👌', config.generalName);
+  await defaultClientSet.reactToMessage(message, '👌');
 };

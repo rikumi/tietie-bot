@@ -1,5 +1,5 @@
 import { getUnidirectionalBridgesByChat } from 'src/database/bridge';
-import type { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
+import type { GenericClient, GenericMessage, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import { EventEmitter } from 'events';
 
 export const prependMessageBridgingPrefix = (message: Pick<GenericMessage, 'text' | 'entities' | 'bridgingPrefix'>, prefix: string) => {
@@ -20,6 +20,7 @@ export const applyMessageBridgingPrefix = (message: Pick<GenericMessage, 'text' 
 export class DefaultClientSet extends EventEmitter {
   public readonly clients = new Map<string, GenericClient>();
   private recentBridgedMessages = new Map<string, [string, string | undefined]>();
+  private recentBridgedReactions = new Map<string, GenericMessageReaction[]>();
   public static readonly CLIENT_NAMES = ['telegram', 'discord', 'discord-bot', 'matrix'] as const;
 
   public async start() {
@@ -93,6 +94,21 @@ export class DefaultClientSet extends EventEmitter {
     }));
   }
 
+  public async bridgeReaction(fromReaction: GenericMessageReaction): Promise<void> {
+    const bridges = await getUnidirectionalBridgesByChat(fromReaction.clientName, fromReaction.chatId);
+    await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
+      const toClient = this.clients.get(toClientName);
+      if (!toClient) return;
+      const [toMessageId] = this.convertRecentMessageId(fromReaction.clientName, fromReaction.chatId, fromReaction.messageId, toClientName, toChatId) ?? [];
+      if (!toMessageId) return;
+      const toReaction = { ...fromReaction, chatId: toChatId, messageId: toMessageId };
+      toClient.applyReaction?.(toReaction);
+      // build bidirectional message id mapping
+      this.recordRecentReaction(fromReaction.clientName, fromReaction.chatId, fromReaction.messageId, toClientName, toChatId, toReaction);
+      this.recordRecentReaction(toClientName, toChatId, toMessageId, fromReaction.clientName, fromReaction.chatId, fromReaction);
+    }));
+  }
+
   public async sendBotMessage(message: MessageToSend) {
     const client = this.clients.get(message.clientName);
     if (!client) return;
@@ -120,10 +136,10 @@ export class DefaultClientSet extends EventEmitter {
     await this.bridgeEditedMessage({ ...message, isServiceMessage: true });
   }
 
-  public async reactToMessage(message: GenericMessage, emoji: string, reactorDisplayName: string) {
+  public async reactToMessage(message: GenericMessage, emoji: string) {
     const client = this.clients.get(message.clientName);
     if (!client) return;
-    await client.reactToMessage?.(message.chatId, message.messageId, emoji, reactorDisplayName);
+    await client.applyReaction?.({ clientName: message.clientName, chatId: message.chatId, messageId: message.messageId, reaction: emoji });
     const bridges = await getUnidirectionalBridgesByChat(message.clientName, message.chatId);
     await Promise.all(bridges.map(async ({ toClient: toClientName, toChatId }) => {
       const toClient = this.clients.get(toClientName);
@@ -131,8 +147,29 @@ export class DefaultClientSet extends EventEmitter {
       const targetMessageIds = this.convertRecentMessageId(message.clientName, message.chatId, message.messageId, toClientName, toChatId);
       if (!targetMessageIds) return;
       const [targetMessageId] = targetMessageIds;
-      toClient.reactToMessage?.(toChatId, targetMessageId, emoji, reactorDisplayName)
+      toClient.applyReaction?.({ clientName: toClientName, chatId: toChatId, messageId: targetMessageId, reaction: emoji });
     }));
+  }
+
+  public async getAllReactionsForMessage(message: GenericMessage): Promise<GenericMessageReaction[]> {
+    const { clientName, chatId, messageId } = message;
+    const bridges = await getUnidirectionalBridgesByChat(clientName, chatId);
+
+    return bridges.flatMap(({ toClient: toClientName, toChatId }) => {
+      const toClient = this.clients.get(toClientName);
+      if (!toClient) return;
+      const toMessageId = this.convertRecentMessageId(clientName, chatId, messageId, toClientName, toChatId)?.[0];
+      if (!toMessageId) return;
+      const key = `${clientName}|${chatId}|${messageId}|${toClientName}|${toChatId}`;
+      return this.recentBridgedReactions.get(key);
+    }).filter(Boolean) as GenericMessageReaction[];
+  }
+
+  public convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): [string, string | undefined] | undefined {
+    const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
+    const bridgedMessageIds = this.recentBridgedMessages.get(key);
+    if (!bridgedMessageIds) return;
+    return bridgedMessageIds;
   }
 
   public async setCommandList(commandList: { command: string; description: string }[]) {
@@ -164,11 +201,15 @@ export class DefaultClientSet extends EventEmitter {
     setTimeout(() => this.recentBridgedMessages.delete(key), 1000 * 60 * 60 * 10);
   }
 
-  private convertRecentMessageId(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string): [string, string | undefined] | undefined {
+  private recordRecentReaction(remoteClientName: string, remoteChatId: string, remoteMessageId: string, localClientName: string, localChatId: string, localReaction: GenericMessageReaction) {
     const key = `${remoteClientName}|${remoteChatId}|${remoteMessageId}|${localClientName}|${localChatId}`;
-    const bridgedMessageIds = this.recentBridgedMessages.get(key);
-    if (!bridgedMessageIds) return;
-    return bridgedMessageIds;
+    if (localReaction.isRetracted) {
+      this.recentBridgedReactions.set(key, this.recentBridgedReactions.get(key)?.filter(reaction => `${reaction.userId}|${reaction.reaction}` !== `${localReaction.userId}|${localReaction.reaction}`) ?? []);
+    } else {
+      this.recentBridgedReactions.set(key, [...(this.recentBridgedReactions.get(key) ?? []), localReaction]);
+    }
+    // some poor handling of cache eviction
+    setTimeout(() => this.recentBridgedReactions.delete(key), 1000 * 60 * 60 * 10);
   }
 }
 

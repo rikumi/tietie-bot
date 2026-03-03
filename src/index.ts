@@ -7,7 +7,7 @@ import * as tietie from './commands/tietie';
 import * as autoreact from './commands/autoreact';
 
 import clients from './clients';
-import { GenericMessage } from './clients/base';
+import { GenericMessage, GenericMessageReaction } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
 import config from '../config.json';
@@ -70,10 +70,15 @@ const handleEditedMessage = async (message: GenericMessage) => {
   clients.bridgeEditedMessage(message);
 };
 
+const handleReaction = async (reaction: GenericMessageReaction) => {
+  clients.bridgeReaction(reaction);
+};
+
 (async () => {
   await clients.start();
   clients.on('message', handleMessage);
   clients.on('edit-message', handleEditedMessage);
+  clients.on('reaction', handleReaction);
 
   for (const fileName of fs.readdirSync(path.resolve(__dirname, 'commands'))) {
     if (fileName === __filename) continue;

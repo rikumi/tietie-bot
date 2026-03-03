@@ -10,6 +10,7 @@ import config from '../../config.json';
 import { setTelegramFileId } from 'src/database/tgfile';
 import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';
+import { TELEGRAM_EMOJI } from '../commands/autoreact';
 
 const MEDIA_SCALING = 1 / 3;
 const serverRoot = /^https?:/.test(config.server.host) ? config.server.host : 'https://' + config.server.host;
@@ -45,6 +46,8 @@ export const fileIdToTGSPreviewUrl = async (fileId: string, fileUniqueId: string
 
 export class TelegramBotClient extends EventEmitter implements GenericClient<Message, User, any> {
   public bot: Telegraf<Context<Update>> = new Telegraf(config.telegram.token);
+
+  private messageReactionStackMap = new Map<string, string[]>;
 
   public constructor() {
     super();
@@ -160,12 +163,40 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     });
   }
 
-  public async reactToMessage(chatId: string, messageId: string, emoji: string) {
+  public async applyReaction(reaction: GenericMessageReaction) {
+    if (reaction.isRetracted) {
+      return await this.retractReaction(reaction);
+    }
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const key = `${chatId}|${messageId}`;
+    const existing = this.messageReactionStackMap.get(key) ?? [];
+    this.messageReactionStackMap.set(key, [...existing, emoji]);
+    // some poor handling of cache eviction
+    setTimeout(() => this.messageReactionStackMap.delete(key), 1000 * 60 * 60);
+
     await this.bot.telegram.setMessageReaction(chatId, Number(messageId), [{
       type: 'emoji',
-      emoji: emoji as TelegramEmoji,
-      is_big: true,
+      emoji: TELEGRAM_EMOJI.includes(emoji) ? emoji as TelegramEmoji : '👀',
     }]);
+  }
+
+  public async retractReaction(reaction: GenericMessageReaction) {
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const key = `${chatId}|${messageId}`;
+    const existing = this.messageReactionStackMap.get(key) ?? [];
+    const newEmojiList = existing.filter(e => e !== emoji);
+    const newLastEmoji = newEmojiList.slice(-1)[0];
+
+    if (newLastEmoji) {
+      this.messageReactionStackMap.set(key, newEmojiList);
+    } else {
+      this.messageReactionStackMap.delete(key);
+    }
+
+    await this.bot.telegram.setMessageReaction(chatId, Number(messageId), newLastEmoji ? [{
+      type: 'emoji',
+      emoji: TELEGRAM_EMOJI.includes(newLastEmoji) ? newLastEmoji as TelegramEmoji : '👀',
+    }] : []);
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
@@ -308,11 +339,13 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     const oldReactions = reactions.old_reaction.filter(r => !reactions.new_reaction.includes(r));
     const newReactions = reactions.new_reaction.filter(r => !reactions.old_reaction.includes(r));
     for (const reaction of oldReactions) {
-      this.emit('remove-reaction', {
+      this.emit('reaction', {
         clientName: 'telegram',
         chatId: String(reactions.chat.id),
         userId: String(reactions.user?.id),
+        messageId: String(reactions.message_id),
         reaction: reaction.type === 'emoji' ? reaction.emoji : '👀',
+        isRetracted: true,
       } satisfies GenericMessageReaction);
     }
     for (const reaction of newReactions) {
@@ -320,6 +353,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
         clientName: 'telegram',
         chatId: String(reactions.chat.id),
         userId: String(reactions.user?.id),
+        messageId: String(reactions.message_id),
         userDisplayName: this.getUserDisplayName(reactions.user),
         reaction: reaction.type === 'emoji' ? reaction.emoji : '👀',
         customReactionUrl: reaction.type === 'custom_emoji' ? `${serverRoot}/tgmoji/${reaction.custom_emoji_id}` : undefined

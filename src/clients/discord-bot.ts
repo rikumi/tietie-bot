@@ -3,10 +3,18 @@ import * as dismoji from 'discord-emoji';
 import { EventEmitter } from 'events';
 import discord, { escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
-import { GenericClient, GenericMessage, GenericMessageEntity, MessageToEdit, MessageToSend } from './base';
+import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { isDiscordWebhookEnabled } from 'src/database/discord';
+
+const convertDismoji = (emojiName: string) => {
+  for (const category of Object.keys(dismoji)) {
+    const emoji = (dismoji as any)[category][emojiName];
+    if (typeof emoji === 'string') return emoji;
+  }
+  return;
+};
 
 const convertDiscordMessage = (text: string) => {
   const rtlCharRegexp = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF])/g;
@@ -14,13 +22,7 @@ const convertDiscordMessage = (text: string) => {
     text = text.replace(rtlCharRegexp, '$1\u202C'); // Force switch back to LTR for major chat clients
   }
   return text.replace(/\\/g, '').replace(/:(\w+):/g, (match, emojiName) => {
-    for (const category of Object.keys(dismoji)) {
-      const emoji = (dismoji as any)[category][emojiName];
-      if (typeof emoji === 'string') {
-        return emoji;
-      }
-    }
-    return match;
+    return convertDismoji(emojiName) ?? match;
   });
 };
 
@@ -41,6 +43,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   public botReady: Promise<void> | undefined;
 
   private webhookForChannel = new Map<string, discord.Webhook>();
+  private messageReactionStackMap = new Map<string, string[]>;
 
   public async start(): Promise<void> {
     if (this.client) {
@@ -66,6 +69,25 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       const transformedMessage = this.transformInteraction(interaction);
       this.emit('message', transformedMessage);
     });
+    this.client.on(Events.MessageReactionAdd, (interaction, user) => {
+      this.emit('reaction', {
+        clientName: 'discord-bot',
+        chatId: interaction.message.channelId,
+        userId: user.id,
+        messageId: interaction.message.id,
+        reaction: convertDismoji(interaction.emoji.name!) ?? '👀',
+      } satisfies GenericMessageReaction);
+    });
+    this.client.on(Events.MessageReactionRemove, (interaction, user) => {
+      this.emit('reaction', {
+        clientName: 'discord-bot',
+        chatId: interaction.message.channelId,
+        userId: user.id,
+        messageId: interaction.message.id,
+        reaction: convertDismoji(interaction.emoji.name!) ?? '👀',
+        isRetracted: true,
+      } satisfies GenericMessageReaction);
+    });
     this.client.login(config['discord-bot'].token);
 
     await this.botReady;
@@ -79,13 +101,9 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
   public async sendMessage(message: MessageToSend): Promise<GenericMessage> {
     const channel = await this.client?.channels.fetch(message.chatId);
-    if (!channel) {
-      throw new Error(`Channel ${message.chatId} not found`);
+    if (!channel?.isSendable()) {
+      throw new Error(`Channel ${message.chatId} is not found or not sendable`);
     }
-    if (!channel.isSendable()) {
-      throw new Error(`Channel ${message.chatId} is not sendable`);
-    }
-
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
     const target = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
     const isUserSpoofingAvailable = target instanceof Webhook;
@@ -119,11 +137,8 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
   public async editMessage(message: MessageToEdit): Promise<void> {
     const channel = await this.client?.channels.fetch(message.chatId);
-    if (!channel) {
-      throw new Error(`Channel ${message.chatId} not found`);
-    }
-    if (!channel.isSendable()) {
-      throw new Error(`Channel ${message.chatId} is not sendable`);
+    if (!channel?.isSendable()) {
+      throw new Error(`Channel ${message.chatId} is not found or not sendable`);
     }
     const shouldUseUserSpoofing = message.bridgedMessage?.userDisplayName && (channel instanceof TextChannel);
     const target = shouldUseUserSpoofing && await this.getWebhookForChannel(channel) || channel;
@@ -143,6 +158,47 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       reply: message.messageIdReplied && !isUserSpoofingAvailable ? { messageReference: message.messageIdReplied } : undefined,
       ...message.platformMessageExtra ?? {},
     });
+  }
+
+  public async applyReaction(reaction: GenericMessageReaction) {
+    if (reaction.isRetracted) {
+      return await this.retractReaction(reaction);
+    }
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const channel = await this.client?.channels.fetch(chatId);
+    if (!channel?.isSendable()) {
+      return;
+    }
+    const key = `${chatId}|${messageId}`;
+    const existing = this.messageReactionStackMap.get(key) ?? [];
+    this.messageReactionStackMap.set(key, [...existing, emoji]);
+    // some poor handling of cache eviction
+    setTimeout(() => this.messageReactionStackMap.delete(key), 1000 * 60 * 60);
+
+    const message = await channel.messages.fetch(messageId);
+    await message?.react(emoji);
+  }
+
+  public async retractReaction(reaction: GenericMessageReaction) {
+    const { chatId, messageId, reaction: emoji } = reaction;
+    const channel = await this.client?.channels.fetch(chatId);
+    if (!channel?.isSendable()) {
+      return;
+    }
+    const message = await channel.messages.fetch(messageId);
+
+    const key = `${chatId}|${messageId}`;
+    const existing = this.messageReactionStackMap.get(key) ?? [];
+    const newEmojiList = existing.filter(e => e !== emoji);
+    const newLastEmoji = newEmojiList.slice(-1)[0];
+
+    if (newLastEmoji) {
+      await message?.react(newLastEmoji);
+      this.messageReactionStackMap.set(key, newEmojiList);
+    } else {
+      await message?.reactions.removeAll();
+      this.messageReactionStackMap.delete(key);
+    }
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {

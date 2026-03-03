@@ -57,7 +57,9 @@ export interface GenericMessageEntity {
 export interface GenericMessageReaction {
   clientName: string;
   chatId: string;
+  messageId: string;
   reaction: string;
+  isRetracted?: boolean;
   customReactionUrl?: string;
   userId?: string;
   userDisplayName?: string;
@@ -73,7 +75,8 @@ export interface GenericClient<T = any, U = any, V = {}> {
   sendMessage(message: MessageToSend): Promise<GenericMessage>;
   editMessage(message: MessageToEdit): Promise<void>;
 
-  reactToMessage?(chatId: string, messageId: string, emoji: string, reactorDisplayName: string): Promise<void>;
+  applyReaction?(reaction: GenericMessageReaction): Promise<void>;
+
   callOtherBotCommand?(text: string, chatId: string): Promise<void>;
   setCommandList?(commandList: { command: string; description: string }[]): Promise<void>;
 }
