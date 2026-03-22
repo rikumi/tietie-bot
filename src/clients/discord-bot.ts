@@ -230,6 +230,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
       userId: message.author?.id,
       userHandle: message.author?.globalName ?? message.author?.username,
       userDisplayName: message.author?.globalName ?? message.author?.username,
+      userLink: message.author?.id ? `https://discord.com/channels/@me/${message.author.id}` : undefined,
       chatId: message.channelId,
       messageId: message.id,
       media,
