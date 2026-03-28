@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
+import * as paren from './commands/paren';
 import * as repeat from './commands/repeat';
 import * as video from './commands/set_video';
 import * as tietie from './commands/tietie';
@@ -32,6 +33,7 @@ const handleMessage = async (message: GenericMessage) => {
   if (!message.text.startsWith('/')) {
     clients.bridgeMessage({ ...message });
     repeat.handleGeneralMessage(message);
+    paren.handleGeneralMessage(message);
     return;
   }
   // 调用 slash commands
