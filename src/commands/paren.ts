@@ -11,10 +11,10 @@ export const handleSlashCommand = async (message: GenericMessage) => {
     return `当前会话括号平衡功能已${current ? '开启' : '关闭'}，使用 /paren ${current ? 'off' : 'on'} 来切换`;
   }
   if (str === 'on') {
-    await sesParenEnabled(message.clientName, message.chatId, true);
+    await setParenEnabled(message.clientName, message.chatId, true);
     return '已为当前会话开启括号平衡功能。';
   } else {
-    await sesParenEnabled(message.clientName, message.chatId, false);
+    await setParenEnabled(message.clientName, message.chatId, false);
     return '已为当前会话关闭括号平衡功能。';
   }
 };
