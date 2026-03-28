@@ -1,6 +1,6 @@
-import { GenericMessage } from 'src/clients/base';
+import { GenericMessage } from '../clients/base';
 import { setRepeatEnabled, isRepeatEnabled } from '../database/repeat';
-import defaultClientSet from 'src/clients';
+import defaultClientSet from '../clients';
 
 export const USAGE = `<on|off> 开启/关闭感叹句复读功能`;
 
