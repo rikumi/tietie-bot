@@ -326,7 +326,9 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     this.pendingMediaUpload = Promise.race([(async () => {
       const mxcUri = await mxcUriPromise;
       await this.uploadToMxcUri(mxcUri, url);
-    })(), new Promise<void>(r => setTimeout(r, 60000))]);
+    })(), new Promise<void>(r => setTimeout(r, 60000))]).then(() => {
+      this.pendingMediaUpload = undefined;
+    });
 
     // ...and also be awaited alone
     return await mxcUriPromise;
