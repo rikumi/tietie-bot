@@ -326,7 +326,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     this.pendingMediaUpload = Promise.race([(async () => {
       const mxcUri = await mxcUriPromise;
       await this.uploadToMxcUri(mxcUri, url);
-    })(), new Promise<void>(r => setTimeout(r, 60000))]).then(() => {
+    })(), new Promise<void>(r => setTimeout(r, 60000))]).finally(() => {
       this.pendingMediaUpload = undefined;
     });
 
@@ -336,7 +336,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
 
   private async uploadToMxcUri(mxcUri: string, url: string) {
     mxcLog(`Uploading to MXC URI ${mxcUri}`);
-    while (true) {
+    for (let retry = 0; retry < 3; retry++) {
       try {
         const resource = await fetch(url, {
           dispatcher: new Agent({ connect: { rejectUnauthorized: false } }),
@@ -349,7 +349,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
           filename: contentType.replace(/\//g, '.'), // temporary, yet geek
         }, buffer, 60000, undefined, contentType);
         this.cachedMedia.set(url, mxcUri);
-        this.pendingMediaUpload = undefined;
         mxcLog(`Uploaded to MXC URI ${mxcUri}`);
         break;
       } catch (e) {
