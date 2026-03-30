@@ -18,17 +18,24 @@ const handlers = fs.readdirSync(routesDir, { recursive: true }).map(file => {
   }
 }).filter(Boolean);
 
-const server = http.createServer((req, res) => {
+const server = http.createServer(async (req, res) => {
   let isHandled = false;
   const pathname = req.url?.split(/\?#/g)[0].replace(/(?<=.)\/$/g, '') ?? '';
-  const use = (matcher: string | RegExp, handler: (req: IncomingMessage, res: ServerResponse) => void) => {
+  const use = async (matcher: string | RegExp, handler: (req: IncomingMessage, res: ServerResponse) => void) => {
     if (typeof matcher === 'string' ? matcher === pathname : matcher.test(pathname)) {
       console.log('[Server] Handling route', pathname);
-      isHandled = true;
-      return handler(req, res);
+      try {
+        isHandled = true;
+        return await handler(req, res);
+      } catch (e) {
+        console.error('[Server] handler error:', e);
+        isHandled = false;
+      }
     }
   };
-  handlers.forEach((handler) => handler && use(handler?.route, handler?.handler));
+  for (const handler of handlers) {
+    if (handler) await use(handler?.route, handler?.handler);
+  }
   if (!isHandled) {
     console.warn('[Server] No handler for', pathname);
     res.writeHead(404);
