@@ -111,11 +111,16 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
     // native replies does not work with user spoofing - see https://github.com/discord/discord-api-docs/discussions/3282
     if (message.messageIdReplied && isUserSpoofingAvailable) {
-      const repliedMessage = await channel.messages.fetch(message.messageIdReplied);
-      const repliedMessageContent = repliedMessage.content.slice(0, 10) + '...';
+      try {
+        const repliedMessage = await channel.messages.fetch(message.messageIdReplied);
+        const repliedMessageContent = repliedMessage.content.slice(0, 10) + '...';
 
-      prependMessageBridgingPrefix(message, `[回复给 ${repliedMessage.author.username}: ${repliedMessageContent}]: `); // use handles for discord only
-      applyMessageBridgingPrefix(message);
+        prependMessageBridgingPrefix(message, `[回复给 ${repliedMessage.author.username}: ${repliedMessageContent}]: `); // use handles for discord only
+        applyMessageBridgingPrefix(message);
+      } catch (e) {
+        prependMessageBridgingPrefix(message, `[回复给 未知消息]: `);
+        applyMessageBridgingPrefix(message);
+      }
     }
 
     // apply bridging prefix for non-webhook messages only
