@@ -32,7 +32,10 @@ export const handleMessage = async (message: GenericMessage) => {
 
   const replied = message.messageReplied;
   const repliedFirstEntity = replied?.entities?.[0];
-  const repliedMentionEntity = repliedFirstEntity?.offset === 0 && repliedFirstEntity.url && !replied?.text?.startsWith(repliedFirstEntity.url)
+  const repliedMentionEntity = repliedFirstEntity?.offset === 0 
+      && repliedFirstEntity.url
+      && !repliedFirstEntity.url.startsWith('https://httpbin.org/')
+      && !replied?.text?.startsWith(repliedFirstEntity.url)
     ? repliedFirstEntity
     : undefined;
 
