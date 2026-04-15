@@ -235,6 +235,18 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       }
       result.text = textBuffer.toString('utf16le');
     }
+    if ('poll' in message) {
+      const isAnonymous = message.poll.is_anonymous;
+      result.text = `[${isAnonymous ? '匿名投票' : '投票'}] ${
+        message.poll.question ?? ''
+      }\n\n${
+        message.poll.description ?? ''
+      }\n\n${
+        message.poll.options.map(option => `- ${option.text}${isAnonymous ? '' : ` (${option.voter_count} 人投票)`}`).join('\n')
+      }\n\n${
+        message.poll.total_voter_count
+      } 人已投票`;
+    }
     if ('entities' in message && message.entities?.some(e => e.type === 'custom_emoji')) {
       prependMessageBridgingPrefix(result, `[点击 emoji 查看对应自定义表情] `);
     }
