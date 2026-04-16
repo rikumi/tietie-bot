@@ -208,9 +208,9 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
   }
 
   public async setCommandList(commandList: { command: string; description: string; }[]): Promise<void> {
-    await this.rest?.put(Routes.applicationCommands(config['discord-bot'].clientId), {
-      body: commandList.map(({ command, description }) => ({ name: command, description })),
-    });
+     await this.rest?.put(Routes.applicationCommands(config['discord-bot'].clientId), {
+       body: [], // commandList.map(({ command, description }) => ({ name: command, description })),
+     });
   }
 
   public getInviteLink() {
