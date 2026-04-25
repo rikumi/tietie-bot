@@ -47,12 +47,10 @@ export interface GenericMediaThumbnail {
 }
 
 export interface GenericMessageEntity {
-  type: 'bold' | 'italic' | 'strikethrough' | 'underline' | 'code' | 'pre' | 'mention' | 'blockquote' | 'link' | 'image';
+  type: 'bold' | 'italic' | 'strikethrough' | 'underline' | 'code' | 'pre' | 'mention' | 'blockquote' | 'link';
   offset: number;
   length: number;
   url?: string;
-  imageWidth?: number;
-  imageHeight?: number;
   codeLanguage?: string;
 }
 

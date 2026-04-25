@@ -248,12 +248,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       } 人已投票`;
     }
     if ('entities' in message && message.entities?.some(e => e.type === 'custom_emoji')) {
-      const prefix = '[点击渲染自定义表情]';
-      const url = `${serverRoot}/render/${Buffer.from(JSON.stringify(result)).toString('base64')}`;
-      prependMessageBridgingPrefix(result, `${prefix} `);
-      applyMessageBridgingPrefix(result);
-      result.entities ??= [];
-      result.entities.unshift({ type: 'link', offset: 0, length: Buffer.from(prefix, 'utf16le').length / 2, url });
+      prependMessageBridgingPrefix(result, `[点击 emoji 查看对应自定义表情] `);
     }
     if ('forward_origin' in message || 'forward_from' in message) {
       prependMessageBridgingPrefix(result, `[转发自 ${this.transformForwardOrigin(message)}] `);
@@ -419,7 +414,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       return { type: 'mention', offset, length, url: this.getUserLink(entity.user) };
     }
     if (type === 'custom_emoji') {
-      return { type: 'image', offset, length, url: `${serverRoot}/tgmoji/${entity.custom_emoji_id}`, imageWidth: 16, imageHeight: 16 };
+      return { type: 'link', offset, length, url: `${serverRoot}/tgmoji/${entity.custom_emoji_id}` };
     }
     if (type === 'expandable_blockquote' as any) {
       return { type: 'blockquote', offset, length };
