@@ -249,7 +249,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     }
     if ('entities' in message && message.entities?.some(e => e.type === 'custom_emoji')) {
       const prefix = '[点击渲染自定义表情]';
-      const url = `${serverRoot}/render/${Buffer.from(JSON.stringify(message)).toString('base64')}`;
+      const url = `${serverRoot}/render/${Buffer.from(JSON.stringify(result)).toString('base64')}`;
       prependMessageBridgingPrefix(result, `${prefix} `);
       applyMessageBridgingPrefix(result);
       result.entities ??= [];
