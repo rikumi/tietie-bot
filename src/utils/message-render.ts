@@ -1,5 +1,12 @@
 import { GenericMessageEntity } from './base';
 
+const escapeHTML = (str: string) => str
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;')
+  .replace(/'/g, '&#039;');
+
 export const renderEntitiesToHTML = (entities: GenericMessageEntity[], text: string): string => {
   entities = entities.slice();
   const newline = /\n/g;

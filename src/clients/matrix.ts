@@ -10,13 +10,6 @@ import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReac
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { renderEntitiesToHTML } from '../utils/message-render';
 
-const escapeHTML = (str: string) => str
-  .replace(/&/g, '&amp;')
-  .replace(/</g, '&lt;')
-  .replace(/>/g, '&gt;')
-  .replace(/"/g, '&quot;')
-  .replace(/'/g, '&#039;');
-
 const mxcLogFile = path.resolve(__dirname, '../../matrix-log.txt');
 
 export const mxcToUrl = (mxcUri: string) => {
