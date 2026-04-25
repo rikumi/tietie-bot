@@ -252,8 +252,8 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       const url = `${serverRoot}/render/${Buffer.from(JSON.stringify(message)).toString('base64')}`;
       prependMessageBridgingPrefix(result, `${prefix} `);
       applyMessageBridgingPrefix(result);
-      message.entities ??= [];
-      message.entities.unshift({ type: 'link', offset: 0, length: Buffer.from(prefix, 'utf16le').length, url });
+      result.entities ??= [];
+      result.entities.unshift({ type: 'link', offset: 0, length: Buffer.from(prefix, 'utf16le').length / 2, url });
     }
     if ('forward_origin' in message || 'forward_from' in message) {
       prependMessageBridgingPrefix(result, `[转发自 ${this.transformForwardOrigin(message)}] `);
