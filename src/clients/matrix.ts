@@ -8,6 +8,7 @@ import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, Mem
 import config from '../../config.json';
 import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
+import { renderEntitiesToHTML } from '../utils/message-render';
 
 const escapeHTML = (str: string) => str
   .replace(/&/g, '&amp;')
@@ -83,7 +84,7 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     const matrixEventContent: any = {
       body: message.text,
       format: message.entities ? 'org.matrix.custom.html' : undefined,
-      formatted_body: message.entities ? this.renderEntitiesToHTML(message.entities, message.text) : message.text,
+      formatted_body: message.entities ? renderEntitiesToHTML(message.entities, message.text) : message.text,
       msgtype: 'm.text',
       'm.relates_to': message.messageIdReplied ? { 'm.in_reply_to': { event_id: message.messageIdReplied } } : undefined,
       'mx.rkm.tietie-bot.message': message,
@@ -364,32 +365,6 @@ export class MatrixUserBotClient extends EventEmitter implements GenericClient<a
     await this.bot.doRequest('PUT', `/_matrix/media/v3/upload/${serverName}/${mediaId}`, {
       filename: 'invalid',
     }, Buffer.from('Resource failed to upload'), 60000, undefined, 'text/plain');
-  }
-
-  private renderEntitiesToHTML(entities: GenericMessageEntity[], text: string): string {
-    entities = entities.slice();
-    const newline = /\n/g;
-    while (newline.exec(text)) {
-      entities.push({ type: 'newline' as any, offset: newline.lastIndex, length: 0 });
-    }
-    const tagsReversed = entities.map((e) => ((e.type as any) === 'newline' ? [e.offset] : [e.offset, e.offset + e.length]).map((position) => {
-      const tagName = ({ bold: 'strong', italic: 'em', strikethrough: 'del', underline: 'u', mention: 'a', link: 'a', newline: 'br' } as any)[e.type] || e.type;
-      const tag = position === e.offset ? `<${tagName}${e.url ? ` href="${e.url.replace(/"/g, '&quot;')}"` : ''}>` : `</${tagName}>`;
-      return { tag, position };
-    })).flat()
-      // close tags should be closed first
-      .sort((a, b) => a.position === b.position ? a.tag.indexOf('</') - b.tag.indexOf('</') : b.position - a.position);
-
-    const buffer = Buffer.from(text, 'utf16le');
-    const stack: string[] = [];
-    let lastPosition = buffer.length / 2;
-    for (const { tag, position } of tagsReversed) {
-      stack.push(escapeHTML(buffer.subarray(position * 2, lastPosition * 2).toString('utf16le')));
-      stack.push(tag);
-      lastPosition = position;
-    }
-    stack.push(escapeHTML(buffer.subarray(0, lastPosition * 2).toString('utf16le')));
-    return stack.reverse().join('');
   }
 }
 
