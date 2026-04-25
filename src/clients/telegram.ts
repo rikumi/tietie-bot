@@ -251,6 +251,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
       const prefix = '[点击渲染自定义表情]';
       const url = `${serverRoot}/render/${Buffer.from(JSON.stringify(message)).toString('base64')}`;
       prependMessageBridgingPrefix(result, `${prefix} `);
+      applyMessageBridgingPrefix(result);
       message.entities ??= [];
       message.entities.unshift({ type: 'link', offset: 0, length: Buffer.from(prefix, 'utf16le').length, url });
     }

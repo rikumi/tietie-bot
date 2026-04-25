@@ -24,6 +24,7 @@ export const unsafeUpdateBot = async (
   onBranchSwitched?: (pullResult: string, switchBranchResult: string) => Promise<void>,
 ) => {
   const cwd = path.resolve(__dirname, '..');
+  const pullResult = await exec('git stash', { cwd });
   const pullResult = await exec('git pull', { cwd });
 
   await onPullFinished?.(pullResult);
