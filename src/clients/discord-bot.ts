@@ -285,7 +285,7 @@ export class DiscordBotClient extends EventEmitter implements GenericClient {
 
   private renderEntitiesToDFM(entities: GenericMessageEntity[], text: string): string {
     const tagsReversed = entities.map((e) => ((e.type as any) === 'newline' ? [e.offset] : [e.offset, e.offset + e.length]).map((position) => {
-      const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[', image: '' } as any)[e.type] || e.type;
+      const tagName = ({ bold: '**', italic: '_', strikethrough: '~~', underline: '__', mention: '[@', link: '[', image: '' } as any)[e.type] ?? e.type;
       const isOpenTag = position === e.offset;
       if (!tagName.startsWith('[') || isOpenTag) {
         return { tag: isOpenTag ? `\u200D${tagName}` : `${tagName}\u200D`, position, isCloseTag: !isOpenTag };
