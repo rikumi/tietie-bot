@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import { GenericMessageEntity } from './base';
+import { GenericMessageEntity } from '../../clients/base';
 import { renderEntitiesToHTML } from '../../utils/message-render';
 
 export const ROUTE = /^\/render\/(.*?)$/;
