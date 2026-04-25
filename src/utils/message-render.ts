@@ -18,9 +18,9 @@ export const renderEntitiesToHTML = (entities: GenericMessageEntity[], text: str
     const tag = position === e.offset ? `<${tagName}${
       e.url ? ` ${tagName === 'img' ? 'src' : 'href'}="${e.url.replace(/"/g, '&quot;')}"` : ''
     } ${
-      tagName === 'img' && e.imageWidth ? `width="${imageWidth}"` : ''
+      tagName === 'img' && e.imageWidth ? `width="${e.imageWidth}"` : ''
     } ${
-      tagName === 'img' && e.imageHeight ? `height="${imageHeight}"` : ''
+      tagName === 'img' && e.imageHeight ? `height="${e.imageHeight}"` : ''
     }>` : `</${tagName}>`;
     return { tag, position };
   })).flat()
