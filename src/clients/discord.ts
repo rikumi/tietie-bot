@@ -39,7 +39,7 @@ interface SpamModeState {
   lastMessageTimestamp: number;
 }
 
-const SPAM_MODE_INTERVAL = 2000;
+const SPAM_MODE_INTERVAL = 3000;
 const SPAM_MODE_COUNT = 10;
 
 export class DiscordUserBotClient extends EventEmitter implements GenericClient {
@@ -67,7 +67,7 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
         spamMode.lastMessageTimestamp = Date.now();
         this.spamModeStateMap.set(message.chatId, spamMode);
         if (spamMode.spamMessageCount >= SPAM_MODE_COUNT) {
-          if (spamMode.spamMessageCount == SPAM_MODE_COUNT) {
+          if (spamMode.spamMessageCount === SPAM_MODE_COUNT) {
             defaultClientSet.sendBotMessage({
               clientName: message.clientName,
               chatId: message.chatId,
@@ -77,7 +77,10 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
           return;
         }
       } else {
-        this.spamModeStateMap.delete(message.chatId);
+        this.spamModeStateMap.set(message.chatId, {
+          spamMessageCount: 0,
+          lastMessageTimestamp: Date.now(),
+        });
       }
       this.emit('message', transformedMessage);
     };
