@@ -6,7 +6,7 @@ import discord from 'discord-user-bots';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
 import config from '../../config.json';
-import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
+import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 
 const convertDiscordMessage = (text: string) => {
   const rtlCharRegexp = /([\u04c7-\u0591\u05D0-\u05EA\u05F0-\u05F4\u0600-\u06FF\uFE70-\uFEFF])/g;
@@ -34,9 +34,19 @@ if (!crypto.getRandomValues) {
   crypto.getRandomValues = getRandomValues as any; // usable
 }
 
+interface SpamModeState {
+  spamMessageCount: number;
+  lastMessageTimestamp: number;
+}
+
+const SPAM_MODE_INTERVAL = 2000;
+const SPAM_MODE_COUNT = 10;
+
 export class DiscordUserBotClient extends EventEmitter implements GenericClient {
   public bot: discord.Client | undefined;
   public botReady: Promise<void> | undefined;
+
+  private spamModeStateMap = new Map<string, SpamModeState>();
 
   public async start(): Promise<void> {
     if (this.bot) {
@@ -51,6 +61,24 @@ export class DiscordUserBotClient extends EventEmitter implements GenericClient 
     this.bot.on.message_create = (message: any) => {
       const transformedMessage = this.transformMessage(message);
       if (message.author?.username === config.discord.username) return;
+      const spamMode = this.spamModeStateMap.get(message.chatId) ?? { spamMessageCount: 0, lastMessageTimestamp: 0 };
+      if (Date.now() - spamMode.lastMessageTimestamp < SPAM_MODE_INTERVAL) {
+        spamMode.spamMessageCount += 1;
+        spamMode.lastMessageTimestamp = Date.now();
+        this.spamModeStateMap.set(message.chatId, spamMode);
+        if (spamMode.spamMessageCount >= SPAM_MODE_COUNT) {
+          if (spamMode.spamMessageCount == SPAM_MODE_COUNT) {
+            defaultClientSet.sendBotMessage({
+              clientName: message.clientName,
+              chatId: message.chatId,
+              text: '收到消息过于频繁，已进入防水模式，接下来连续收到的消息将不被处理和转发',
+            });
+          }
+          return;
+        }
+      } else {
+        this.spamModeStateMap.delete(message.chatId);
+      }
       this.emit('message', transformedMessage);
     };
     this.bot.on.message_edit = (message: any) => {
