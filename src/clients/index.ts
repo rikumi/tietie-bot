@@ -42,29 +42,34 @@ export class DefaultClientSet extends EventEmitter {
         ? this.convertRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageIdReplied, toClientName, toChatId)?.[0]
         : undefined;
 
-      const toMessage = await toClient.sendMessage({
-        clientName: toClientName,
-        text: fromMessage.text,
-        chatId: toChatId,
-        media: fromMessage.media,
-        messageIdReplied: toMessageIdReplied,
-        bridgedMessage: {
-          ...fromMessage,
-          userHandle: !fromMessage.isServiceMessage && fromMessage.userHandle || '',
-          userDisplayName: !fromMessage.isServiceMessage && fromMessage.userDisplayName || '',
-        },
-        entities: fromMessage.entities,
-      });
-      // build bidirectional message id mapping
-      this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
-      this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
-      if (toMessage.mediaMessageId) {
-        this.recordRecentMessageId(toClientName, toChatId, toMessage.mediaMessageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+      try {
+        const toMessage = await toClient.sendMessage({
+          clientName: toClientName,
+          text: fromMessage.text,
+          chatId: toChatId,
+          media: fromMessage.media,
+          messageIdReplied: toMessageIdReplied,
+          bridgedMessage: {
+            ...fromMessage,
+            userHandle: !fromMessage.isServiceMessage && fromMessage.userHandle || '',
+            userDisplayName: !fromMessage.isServiceMessage && fromMessage.userDisplayName || '',
+          },
+          entities: fromMessage.entities,
+        });
+        // build bidirectional message id mapping
+        this.recordRecentMessageId(fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, toClientName, toChatId, toMessage.messageId, toMessage.mediaMessageId);
+        this.recordRecentMessageId(toClientName, toChatId, toMessage.messageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+        if (toMessage.mediaMessageId) {
+          this.recordRecentMessageId(toClientName, toChatId, toMessage.mediaMessageId, fromMessage.clientName, fromMessage.chatId, fromMessage.messageId, undefined);
+        }
+        if (hasCommand) {
+          toClient.callOtherBotCommand?.(rawText, toChatId);
+        }
+        return toMessage;
+      } catch (e) {
+        console.error(e);
+        return;
       }
-      if (hasCommand) {
-        toClient.callOtherBotCommand?.(rawText, toChatId);
-      }
-      return toMessage;
     }));
     return results.filter(Boolean) as GenericMessage[];
   }
