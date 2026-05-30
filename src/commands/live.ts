@@ -11,8 +11,8 @@ export const handleSlashCommand = (message: GenericMessage | undefined) => {
     return '回复给其它消息以查看动态照片';
   }
   const live = message.messageReplied.platformMessage?.live_photo;
-  const photoId = live?.photo?.slice(-1)[0]?.file_unique_id;
-  const videoId = live?.file_unique_id;
+  const photoId = live?.photo?.slice(-1)[0]?.file_id;
+  const videoId = live?.file_id;
 
   if (!live || !photoId || !videoId) {
     return '该消息不包含动态照片，请长按选择正确消息后再试';
