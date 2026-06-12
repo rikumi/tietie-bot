@@ -8,11 +8,15 @@ export const handleSlashCommand = (message: GenericMessage | undefined) => {
     return '回复给其它消息以查看消息原始数据';
   }
   const code = JSON.stringify(message.messageReplied, null, 2);
-  defaultClientSet.sendBotMessage({
-    clientName: message.clientName,
-    chatId: message.chatId,
-    messageIdReplied: message.messageId,
-    text: code!,
-    entities: [{ type: 'expandable_blockquote', offset: 0, length: Buffer.from(code, 'utf16le').length / 2, codeLanguage: 'json' }],
-  });
+  try {
+    await defaultClientSet.sendBotMessage({
+      clientName: message.clientName,
+      chatId: message.chatId,
+      messageIdReplied: message.messageId,
+      text: code!,
+      entities: [{ type: 'expandable_blockquote', offset: 0, length: Buffer.from(code, 'utf16le').length / 2, codeLanguage: 'json' }],
+    });
+  } catch (e) {
+    return '回显消息结构体失败：' + (e?.message ?? '未知错误');
+  }
 };
