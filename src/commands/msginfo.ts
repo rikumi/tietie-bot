@@ -3,7 +3,7 @@ import { GenericMessage } from 'src/clients/base';
 
 export const USAGE = `显示被引用的消息的原始数据`;
 
-export const handleSlashCommand = (message: GenericMessage | undefined) => {
+export const handleSlashCommand = async (message: GenericMessage | undefined) => {
   if (!message?.messageReplied) {
     return '回复给其它消息以查看消息原始数据';
   }
