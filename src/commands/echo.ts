@@ -12,8 +12,8 @@ export const handleSlashCommand = async (message: GenericMessage | undefined) =>
       clientName: message.clientName,
       chatId: message.chatId,
       messageIdReplied: message.messageId,
-      text: message.text ?? '',
-      entities: [{ type: 'expandable_blockquote', offset: 0, length: Buffer.from(message.text ?? '', 'utf16le').length / 2 }],
+      text: message.messageReplied.text ?? '',
+      entities: [{ type: 'expandable_blockquote', offset: 0, length: Buffer.from(message.messageReplied.text ?? '', 'utf16le').length / 2 }],
     });
   } catch (e) {
     return '回显消息文字失败：' + (e?.message ?? '未知错误');
