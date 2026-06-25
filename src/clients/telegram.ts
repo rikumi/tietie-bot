@@ -65,7 +65,7 @@ export class TelegramBotClient extends EventEmitter implements GenericClient<Mes
     this.bot.on('chat_member', async (ctx: Context<Update.ChatMemberUpdate>) => {
       const { old_chat_member: oldMember, new_chat_member: newMember } = ctx.chatMember;
       const getTag = (member: any) => member.tag || member.custom_title || '(空)';
-      if (getTag(oldMember) !== getTag(newMember)) {
+      if (getTag(oldMember) !== getTag(newMember) && newMember.status !== 'left') {
         this.handleTagChange(ctx.chatMember, getTag(newMember));
       }
     });
