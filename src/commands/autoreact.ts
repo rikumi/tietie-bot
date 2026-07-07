@@ -1,7 +1,7 @@
 import { GenericMessage } from 'src/clients/base';
 import defaultClientSet from 'src/clients';
 import { deleteAutoReact, getAutoReact, setAutoReact } from 'src/database/autoreact';
-import config from '../../config.json';
+import config from '../config';
 
 export const USAGE = `<keyword> <emoji> | del <keyword> 为本会话中的特定关键词消息设置自动回应`;
 

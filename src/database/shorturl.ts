@@ -1,6 +1,6 @@
 import crypto from 'crypto';
 import { getDatabase } from '.';
-import config from '../../config.json';
+import config from '../config';
 
 export const init = async () => {
   const db = await getDatabase();

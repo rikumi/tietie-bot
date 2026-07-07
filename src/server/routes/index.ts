@@ -1,5 +1,5 @@
 import { IncomingMessage, ServerResponse } from 'http';
-import config from '../../../config.json';
+import config from '../../config';
 
 export const ROUTE = '/';
 

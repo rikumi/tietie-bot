@@ -5,7 +5,7 @@ import { EventEmitter } from 'events';
 import discord from 'discord-user-bots';
 
 import { GenericClient, GenericMessage, MessageToEdit, MessageToSend } from './base';
-import config from '../../config.json';
+import config from '../config';
 import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 
 const convertDiscordMessage = (text: string) => {

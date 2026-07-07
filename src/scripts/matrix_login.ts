@@ -1,6 +1,6 @@
 import readline from 'readline';
 import { MatrixAuth } from 'matrix-bot-sdk';
-import config from '../../config.json';
+import config from '../config';
 
 const rl = readline.createInterface(process.stdin, process.stdout);
 const ask = async (q: string) => new Promise<string>(r => rl.question(q, r));

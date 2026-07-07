@@ -1,7 +1,7 @@
 import defaultClientSet, { DefaultClientSet } from 'src/clients';
 import { GenericMessage } from 'src/clients/base';
 import { getBidirectionalBridgesByChat, registerBidirectionalBridge, removeBidirectionalBridge } from 'src/database/bridge';
-import config from '../../config.json';
+import config from '../config';
 
 export const USAGE = `<platform> <chatId> | rm | list 在多个会话之间建立绑定关系`;
 

@@ -5,7 +5,7 @@ import util from 'util';
 import { fetch, Agent } from 'undici';
 import { load as $ } from 'cheerio';
 import { MatrixClient, SimpleFsStorageProvider, AutojoinRoomsMixin, IWhoAmI, MemoryStorageProvider } from 'matrix-bot-sdk';
-import config from '../../config.json';
+import config from '../config';
 import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 

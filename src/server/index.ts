@@ -1,7 +1,7 @@
 import http, { IncomingMessage, ServerResponse } from 'http';
 import fs from 'fs';
 import path from 'path';
-import config from '../../config.json';
+import config from '../config';
 
 const routesDir = path.resolve(__dirname, 'routes');
 

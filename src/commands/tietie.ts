@@ -3,6 +3,7 @@ import { isAutodelEnabled } from 'src/database/autodel';
 import { GenericMessage, GenericMessageEntity } from 'src/clients/base';
 import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from 'src/clients';
 import telegram from 'src/clients/telegram';
+import config from '../config';
 
 export const USAGE = `<on|off> 开启/关闭任意非 ASCII 指令贴贴功能`;
 
@@ -32,7 +33,9 @@ export const handleMessage = async (message: GenericMessage) => {
 
   const replied = message.messageReplied;
   const repliedFirstEntity = replied?.entities?.[0];
-  const repliedMentionEntity = repliedFirstEntity?.offset === 0 
+  const isReplyingToBotMessage = replied && replied.userHandle === (config as any)[message.clientName]?.username;
+  const repliedMentionEntity = isReplyingToBotMessage
+      && repliedFirstEntity?.offset === 0
       && repliedFirstEntity.url
       && !repliedFirstEntity.url.startsWith('https://httpbin.org/')
       && !replied?.text?.startsWith(repliedFirstEntity.url)

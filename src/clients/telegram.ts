@@ -6,7 +6,7 @@ import { Telegraf } from 'telegraf';
 
 import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
 import * as autoreact from '../commands/autoreact';
-import config from '../../config.json';
+import config from '../config';
 import { setTelegramFileId } from 'src/database/tgfile';
 import defaultClientSet, { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import mime from 'mime-types';

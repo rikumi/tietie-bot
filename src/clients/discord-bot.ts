@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import discord, { escapeMarkdown, Events, GatewayIntentBits, Interaction, Message, Routes, TextChannel, Webhook } from 'discord.js';
 
 import { GenericClient, GenericMessage, GenericMessageEntity, GenericMessageReaction, MessageToEdit, MessageToSend } from './base';
-import config from '../../config.json';
+import config from '../config';
 import { applyMessageBridgingPrefix, prependMessageBridgingPrefix } from '.';
 import { isDiscordWebhookEnabled } from 'src/database/discord';
 

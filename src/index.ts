@@ -11,7 +11,7 @@ import clients from './clients';
 import { GenericMessage, GenericMessageReaction } from './clients/base';
 import defaultClientSet from './clients';
 import { startServer } from './server';
-import config from '../config.json';
+import config from 'config';
 import { notifyAllUpdateReceivers } from './utils/update';
 
 process.on('uncaughtException', (e) => { console.error(e); });
