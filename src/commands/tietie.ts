@@ -26,8 +26,8 @@ const utf16Length = (str: string) => Buffer.from(str, 'utf16le').length / 2;
 export const handleMessage = async (message: GenericMessage) => {
   const command = message.text!.trim().split(/\s+/)[0].replace(/^\//, '');
 
-  // 默认行为 /贴贴，要求指令内有中日字符
-  if (!/[\u0800-\u9fa5]/.test(command) || !await isTietieEnabled(message.clientName, message.chatId)) {
+  // 默认行为 /贴贴，要求指令内有 U+2E00 或更高区段的字符
+  if (!/[^\u0000-\u2DFF]/.test(command) || !await isTietieEnabled(message.clientName, message.chatId)) {
     return false;
   }
 
